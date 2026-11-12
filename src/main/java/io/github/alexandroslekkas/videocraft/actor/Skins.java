@@ -34,6 +34,28 @@ final class Skins {
 		return profile;
 	}
 
+	/**
+	 * {@code texture = "x.png"} on a mob: the model's own texture replaced by a local PNG (the CLI makes the path
+	 * absolute against the script), the same layout and size as the entity's texture. Layers keep theirs (a sheep's
+	 * wool). Null when the spec has none.
+	 */
+	static Identifier mobTexture(String actor, Params spec) {
+		if (!spec.has("texture")) return null;
+		Identifier id = Identifier.fromNamespaceAndPath("videocraft", "textures/mobs/" + actor.replaceAll("[^a-z0-9_-]", "_") + ".png");
+		NativeImage image = read(Path.of(spec.string("texture")), spec.where() + ".texture");
+		Minecraft.getInstance().getTextureManager().register(id, new DynamicTexture(id::toString, image));
+		return id;
+	}
+
+	private static NativeImage read(Path file, String where) {
+		if (!Files.isRegularFile(file)) throw new IllegalArgumentException(where + ": no PNG at " + file + " (paths are relative to the script)");
+		try (InputStream in = Files.newInputStream(file)) {
+			return NativeImage.read(in);
+		} catch (IOException e) {
+			throw new IllegalArgumentException(where + ": " + file + " is not a PNG: " + e.getMessage());
+		}
+	}
+
 	private static void upload(Path file, Identifier id, String where) {
 		if (!Files.isRegularFile(file)) throw new IllegalArgumentException(where + ": no skin PNG at " + file + " (paths are relative to the script)");
 		NativeImage image;

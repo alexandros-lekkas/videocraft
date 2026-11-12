@@ -107,6 +107,8 @@ def compile_script(raw, source='script'):
         actors.append({'kind': 'npc', **actor})
         if isinstance(actor.get('skin'), str) and Path(source).is_file():  # a skin PNG is relative to the script
             actors[-1]['skin'] = str((Path(source).parent / actor['skin']).resolve())
+        if isinstance(actor.get('texture'), str) and Path(source).is_file():  # so is a mob's texture PNG
+            actors[-1]['texture'] = str((Path(source).parent / actor['texture']).resolve())
 
     shots, names = [], set()
     for i, shot in enumerate(raw.get('shot', [])):
