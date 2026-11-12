@@ -6,9 +6,10 @@
     rotate = 0                    # 0, 90, 180, 270 (clockwise from above); mirror = true flips east and west
     as = "lane"                   # the prefix of its marks (default: the set's name)
 
-The set is built when the script compiles. Its commands become staging cues before the script's own: `forceload`
-first, then (two seconds of staging later, so the chunks are loaded) biome, clearing and blocks as one batched
-`command` cue with a `forceload` box (the runtime waits for those chunks), entity summons last in it. The script's own stage cues are moved after them.
+The set is built when the script compiles. Its commands become one batched `command` cue with the set's box as its
+`forceload` key (the runtime forceloads it and waits for every chunk): biome, clearing, blocks, entity summons last.
+No literal `forceload add` commands: a chunk already forced (by another cue, or the runtime) fails one. A settle wait
+follows, and the script's own stage cues are moved after it.
 
 Anywhere in the script (shots, cues, actors, stage), these are replaced by plain values, so the mod needs nothing
 new to use them:
@@ -24,7 +25,7 @@ The plan's world also gets `anchors` (every mark, by name, for the runtime's anc
 from . import DEFAULT_AT, SetError, build, load, place
 
 SET_KEYS = {'name', 'at', 'rotate', 'mirror', 'as', 'note'}
-LOAD_DELAY = 2.0     # staging seconds between forceload and the first block, so the chunks have loaded
+LOAD_DELAY = 0.0     # the build cue's own `forceload` key loads the set's chunks and waits for them
 ENTITY_GAP = 0.1
 
 
@@ -55,9 +56,8 @@ def expand(raw, source='script'):
         if prefix in placed:
             raise SetError(f'{where}: "{prefix}" is placed twice; give the second one `as = "<other name>"`')
         placed[prefix] = p
-        cues.append({'at': 0.0, 'do': 'command', 'commands': p.prepare_commands()})
         # The `forceload` box makes the runtime wait until every chunk of the set has loaded before the first fill
-        # (stage cues start on their time and run side by side, so the forceload cue at 0 alone cannot hold them).
+        # (stage cues start on their time and run side by side, so only a cue's own forceload key holds it).
         box = [p.lo[0], p.lo[2], p.hi[0], p.hi[2]]
         # Entities go last in the same cue, so an item frame is summoned after the wall it hangs on.
         cues.append({'at': LOAD_DELAY, 'do': 'command', 'forceload': box, 'commands': p.build_commands() + p.entity_commands()})

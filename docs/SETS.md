@@ -142,9 +142,9 @@ rotate = 0                    # 0, 90, 180, 270 clockwise from above; mirror = t
 as = "lane"                   # the prefix of its marks (default: the set's name), to place one set twice
 ```
 
-The set is built when the script compiles and staged before the script's own stage cues: a `forceload` of its box
-in 256-chunk pieces at once, then (once those chunks have loaded) every fill, setblock and summon in one batched,
-checked `command` cue, then a settle wait so the client draws it. The script's own stage cues start after that.
+The set is built when the script compiles and staged before the script's own stage cues: one batched, checked
+`command` cue with the set's box as its `forceload` key (the runtime forceloads it in 256-chunk pieces and waits until
+every chunk has loaded), holding every fill, setblock and summon, then a settle wait so the client draws it. The script's own stage cues start after that.
 A take whose set has a failed command fails naming the command.
 
 ## Previews
