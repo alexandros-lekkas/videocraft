@@ -15,7 +15,7 @@ TO_YUV = 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p'
 # Named grades: (saturation, contrast, brightness, gamma, tint colour, tint amount). Tint keeps each pixel's luminance
 # and moves its colour towards the tint's.
 PRESETS = {
-    'sepia': (0.85, 1.06, 0.0, 1.0, '#d9a868', 0.62),
+    'sepia': (0.75, 0.97, -0.01, 1.0, '#b89470', 0.5),
     'warm': (1.06, 1.03, 0.01, 1.0, '#ffb070', 0.14),
     'cool': (0.94, 1.03, 0.0, 1.0, '#7fb0ff', 0.16),
     'crush': (1.12, 1.22, -0.03, 1.0, None, 0.0),

@@ -15,7 +15,7 @@ import java.util.List;
  * "drop"}), words pop ({@code "pop"}), or everything is there on the first frame ({@code "whole"}).
  */
 final class Title extends Message {
-	static final double TITLE_CAP = 112, SUBTITLE_CAP = 49;
+	static final double TITLE_CAP = 112, SUBTITLE_CAP = 56;
 
 	private final boolean card;
 	private final String style, position;
