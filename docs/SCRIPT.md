@@ -54,6 +54,7 @@ body after, glance about between beats, and make their own footstep sounds throu
 | `baby` | `false` | A baby (ageable mobs). |
 | `color` | | A sheep's wool (a dye colour). |
 | `tint` | | `"#rrggbb"` multiplied over the model: a slate-blue goat without a texture file. |
+| `wool` | | A sheep's wool as `"#rrggbb"`, any colour (`color` takes only the sixteen dyes); the face and legs keep theirs. |
 | `texture` | | For `mob`: a PNG (relative to the script, never fetched) drawn instead of the entity's own texture, in the same layout and size (a sheep's is 64x32); layers keep theirs (a sheep's wool still takes `color`). A local copy of a vanilla texture with a painted change is the usual way in. |
 | `scale` | `1` | Body size (0.0625 to 16); paces are not scaled. |
 | `name`, `show_name` | | A custom name; the tag is shown only with `show_name = true`. |

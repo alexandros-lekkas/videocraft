@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `wool = "#rrggbb"` on a sheep actor: wool of any colour, not only the sixteen dyes.
 - A `say` line with `fit = "none"` that runs over its shot's end keeps its caption on screen across the cut (and
   over a run of short shots): the whole line, the words said before the cut already landed, the rest popping on time.
 - `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
