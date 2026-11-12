@@ -79,3 +79,6 @@
   passes Gradle's download lines through and says a progress line every 30 s after 15 s of silence.
 - Game assets (sounds, music) are found under `GRADLE_USER_HOME` when it is set, not only `~/.gradle`
   (`paths.loom_assets`, used by `doctor` and the audio mix).
+- Vertical frames keep text clear of TikTok, Shorts and Reels overlays: the safe area of a frame taller than wide is
+  x 5-88 %, y 5-75 % (54-950, 96-1440 at 1080x1920), centred text centres on it, a lower third steps its size down to
+  fit, a keycap is kept inside it; `measure` checks the same area.

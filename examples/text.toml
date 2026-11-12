@@ -77,7 +77,7 @@ camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 14, height = 6
 at = 0.2
 do = "lower_third"
 text = "Nibs"
-subtitle = "Goat. One horn. Best jumper."
+subtitle = "One horn. Best jumper."
 color = "#8fb3d9"
 hold = 1.7
 

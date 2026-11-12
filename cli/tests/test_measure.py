@@ -167,6 +167,14 @@ class Text(unittest.TestCase):
         _, problems = text.check(items, 60, 1080, 1920)
         self.assertEqual(sorted(p['rule'] for p in problems), ['safe_area'])   # 30 px at 1080 wide is above 44 * 1080 / 1920
 
+    def test_vertical_safe_area_clears_the_app_overlays(self):
+        def rules(box):
+            items = [text.normalise({'text': 'Hi', 'start': 0, 'end': 120, 'box': box, 'cap_height': 56}, 60)]
+            return [p['rule'] for p in text.check(items, 60, 1080, 1920)[1]]
+        self.assertEqual(rules([100, 1300, 800, 120]), [])               # ends at y 1420, x 900
+        self.assertEqual(rules([100, 1400, 800, 120]), ['safe_area'])    # into the bottom 25 %
+        self.assertEqual(rules([200, 1000, 800, 120]), ['safe_area'])    # into the right 12 % (x 1000 > 950)
+
 
 class Loudness(unittest.TestCase):
     LOG = '\n'.join([

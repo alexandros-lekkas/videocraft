@@ -28,12 +28,20 @@ final class LowerThird extends Message {
 	@Override
 	void start() {
 		double[] safe = layout.safe();
-		roleK = Math.max(TextLayout.fontScale(TextLayout.MIN_CAP), k - 2);
-		float pad = 2.8f * roleK, bar = 1.8f * k;
-		float w = (Ink.width(name) - 1) * k;
-		if (role != null) w = Math.max(w, (Ink.width(role) - 1) * roleK);
-		float h = TextLayout.CAP * k + (role != null ? 3.5f * roleK + TextLayout.CAP * roleK : 0);
-		float boxW = bar + pad * 2 + w, boxH = h + pad * 2;
+		// Too wide for the safe area (a vertical frame's is 896 px): step the sizes down, never below the smallest readable.
+		int least = TextLayout.fontScale(TextLayout.MIN_CAP);
+		float boxW, boxH;
+		while (true) {
+			roleK = Math.max(least, k - 2);
+			float pad = 2.8f * roleK, bar = 1.8f * k;
+			float w = (Ink.width(name) - 1) * k;
+			if (role != null) w = Math.max(w, (Ink.width(role) - 1) * roleK);
+			float h = TextLayout.CAP * k + (role != null ? 3.5f * roleK + TextLayout.CAP * roleK : 0);
+			boxW = bar + pad * 2 + w;
+			boxH = h + pad * 2;
+			if (boxW <= safe[2] - safe[0] || k <= least) break;
+			k--;
+		}
 		if (boxW > safe[2] - safe[0]) throw new IllegalArgumentException(params.where() + ": the lower third is wider than the safe area; shorten it");
 		x0 = side.equals("left") ? (float) safe[0] : (float) safe[2] - boxW;
 		x1 = x0 + boxW;
