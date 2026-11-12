@@ -9,6 +9,7 @@
 // Every scene is a function of absolute time, so any frame renders alone (stills, strips, the poster).
 import AppKit
 import CoreGraphics
+import CoreImage
 import CoreText
 import Foundation
 import ImageIO
@@ -1507,6 +1508,564 @@ func sceneTimeline(_ o: Obj, _ t: Double) {
 	}
 }
 
+// MARK: - Minecraft's own GUI: font, sprites, screens (read at render time from the local game jar, never committed)
+
+
+/// One GUI pixel in frame pixels: GUI scale 4, the game's own at 1080 lines (a 480x270 GUI on 1920x1080, 270x480 on 1080x1920).
+let G: CGFloat = 4
+let MCROOT = (J["mc"] as? String) ?? ""
+var pngCache: [String: CGImage] = [:]
+func png(_ rel: String) -> CGImage? {
+	if let i = pngCache[rel] { return i }
+	let url = URL(fileURLWithPath: MCROOT + "/" + rel) as CFURL
+	guard let src = CGImageSourceCreateWithURL(url, nil), let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return nil }
+	pngCache[rel] = img
+	return img
+}
+/// Draws an image with nearest-neighbour sampling (pixel-crisp), flipped for the top-left canvas.
+func blit(_ img: CGImage, _ r: CGRect, alpha: CGFloat = 1) {
+	save {
+		ctx.interpolationQuality = .none
+		setAlpha(alpha)
+		ctx.translateBy(x: r.minX, y: r.maxY)
+		ctx.scaleBy(x: 1, y: -1)
+		ctx.draw(img, in: CGRect(x: 0, y: 0, width: r.width, height: r.height))
+	}
+}
+/// A GUI sprite (textures/gui/sprites/<name>.png), nine-sliced by its .mcmeta border, at GUI scale.
+struct Slice { let l: Int; let t: Int; let r: Int; let b: Int }
+var sliceCache: [String: Slice?] = [:]
+func sliceOf(_ name: String) -> Slice? {
+	if let s = sliceCache[name] { return s }
+	var out: Slice? = nil
+	if let data = FileManager.default.contents(atPath: MCROOT + "/gui/sprites/\(name).png.mcmeta"),
+		let j = try? JSONSerialization.jsonObject(with: data) as? Obj, let gui = j["gui"] as? Obj, let sc = gui["scaling"] as? Obj,
+		s(sc, "type") == "nine_slice" {
+		if let b = sc["border"] as? Int { out = Slice(l: b, t: b, r: b, b: b) }
+		else if let b = sc["border"] as? Obj { out = Slice(l: Int(d(b, "left")), t: Int(d(b, "top")), r: Int(d(b, "right")), b: Int(d(b, "bottom"))) }
+	}
+	sliceCache[name] = out
+	return out
+}
+func sprite(_ name: String, _ r: CGRect, alpha: CGFloat = 1) {
+	guard let img = png("gui/sprites/\(name).png") else { return }
+	guard let sl = sliceOf(name) else { blit(img, r, alpha: alpha); return }
+	let w = CGFloat(img.width), h = CGFloat(img.height)
+	let L = CGFloat(sl.l), T = CGFloat(sl.t), R = CGFloat(sl.r), B = CGFloat(sl.b)
+	let xs: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [(0, L, r.minX, L * G), (L, w - L - R, r.minX + L * G, r.width - (L + R) * G), (w - R, R, r.maxX - R * G, R * G)]
+	let ys: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [(0, T, r.minY, T * G), (T, h - T - B, r.minY + T * G, r.height - (T + B) * G), (h - B, B, r.maxY - B * G, B * G)]
+	for (sx, sw, dx, dw) in xs {
+		for (sy, sh, dy, dh) in ys where sw > 0 && sh > 0 && dw > 0 && dh > 0 {
+			if let part = img.cropping(to: CGRect(x: sx, y: sy, width: sw, height: sh)) {
+				blit(part, CGRect(x: dx, y: dy, width: dw, height: dh), alpha: alpha)
+			}
+		}
+	}
+}
+/// Snaps a frame coordinate to the GUI pixel grid.
+func snap(_ v: CGFloat) -> CGFloat { (v / G).rounded() * G }
+
+// The font: the game's bitmap providers (ascii.png, nonlatin_european.png), glyph widths from their pixels.
+struct Glyph { let sheet: String; let rect: CGRect; let adv: CGFloat }
+var glyphs: [Character: Glyph] = [:]
+var fontReady = false
+func loadFont() {
+	fontReady = true
+	guard let data = FileManager.default.contents(atPath: MCROOT + "/../font/include/default.json"),
+		let j = try? JSONSerialization.jsonObject(with: data) as? Obj else { return }
+	for p in arr(j, "providers") where s(p, "type") == "bitmap" {
+		let file = s(p, "file").replacingOccurrences(of: "minecraft:", with: "")
+		guard file == "font/ascii.png" || file == "font/nonlatin_european.png", let img = png(file),
+			let rows = p["chars"] as? [String] else { continue }
+		let cw = img.width / 16, ch = img.height / rows.count
+		// Read the alpha to find each glyph's width (the rightmost lit column), as the game does.
+		let bpr = img.width * 4
+		var px = [UInt8](repeating: 0, count: bpr * img.height)
+		let c2 = CGContext(data: &px, width: img.width, height: img.height, bitsPerComponent: 8, bytesPerRow: bpr, space: cs,
+			bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+		c2.draw(img, in: CGRect(x: 0, y: 0, width: img.width, height: img.height))
+		for (ri, row) in rows.enumerated() {
+			for (ci, chr) in row.enumerated() where glyphs[chr] == nil {
+				var right = -1
+				for x in 0..<cw { for y in 0..<ch where px[(ri * ch + y) * bpr + (ci * cw + x) * 4 + 3] > 0 { right = max(right, x) } }
+				if chr == " " { continue }
+				glyphs[chr] = Glyph(sheet: file, rect: CGRect(x: ci * cw, y: ri * ch, width: cw, height: ch), adv: CGFloat(right + 2))
+			}
+		}
+	}
+}
+var tinted: [String: CGImage] = [:]
+func tintedSheet(_ sheet: String, _ color: CGColor) -> CGImage? {
+	let c = color.components!
+	let key = "\(sheet)#\(c[0])-\(c[1])-\(c[2])"
+	if let i = tinted[key] { return i }
+	guard let img = png(sheet) else { return nil }
+	let c2 = CGContext(data: nil, width: img.width, height: img.height, bitsPerComponent: 8, bytesPerRow: img.width * 4, space: cs,
+		bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+	c2.draw(img, in: CGRect(x: 0, y: 0, width: img.width, height: img.height))
+	c2.setBlendMode(.sourceIn)
+	c2.setFillColor(CGColor(srgbRed: c[0], green: c[1], blue: c[2], alpha: 1))
+	c2.fill(CGRect(x: 0, y: 0, width: img.width, height: img.height))
+	let out = c2.makeImage()!
+	tinted[key] = out
+	return out
+}
+/// The game's text colours (§ codes).
+let MCCOL: [Character: String] = ["0": "#000000", "1": "#0000AA", "2": "#00AA00", "3": "#00AAAA", "4": "#AA0000", "5": "#AA00AA",
+	"6": "#FFAA00", "7": "#AAAAAA", "8": "#555555", "9": "#5555FF", "a": "#55FF55", "b": "#55FFFF", "c": "#FF5555",
+	"d": "#FF55FF", "e": "#FFFF55", "f": "#FFFFFF", "y": "#FFE23B", "k": "#10141A"]
+func plain(_ str: String) -> String {
+	var out = ""
+	var skip = false
+	for ch in str { if skip { skip = false; continue }; if ch == "§" { skip = true; continue }; out.append(ch) }
+	return out
+}
+/// Width of a string in frame pixels at `k` GUI pixels per font pixel.
+func mcWidth(_ str: String, _ k: CGFloat = 1) -> CGFloat {
+	if !fontReady { loadFont() }
+	var w: CGFloat = 0
+	for ch in plain(str) { w += (ch == " " ? 4 : (glyphs[ch]?.adv ?? 6)) }
+	return (w - 1) * G * k
+}
+enum MCStyle { case flat, shadow, outline }
+/// Draws game-font text with its top-left at (x, y); `k` is the size in GUI pixels per font pixel. `shadow` is the GUI's
+/// own drop shadow; `outline` is the caption look (an ink outline and a 2-pixel drop, the in-game text layer's style).
+@discardableResult
+func mcText(_ str: String, _ x: CGFloat, _ y: CGFloat, k: CGFloat = 1, color: String = "#FFFFFF", style: MCStyle = .shadow,
+	alpha: CGFloat = 1, align: CGFloat = 0) -> CGFloat {
+	if !fontReady { loadFont() }
+	let px = G * k
+	let w = mcWidth(str, k)
+	let x0 = snap(x - w * align), y0 = snap(y)
+	func pass(_ dx: CGFloat, _ dy: CGFloat, _ fixed: CGColor?) {
+		var cx = x0 + dx
+		var col = hex(color)
+		var code = false
+		for ch in str {
+			if code { if let c = MCCOL[ch] { col = hex(c) }; code = false; continue }
+			if ch == "§" { code = true; continue }
+			if ch == " " { cx += 4 * px; continue }
+			guard let g = glyphs[ch] else { cx += 6 * px; continue }
+			var use = fixed ?? col
+			if fixed == nil, style == .shadow { use = col }
+			if let sheet = tintedSheet(g.sheet, use), let part = sheet.cropping(to: g.rect) {
+				blit(part, CGRect(x: cx, y: y0 + dy - px, width: g.rect.width * px, height: g.rect.height * px), alpha: alpha)
+			}
+			cx += g.adv * px
+		}
+	}
+	switch style {
+	case .flat: pass(0, 0, nil)
+	case .shadow:
+		// The GUI's drop shadow: the colour at a quarter brightness, one pixel down and right.
+		passShadow(str, x0, y0, px, alpha)
+		pass(0, 0, nil)
+	case .outline:
+		let ink = hex("#10141A")
+		for (ox, oy) in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)] { pass(CGFloat(ox) * px, CGFloat(oy) * px, ink) }
+		pass(0, 2 * px, ink)
+		pass(0, 0, nil)
+	}
+	return w
+}
+func passShadow(_ str: String, _ x0: CGFloat, _ y0: CGFloat, _ px: CGFloat, _ alpha: CGFloat) {
+	var cx = x0 + px
+	var col = hex("#FFFFFF")
+	var code = false
+	for ch in str {
+		if code { if let c = MCCOL[ch] { col = hex(c) }; code = false; continue }
+		if ch == "§" { code = true; continue }
+		if ch == " " { cx += 4 * px; continue }
+		guard let g = glyphs[ch] else { cx += 6 * px; continue }
+		let c = col.components!
+		let sh = CGColor(srgbRed: c[0] * 0.25, green: c[1] * 0.25, blue: c[2] * 0.25, alpha: 1)
+		if let sheet = tintedSheet(g.sheet, sh), let part = sheet.cropping(to: g.rect) {
+			blit(part, CGRect(x: cx, y: y0, width: g.rect.width * px, height: g.rect.height * px), alpha: alpha)
+		}
+		cx += g.adv * px
+	}
+}
+/// Words of game text, wrapped to `maxW` frame pixels (colour codes carry over a wrap).
+func mcWrap(_ str: String, _ maxW: CGFloat, _ k: CGFloat = 1) -> [String] {
+	var out: [String] = []
+	var line = ""
+	for w in str.split(separator: " ", omittingEmptySubsequences: false) {
+		let cand = line.isEmpty ? String(w) : line + " " + w
+		if mcWidth(cand, k) > maxW && !line.isEmpty { out.append(line); line = "  " + w } else { line = cand }
+	}
+	out.append(line)
+	return out
+}
+/// CLI output in the game's colours: the line's first word dark grey, verdicts green, failures red, the rest grey.
+func mcTerm(_ str: String) -> String {
+	if str.hasPrefix("$ ") { return "§8$ §f" + String(str.dropFirst(2)) }
+	if str.hasPrefix("  ") { return "§8" + str }
+	var out: [String] = []
+	for (i, p) in str.split(separator: " ", omittingEmptySubsequences: false).enumerated() {
+		let w = String(p)
+		if ["PASS", "ok", "locked", "READY"].contains(w) { out.append("§a" + w + "§7") }
+		else if w == "FAIL" { out.append("§c" + w + "§7") }
+		else if i == 0 && w == w.uppercased() && w.count >= 3 && (w.first?.isLetter ?? false) { out.append("§8" + w + "§7") }
+		else { out.append(w) }
+	}
+	return "§7" + out.joined(separator: " ")
+}
+
+// The menu screen: the world behind blurred (as the game blurs it under a screen), the in-world menu background over
+// it, and the header and footer separators.
+let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+func blurred(_ img: CGImage, _ radius: CGFloat) -> CGImage? {
+	let ci = CIImage(cgImage: img).clampedToExtent().applyingGaussianBlur(sigma: Double(radius))
+	return ciContext.createCGImage(ci, from: CGRect(x: 0, y: 0, width: img.width, height: img.height))
+}
+func tile(_ rel: String, _ r: CGRect, alpha: CGFloat = 1) {
+	guard let img = png(rel) else { return }
+	let tw = CGFloat(img.width) * G, th = CGFloat(img.height) * G
+	save {
+		ctx.clip(to: r)
+		var y = r.minY
+		while y < r.maxY { var x = r.minX; while x < r.maxX { blit(img, CGRect(x: x, y: y, width: tw, height: th), alpha: alpha); x += tw }; y += th }
+	}
+}
+/// The world behind a screen: a frame of `key` at time t, cover-fitted, blurred, then the menu background over it.
+func menuBackdrop(_ key: String, inSec: Double, since: Double, t: Double, header: CGFloat, footer: CGFloat) {
+	if let img = footage(key, inSec: inSec, since: since, t: t) {
+		let a = CGFloat(img.width) / CGFloat(img.height)
+		var r = CGRect(x: 0, y: 0, width: CW, height: CH)
+		if a > CW / CH { let w = CH * a; r = CGRect(x: (CW - w) / 2, y: 0, width: w, height: CH) }
+		else { let h = CW / a; r = CGRect(x: 0, y: (CH - h) / 2, width: CW, height: h) }
+		if let b = blurred(img, 14) { image(b, r) } else { image(img, r) }
+	}
+	tile("gui/inworld_menu_background.png", CGRect(x: 0, y: 0, width: CW, height: CH))
+	tile("gui/inworld_menu_list_background.png", CGRect(x: 0, y: header, width: CW, height: footer - header))
+	tile("gui/inworld_header_separator.png", CGRect(x: 0, y: header - 2 * G, width: CW, height: 2 * G))
+	tile("gui/inworld_footer_separator.png", CGRect(x: 0, y: footer, width: CW, height: 2 * G))
+}
+/// The game's translucent black panel (chat lines, the in-game overlays).
+func mcPanel(_ r: CGRect, _ a: CGFloat = 0.55) { fill(CGRect(x: snap(r.minX), y: snap(r.minY), width: snap(r.width), height: snap(r.height)), CGColor(gray: 0, alpha: a)) }
+/// A tooltip: its own background and purple frame sprites.
+func mcTooltip(_ r: CGRect, alpha: CGFloat = 1) {
+	let rr = CGRect(x: snap(r.minX), y: snap(r.minY), width: snap(r.width), height: snap(r.height))
+	sprite("tooltip/background", rr, alpha: alpha)
+	sprite("tooltip/frame", rr, alpha: alpha)
+}
+
+// MARK: - the Minecraft-native scenes (GUI scale 4, the game's font, vanilla chrome only; footage always full frame)
+
+/// The frame in GUI pixels.
+let GW = CW / G, GH = CH / G
+/// Text size: the GUI's own size in the landscape cut; doubled in the vertical so capitals clear 44 px on a phone.
+let TK: CGFloat = V ? 2 : 1
+func gx(_ v: CGFloat) -> CGFloat { v * G }
+
+/// Full-frame footage, cover-fitted (the vertical cut plays the tool's own 9:16 re-frame when the clip names one).
+func fullFrame(_ c: Obj, _ t: Double, since: Double, step: Int = 1, speed: Double = 1) {
+	let key = V ? s(c, "media_v", s(c, "media")) : s(c, "media")
+	let inSec = V && c["media_v"] != nil ? d(c, "in_v", d(c, "in")) : d(c, "in")
+	guard let img = footage(key, inSec: inSec, since: since, t: since + (t - since) * speed, step: step) else { return }
+	let a = CGFloat(img.width) / CGFloat(img.height)
+	var r = CGRect(x: 0, y: 0, width: CW, height: CH)
+	if V && a > 1.2 {
+		// A landscape take in the vertical cut: whole and full width (its captions intact) over a blurred fill of
+		// itself, the way the tool's own 9:16 re-frame lays out a clip whose text would not fit a crop.
+		let w = CH * a
+		if let b = blurred(img, 18) { image(b, CGRect(x: (CW - w) / 2, y: 0, width: w, height: CH)) }
+		fill(CGRect(x: 0, y: 0, width: CW, height: CH), CGColor(gray: 0, alpha: 0.25))
+		let h = CW / a
+		image(img, CGRect(x: 0, y: (CH - h) / 2, width: CW, height: h))
+		return
+	}
+	if a > CW / CH { let w = CH * a; r = CGRect(x: (CW - w) / 2, y: 0, width: w, height: CH) }
+	else if a < CW / CH { let h = CW / a; r = CGRect(x: 0, y: (CH - h) / 2, width: CW, height: h) }
+	image(img, r)
+}
+
+/// The vanilla chat: lines over a translucent black band bottom-left, the edit line along the bottom with its `_`.
+func mcChatLines(_ lines: [(String, Double)], _ t: Double, open: Bool, typed: String, caret: Bool, closeAt: Double) {
+	let chatW: CGFloat = V ? GW - 4 : 320
+	let lineH: CGFloat = 9 * TK
+	var rows: [(String, CGFloat)] = []
+	for (str, at) in lines where t >= at {
+		for piece in mcWrap(str, gx(chatW - 4), TK) { rows.append((piece, CGFloat(min(1, (t - at) / 0.12)))) }
+	}
+	let bottom: CGFloat = GH - (open ? 14 : 2) - (V ? 40 : 0)
+	let shown = rows.suffix(V ? 12 : 14)
+	for (i, row) in shown.enumerated() {
+		let y = bottom - CGFloat(shown.count - i) * lineH
+		mcPanel(CGRect(x: 0, y: gx(y), width: gx(chatW + 2), height: gx(lineH)), 0.5 * row.1)
+		mcText(row.0, gx(2), gx(y + 1 + (TK - 1) * 0.5), k: TK, alpha: row.1)
+	}
+	if open {
+		let barH: CGFloat = 12 * (V ? 1.6 : 1)
+		let by = GH - 2 - barH - (V ? 40 : 0)
+		mcPanel(CGRect(x: gx(2), y: gx(by), width: gx(GW - 4), height: gx(barH)), 0.5)
+		let maxW = gx(GW - 12)
+		var shownTyped = typed
+		while mcWidth(shownTyped, TK) > maxW && !shownTyped.isEmpty { shownTyped.removeFirst() }
+		let w = mcText(shownTyped, gx(4), gx(by + 2), k: TK)
+		if caret { mcText("_", gx(4) + w + (typed.isEmpty ? 0 : G * TK), gx(by + 2), k: TK) }
+	}
+}
+func sceneMCChat(_ o: Obj, _ t: Double) {
+	fullFrame(pick(o, "bg"), t, since: d(o, "from"))
+	let typeAt = d(o, "type_at"), sendAt = d(o, "send_at"), closeAt = d(o, "close_at")
+	let prompt = s(o, "prompt")
+	let n = t < typeAt ? 0 : min(prompt.count, Int((t - typeAt) * d(o, "cps", 40)))
+	var lines: [(String, Double)] = [("§f<you> " + prompt, sendAt)]
+	for l in arr(o, "lines") { lines.append((s(l, "mc"), d(l, "t"))) }
+	let open = t < closeAt
+	let caret = Int(t / 0.3) % 2 == 0
+	mcChatLines(lines, t, open: open, typed: t < sendAt ? String(prompt.prefix(n)) : "", caret: caret, closeAt: closeAt)
+}
+
+/// A vanilla toast, sliding in from the right edge and back out: the system toast's own sprite, an item icon, a
+/// yellow title and white lines. It grows to fit its text, as the game's system toasts do.
+func mcToast(_ title: String, _ body: [String], icon: String, at: Double, until: Double, t: Double, sprite name: String = "toast/system", titleColor: String = "#FFFF00") {
+	let inP = outCubic(prog(t, at, 0.6)), outP = inCubic(prog(t, until - 0.5, 0.5))
+	let slide = inP * (1 - outP)
+	if slide <= 0 { return }
+	let k = TK
+	let maxText = gx(GW - 4 - 30 * k - 8)
+	var lines: [String] = []
+	for b in body { lines += mcWrap(b, maxText, k) }
+	let body = lines
+	var textW = mcWidth(title, k)
+	for b in body { textW = max(textW, mcWidth(b, k)) }
+	let wG = max(160, (textW / G) + 30 * k + 8)
+	let hG = max(32, CGFloat(8 + 11 * (body.count + 1)) * k)
+	let x = GW - wG * slide
+	let r = CGRect(x: gx(x), y: gx(V ? 40 : 0), width: gx(wG), height: gx(hG))
+	sprite(name, r)
+	if let ic = png("item/\(icon).png") { blit(ic, CGRect(x: r.minX + gx(8 * k), y: r.minY + gx(8 * k), width: gx(16 * k), height: gx(16 * k))) }
+	mcText(title, r.minX + gx(30 * k), r.minY + gx(7 * k), k: k, color: titleColor, style: .flat)
+	for (i, b) in body.enumerated() { mcText(b, r.minX + gx(30 * k), r.minY + gx(CGFloat(18 + 11 * i) * k), k: k, color: "#FFFFFF", style: .flat) }
+}
+/// A boss bar: the game's own background and progress sprites, its title above it in the game font.
+func mcBossBar(_ title: String, _ p: CGFloat, color: String, y: CGFloat, alpha: CGFloat = 1) {
+	let w: CGFloat = 182, x = (GW - w) / 2
+	mcText(title, CW / 2, gx(y - 9 * TK - 1), k: TK, alpha: alpha, align: 0.5)
+	if let bg = png("gui/sprites/boss_bar/\(color)_background.png") { blit(bg, CGRect(x: gx(x), y: gx(y), width: gx(w), height: gx(5)), alpha: alpha) }
+	if p > 0, let fg = png("gui/sprites/boss_bar/\(color)_progress.png"),
+		let part = fg.cropping(to: CGRect(x: 0, y: 0, width: max(1, Int(182 * p)), height: 5)) {
+		blit(part, CGRect(x: gx(x), y: gx(y), width: gx(CGFloat(Int(182 * p))), height: gx(5)), alpha: alpha)
+	}
+}
+/// A filled map held up: the map's own parchment, the camera's path and every actor in the map's ink, and the
+/// player marker turned the way the camera looks (16 steps, as map markers turn).
+func mcMap(_ track: Obj, _ k: Int, x: CGFloat, y: CGFloat, size: CGFloat) {
+	guard let bg = png("map/map_background.png") else { return }
+	let r = CGRect(x: gx(x), y: gx(y), width: gx(size), height: gx(size))
+	blit(bg, r)
+	let inner = r.insetBy(dx: gx(size * 7 / 64), dy: gx(size * 7 / 64))
+	let b = (track["b"] as? [Double]) ?? [0, 0, 1, 1]
+	let span = max(b[2] - b[0], b[3] - b[1])
+	let cx = (b[0] + b[2]) / 2, cz = (b[1] + b[3]) / 2
+	let cells: CGFloat = 64
+	let cell = inner.width / cells
+	func P(_ x: Double, _ z: Double) -> CGPoint {
+		let u = CGFloat((x - cx) / span + 0.5) * cells, v = CGFloat((z - cz) / span + 0.5) * cells
+		return CGPoint(x: inner.minX + floor(u) * cell, y: inner.minY + floor(v) * cell)
+	}
+	let ink = hex("#5A4527")
+	let cam = (track["c"] as? [[Double]]) ?? []
+	for (i, c) in cam.enumerated() where i <= k {
+		let p = P(c[0], c[1])
+		fill(CGRect(x: p.x, y: p.y, width: cell, height: cell), ink)
+	}
+	for a in (track["a"] as? [Obj]) ?? [] {
+		let ps = (a["p"] as? [[Double]]) ?? []
+		if ps.isEmpty { continue }
+		let p = P(ps[min(k, ps.count - 1)][0], ps[min(k, ps.count - 1)][1])
+		fill(CGRect(x: p.x - cell, y: p.y - cell, width: cell * 3, height: cell * 3), hex("#2B2015"))
+		fill(CGRect(x: p.x, y: p.y, width: cell, height: cell), hex("#FFFFFF"))
+	}
+	if !cam.isEmpty, let marker = png("map/decorations/player.png") {
+		let c = cam[min(k, cam.count - 1)]
+		let p = P(c[0], c[1])
+		let steps = (c[2] / 22.5).rounded() * 22.5
+		save {
+			ctx.interpolationQuality = .none
+			ctx.translateBy(x: p.x + cell / 2, y: p.y + cell / 2)
+			ctx.rotate(by: CGFloat(steps + 180) * .pi / 180)
+			blit(marker, CGRect(x: -gx(4 * size / 64), y: -gx(4 * size / 64), width: gx(8 * size / 64), height: gx(8 * size / 64)))
+		}
+	}
+}
+func sceneMCMonitor(_ o: Obj, _ t: Double) {
+	let clips = arr(o, "clips")
+	guard let idx = clips.lastIndex(where: { t >= d($0, "at") }) else { return }
+	let c = clips[idx]
+	let at = d(c, "at"), dur = d(c, "dur")
+	let step = Int(d(c, "step", 1))
+	fullFrame(c, t, since: at, step: step)
+	let track = pick(c, "track")
+	let frames = (track["f"] as? [Int]) ?? []
+	let k = max(0, min(frames.count - 1, Int(((t - at) * 30 * Double(step)).rounded(.down))))
+	let fr = frames.isEmpty ? 0 : frames[k]
+	let total = Int(d(track, "n"))
+	let title = V ? String(format: "§cREC §f%04d§7/%04d", fr, total) : String(format: "§cREC §f%@ §7%04d/%04d", s(c, "shot"), fr, total)
+	mcBossBar(title, CGFloat(fr) / CGFloat(max(total, 1)), color: "red", y: V ? 140 : 12)
+	mcToast(s(c, "toast_title"), (c["toast"] as? [String]) ?? [], icon: s(c, "icon", "writable_book"), at: at + 0.05, until: at + dur, t: t)
+	if !(track["c"] as? [[Double]] ?? []).isEmpty {
+		if V { mcMap(track, k, x: 6, y: 150, size: 96) } else { mcMap(track, k, x: 6, y: 64, size: 96) }
+	}
+}
+
+/// The speaking shot, full frame, with the game's subtitle box bottom-right listing each word on its onset.
+func sceneMCVoice(_ o: Obj, _ t: Double) {
+	let from = d(o, "from")
+	fullFrame(pick(o, "clip"), t, since: from)
+	let ws = arr(o, "words")
+	let shownWords = ws.filter { t >= from + d($0, "at") }
+	let rows = shownWords.suffix(V ? 4 : 6).map { w -> String in String(format: "§7%5.2f s  §f%@", d(w, "at") - d(o, "offset"), s(w, "w")) }
+	if rows.isEmpty { return }
+	let k = TK
+	let w = max(rows.map { mcWidth($0, k) }.max()!, mcWidth(s(o, V ? "box_title_v" : "box_title"), k)) / G + 8
+	let lh: CGFloat = 10 * k
+	let h = CGFloat(rows.count) * lh + 4 + lh
+	let x = GW - w - 2, y: CGFloat = V ? 150 : 70
+	mcPanel(CGRect(x: gx(x), y: gx(y), width: gx(w), height: gx(h)), 0.8)
+	mcText(s(o, V ? "box_title_v" : "box_title"), gx(x + 4), gx(y + 2), k: k, color: "#FFFF55")
+	for (i, r) in rows.enumerated() { mcText(r, gx(x + 4), gx(y + 2 + lh * CGFloat(i + 1)), k: k) }
+}
+
+/// The edit: the film scrubbing full frame, and its timeline over the top of the frame in the game's chrome.
+func sceneMCEdit(_ o: Obj, _ t: Double) {
+	let from = d(o, "from")
+	let total = d(o, "seconds")
+	let scrubAt = d(o, "scrub_at"), scrubDur = d(o, "scrub_dur")
+	let ph = clamp(CGFloat((t - scrubAt) / scrubDur)) * CGFloat(total)
+	let step = Int(d(o, "step", 8))
+	if let img = footage(s(o, "media"), inSec: 0, since: 0, t: Double(ph) * 60 / Double(step) / FPS, step: step) {
+		let a = CGFloat(img.width) / CGFloat(img.height)
+		let r = V ? CGRect(x: (CW - CH * a) / 2, y: 0, width: CH * a, height: CH) : CGRect(x: 0, y: 0, width: CW, height: CH)
+		image(img, r)
+	}
+	let k = TK
+	let px: CGFloat = 4, pw = GW - 8
+	let laneH: CGFloat = V ? 14 : 9, gap: CGFloat = 3
+	let names = ["video", "voice", "music", "sfx"]
+	let labW: CGFloat = V ? 66 : 30
+	let headH: CGFloat = 12 * k
+	let ph0: CGFloat = V ? 40 : 4
+	let panelH = headH + 6 + CGFloat(names.count) * (laneH + gap) + 10 * k
+	let enter = outCubic(prog(t, from, 0.25))
+	mcPanel(CGRect(x: gx(px), y: gx(ph0), width: gx(pw), height: gx(panelH)), 0.72 * enter)
+	mcText(s(o, V ? "title_v" : "title"), gx(px + 4), gx(ph0 + 3), k: k, alpha: enter)
+	let laneX = px + 4 + labW, laneW = pw - 8 - labW
+	func X(_ sec: Double) -> CGFloat { gx(laneX) + gx(laneW) * CGFloat(sec / total) }
+	func laneY(_ i: Int) -> CGFloat { gx(ph0 + headH + 6 + CGFloat(i) * (laneH + gap)) }
+	for (i, n) in names.enumerated() {
+		mcText("§7" + n, gx(px + 4), laneY(i) + gx((laneH - 8 * k) / 2), k: k, alpha: enter)
+		fill(CGRect(x: gx(laneX), y: laneY(i), width: gx(laneW), height: gx(laneH)), CGColor(gray: 0, alpha: 0.45 * enter))
+	}
+	// Video: each clip a block in a dye colour, landing on the beat one after another.
+	let dyes = ["#F9FFFE", "#F9801D", "#C74EBD", "#3AB3DA", "#FED83D", "#80C71F", "#F38BAA", "#9D9D97", "#169C9C", "#8932B8", "#3C44AA", "#835432", "#5E7C16", "#B02E26"]
+	let clips = (o["clips"] as? [[Any]]) ?? []
+	let slideAt = d(o, "slide_at")
+	for (i, cl) in clips.enumerated() {
+		let st = (cl[0] as? Double) ?? 0, du = (cl[1] as? Double) ?? 0, kind = (cl[3] as? String) ?? "shot"
+		if t < slideAt + Double(i) * 0.04 { continue }
+		let x0 = snap(X(st)), x1 = snap(X(st + du))
+		let r = CGRect(x: x0, y: laneY(0), width: max(G, x1 - x0 - G), height: gx(laneH))
+		fill(r, kind == "black" ? hex("#000000") : hex(dyes[i % dyes.count]))
+		fill(CGRect(x: r.minX, y: r.maxY - G, width: r.width, height: G), CGColor(gray: 0, alpha: 0.35))
+	}
+	let la = outCubic(prog(t, d(o, "lanes_at"), 0.2))
+	if la > 0 {
+		let voice = (o["voice"] as? [[Double]]) ?? []
+		for v in voice {
+			let x0 = snap(X(v[0])), x1 = snap(X(v[0] + v[1]))
+			fill(CGRect(x: x0, y: laneY(1) + G, width: max(G, x1 - x0), height: gx(laneH - 2)), hex("#55FF55", la))
+		}
+		// The bed's level: full, and down by the duck under every line (a dip, not a pulse).
+		let duck = d(o, "duck_db", -9)
+		var x = gx(laneX)
+		while x < gx(laneX + laneW) {
+			let sec = Double((x - gx(laneX)) / gx(laneW)) * total
+			let under = voice.contains { sec >= $0[0] - 0.03 && sec <= $0[0] + $0[1] + 0.2 }
+			let hgt = under ? gx(laneH) * CGFloat(1 + duck / 14) * 0.5 : gx(laneH - 2)
+			fill(CGRect(x: x, y: laneY(2) + gx(laneH) - G - hgt, width: G, height: hgt), hex("#FFAA00", la))
+			x += G
+		}
+		for sec in (o["sfx"] as? [Double]) ?? [] { fill(CGRect(x: snap(X(sec)), y: laneY(3) + G, width: G, height: gx(laneH - 2)), hex("#FFFFFF", 0.8 * la)) }
+	}
+	// Cuts on words: marked in yellow as the playhead reaches them.
+	let reached = ((o["cuts"] as? [[Any]]) ?? []).filter { Double(ph) >= (($0[0] as? Double) ?? 0) }
+	for (i, cut) in reached.enumerated() {
+		let sec = (cut[0] as? Double) ?? 0, word = ((cut[1] as? String) ?? "").replacingOccurrences(of: "*", with: "")
+		let x = snap(X(sec))
+		fill(CGRect(x: x, y: laneY(0) - G, width: G, height: laneY(1) + gx(laneH) - laneY(0) + G), hex("#FFFF55"))
+		// Only the newest cut is named, under the tracks (the older ones keep their marks).
+		if i == reached.count - 1 {
+			let label = "§ecut on \"\(word.trimmingCharacters(in: .punctuationCharacters))\""
+			let lx = min(x + G * 2, gx(laneX + laneW) - mcWidth(label, k))
+			mcText(label, lx, laneY(3) + gx(laneH + 2), k: k)
+		}
+	}
+	if t >= scrubAt {
+		let x = snap(X(Double(ph)))
+		fill(CGRect(x: x, y: laneY(0) - gx(2), width: G, height: laneY(3) + gx(laneH + 2) - laneY(0)), hex("#FFFFFF"))
+	}
+}
+
+/// The review: each criterion a boss bar filling to its score, then a toast for the climb's best step.
+func sceneMCScores(_ o: Obj, _ t: Double) {
+	let from = d(o, "from")
+	fullFrame(pick(o, "clip"), t, since: from)
+	let crit = (o["criteria"] as? [[Any]]) ?? []
+	let y0: CGFloat = V ? 150 : 16
+	let gap: CGFloat = V ? 31 : 19
+	let cols = V ? 1 : 1
+	_ = cols
+	for (i, c) in crit.enumerated() {
+		let name = (c[0] as? String) ?? "", v = (c[1] as? Double) ?? Double((c[1] as? Int) ?? 0)
+		let at = from + 0.3 + Double(i) * 0.22
+		if t < at { continue }
+		let p = outCubic(prog(t, at, 0.5))
+		let color = v >= 7 ? "green" : (v >= 6 ? "yellow" : "pink")
+		mcBossBar(String(format: "§f%@ §7%.1f", name, v * Double(p)), CGFloat(v / 10) * p, color: color, y: y0 + gap * CGFloat(i))
+	}
+	mcToast(s(o, "toast_title"), (o["toast"] as? [String]) ?? [], icon: "experience_bottle", at: d(o, "toast_at"), until: d(o, "to") + 0.3,
+		t: t, sprite: "toast/advancement", titleColor: "#FFFF00")
+}
+
+/// The end: the dusk shot full frame, the name in the game's font with its shadow, the command in the chat's edit
+/// line, the repository in grey.
+func sceneMCEnd(_ o: Obj, _ t: Double) {
+	let from = d(o, "from"), to = d(o, "to")
+	fullFrame(pick(o, "clip"), t, since: from)
+	let fade = 1 - inOutCubic(prog(t, to - 0.6, 0.6))
+	save {
+		setAlpha(fade)
+		fill(CGRect(x: 0, y: 0, width: CW, height: CH), CGColor(gray: 0, alpha: 0.25))
+		let titleK: CGFloat = V ? 4 : 6
+		let ty: CGFloat = V ? 150 : 70
+		mcText(s(o, "name"), CW / 2, gx(ty), k: titleK, style: .outline, alpha: outCubic(prog(t, from + 0.1, 0.2)), align: 0.5)
+		let lines = s(o, V ? "tagline_v" : "tagline").components(separatedBy: "\n")
+		for (i, l) in lines.enumerated() {
+			mcText(l, CW / 2, gx(ty + 9 * titleK + 8 + CGFloat(i) * 11 * TK), k: TK, alpha: outCubic(prog(t, from + 0.35, 0.2)), align: 0.5)
+		}
+		let cmd = s(o, "command")
+		let ck: CGFloat = V ? 1.5 : 1
+		let n = min(cmd.count, max(0, Int((t - from - 0.6) * 40)))
+		let by = ty + 9 * titleK + 14 + CGFloat(lines.count) * 11 * TK
+		let bw = mcWidth(cmd, ck) / G + 12
+		mcPanel(CGRect(x: CW / 2 - gx(bw / 2), y: gx(by), width: gx(bw), height: gx(12 * ck)), 0.55)
+		let w = mcText(String(cmd.prefix(n)), CW / 2 - gx(bw / 2) + gx(4), gx(by + 2 * ck), k: ck)
+		if Int(t / 0.3) % 2 == 0 { mcText("_", CW / 2 - gx(bw / 2) + gx(4) + w + G * ck, gx(by + 2 * ck), k: ck) }
+		for (i, u) in s(o, V ? "url_v" : "url").components(separatedBy: "\n").enumerated() {
+			mcText("§7" + u, CW / 2, gx(by + 12 * ck + 6 + CGFloat(i) * 11 * TK), k: TK, alpha: outCubic(prog(t, from + 1.6, 0.2)), align: 0.5)
+		}
+		let dis = s(o, V ? "disclaimer_v" : "disclaimer").components(separatedBy: "\n")
+		for (i, l) in dis.enumerated() {
+			mcText("§8" + l, CW / 2, CH - gx(CGFloat(dis.count - i) * 14 + (V ? 60 : 8)), k: V ? 1.5 : 1, alpha: outCubic(prog(t, from + 1.8, 0.2)), align: 0.5)
+		}
+	}
+}
+/// The finished film: full frame, nothing over it.
+func sceneMCFilm(_ o: Obj, _ t: Double) { fullFrame(pick(o, "clip"), t, since: d(o, "from")) }
+
 /// The chapter mark, top-left, on the canvas scenes: the small logo, a number and a word.
 func chapters(_ t: Double) {
 	for c in (J["chapters"] as? [Obj]) ?? [] {
@@ -1531,6 +2090,13 @@ func render(_ frame: Int) {
 		switch s(sc, "type") {
 		case "make": sceneMake(sc, t)
 		case "chat": sceneChat(sc, t)
+		case "mcchat": sceneMCChat(sc, t)
+		case "mcmonitor": sceneMCMonitor(sc, t)
+		case "mcvoice": sceneMCVoice(sc, t)
+		case "mcedit": sceneMCEdit(sc, t)
+		case "mcscores": sceneMCScores(sc, t)
+		case "mcfilm": sceneMCFilm(sc, t)
+		case "mcend": sceneMCEnd(sc, t)
 		case "monitor": sceneMonitor(sc, t)
 		case "timeline": sceneTimeline(sc, t)
 		case "title": sceneTitle(sc, t)

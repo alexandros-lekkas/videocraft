@@ -1,8 +1,8 @@
 # The videocraft launch trailer: timeline, data sources and the trailer's own takes. trailer/README.md says how.
 
-seconds = 66.0
+seconds = 60.0
 fps = 60
-poster = 59.4
+poster = 56.6
 
 # ---------------------------------------------------------------- the trailer's own takes (trailer/footage.py)
 # Footage the finished runs do not have, filmed by videocraft, each with the game's own captions.
@@ -10,6 +10,10 @@ poster = 59.4
 [[footage.take]]
 name = "keynote"
 script = "trailer/footage/keynote.toml"
+
+[[footage.take]]
+name = "panorama"
+script = "trailer/footage/panorama.toml"
 
 [[footage.take]]
 name = "build"
@@ -55,6 +59,8 @@ warn = "#e06c5a"
 
 # Captured output and measured data (trailer/data/, written by `make.py capture` from the commands in README.md).
 [data]
+story = "story-show.txt"
+gamelog = "game-log.txt"
 make = "make.txt"
 run = "run-story2.txt"
 voice = "voice-nibs.json"
@@ -63,6 +69,10 @@ review = "review.json"
 
 # Footage, under runs/ (README.md: which runs, and how each was made). *_v: the tool's own 9:16 re-frames.
 [media]
+marks = "fu-marks/0006/take/shots/wide/video.mp4"
+barn_build = "fu-build-barn-stage/0003/take/shots/build/video.mp4"
+pano = "trailer-panorama/0001/cut/master.mp4"
+nibs_v_s04 = "nibs-vs-duke/0012/clips/r2/short-1080x1920.mp4"
 story = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/cut/master.mp4"
 story_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r1/short-1080x1920.mp4"
 nibs = "nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
@@ -82,220 +92,114 @@ build_v = "trailer-build/0001/clips/r1/short-1080x1920.mp4"
 story_walk_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r2/short-1080x1920.mp4"
 hall_dolly_v = "trailer-keynote/0002/clips/r3/short-1080x1920.mp4"
 
-# The story: you ask an agent in a chat; it drafts and films the film inside a hidden Minecraft; it edits, reviews
-# and climbs; the finished film plays; the command line and the repo. Sections overlap so no frame is empty.
+# The story, in the game's own look: you ask the agent in the game's chat; the chat closes on the world it becomes;
+# the agent films it (REC as a boss bar, the script line as a toast, the camera on a held map); a voiced line with
+# the game's subtitle box; the edit over the film scrubbing; the reviewers' scores as boss bars and the climb's toast;
+# the finished film; the end over the same lane at dusk. One world throughout: Nibs vs Duke's market lane and barn.
 
 [[scene]]
-type = "chat"
+type = "mcchat"
 from = 0.0
-to = 8.7
-title = "agent"
-subtitle = "new chat"
-agent_name = "agent"
-placeholder = "Ask the agent to make something…"
-prompt = "make a 60-second comedy short: a goat challenges a fox to a jump-off"
-type_at = 0.5
-cps = 24
-send_at = 3.6
-cut_at = 8.0
-focus = "recording at"
-messages = [
-  { kind = "text", t = 3.95, text = "On it. I'll draft the story with videocraft, then film it in a hidden game." },
-  { kind = "tool", t = 4.7, lines = [
-    { t = 4.7, text = '$ bin/videocraft make "a goat challenges a fox to a jump-off" --dry-run' },
-    { t = 5.0, match = '^STORY' },
-    { t = 5.25, match = '^STAGE\s+premise' },
-    { t = 5.45, match = '^STAGE\s+bible' },
-    { t = 5.65, match = '^STAGE\s+outline' },
-    { t = 5.85, match = '^STAGE\s+script' },
-    { t = 6.05, match = '^STAGE\s+shots' },
-    { t = 6.3, match = '^RESULT\s+PASS shots.toml' },
-  ] },
-  { kind = "tool", t = 6.8, lines = [
-    { t = 6.8, text = "$ bin/videocraft run stories/a-goat-challenges-a-fox-to-a-jump-off-2/shots.toml" },
-    { t = 7.2, data = "run", match = '^videocraft \d.*hidden' },
-    { t = 7.6, data = "run", match = 'shot s01-wide recording at' },
-  ] },
+to = 5.1
+bg = { media = "pano", in = 2.0 }
+prompt = "a one-horned goat challenges the three-time Talent Night champion, a snow fox, to a jump-off"
+type_at = 0.3
+cps = 44
+send_at = 2.55
+close_at = 4.9
+lines = [
+  { t = 2.85, mc = "§f<agent> On it: the story first, then I film it." },
+  { t = 3.25, data = "story", match = '^STORY' },
+  { t = 3.45, data = "story", match = '^  premise ', cut = 20 },
+  { t = 3.65, data = "story", match = '^  bible ', cut = 20 },
+  { t = 3.95, text = "$ bin/videocraft run examples/nibs-vs-duke.toml" },
+  { t = 4.35, data = "gamelog", match = 'shot s01-nibs recording at', strip = '^.*\(videocraft\) ' },
 ]
 
 [[scene]]
-type = "monitor"
-from = 8.1
-to = 23.5
-clock = "fixed 1/60 s clock · the game's own framebuffer"
-map_title = "top view"
-map_legend = "camera (frames.csv) · actors (actors.csv)"
+type = "mcmonitor"
+from = 5.0
+to = 25.1
 clips = [
-  { at = 8.1, dur = 3.7, media = "build", in = 0.0, step = 2, media_v = "build_v", in_v = 0.0, run = "trailer-build/0001", intro = 0.55, intro_from = "chat", label = '[[world.set]] name = "keynote-stage"', tag = "the set going up, its own build commands on camera (2x)", label_v = '[[world.set]] name = "keynote-stage"', tag_v = "the set going up, block by block (2x)" },
-  { at = 11.8, dur = 3.4, media = "story", in = 1.0, media_v = "story_walk_v", in_v = 0.2, run = "a-goat-challenges-a-fox-to-a-jump-off-2/0002", label = 'do = "walk", actor = "lugnut", path = [[17.5, 230, -8.5], …]', label_v = 'do = "walk", actor = "lugnut"', tag = "the goat walks to his mark  ·  the film from that prompt, s01" , tag_v = "to his mark  ·  the film from that prompt" },
-  { at = 15.2, dur = 3.0, media = "keynote", in = 0.3, media_v = "hall_dolly_v", in_v = 0.3, run = "trailer-keynote/0002", label = 'camera = { rig = "dolly", from = [0.5, 241, 21.5], … }', label_v = 'camera = { rig = "dolly", … }', tag = "the camera flies down the aisle  ·  trailer/footage/keynote.toml", tag_v = "the camera flies down the aisle" },
-  { at = 18.2, dur = 2.6, media = "nibs", in = 1.6, media_v = "lane_v", in_v = 0.0, run = "nibs-vs-duke/0012", label = 'camera = { rig = "lead", subject = "nibs", fov = 108 }', tag = "a lead track down the market lane  ·  nibs-vs-duke s01", tag_v = "a lead track  ·  nibs-vs-duke s01" },
-  { at = 20.8, dur = 2.7, media = "bees", in = 22.9, media_v = "bees_v", in_v = 0.08, run = "trailer-bees/0001", label = 'do = "swarm", around = "ben", angry = true', tag = "five bees on scripted paths  ·  examples/bees.toml", tag_v = "five scripted bees  ·  examples/bees.toml" },
+  { at = 5.0, dur = 3.6, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]] name = "barn-stage"', 'built on camera, block by block'], toast_v = ['[[world.set]]', '"barn-stage"'] },
+  { at = 8.6, dur = 2.6, media = "marks", in = 3.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", icon = "name_tag", toast_title = "five actors, five marks", toast = ['do = "walk"', 'face = "camera"'] },
+  { at = 11.2, dur = 2.4, media = "nibs", in = 9.9, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s04-market", toast = ['rig = "lead"', 'subject = "nibs"', 'fov = 108'] },
+  { at = 13.6, dur = 2.0, media = "nibs", in = 22.65, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s08-poster", toast = ['view = "market-lane', ':poster"'] },
+  { at = 15.6, dur = 2.2, media = "nibs", in = 32.0, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s12-note", toast = ['rig = "fixed"', 'barn-stage:note-1'] },
+  { at = 17.8, dur = 2.4, media = "nibs", in = 37.1, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s14-notes", toast = ['[[edit.look]] frame = { color = "#e8a23a" }'], toast_v = ['[[edit.look]]', 'an amber frame'] },
+  { at = 20.2, dur = 2.4, media = "nibs", in = 50.4, run = "nibs-vs-duke/0012", icon = "egg", toast_title = "s17-egg", toast = ['do = "emit"', 'actor = "hen-2"'] },
+  { at = 22.6, dur = 2.5, media = "nibs", in = 55.8, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s19-jump", toast = ['rig = "lead"', 'subject = "nibs"'] },
 ]
 
 [[scene]]
-type = "voice"
-from = 23.3
-to = 29.2
-header = "Local voices. Captions pop on each word."
-header_v = "Local voices. Captions\npop on each word."
-media = "talk"
-in = 0.0
-media_at = 23.6
-media_len = 3.65
-voice_at = 23.6
-label = "do = \"say\", actor = \"nibs\", text = \"Hey. It's me. *Nibs. …\""
-line_info = "{engine} · voice {voice} · aligned word by word"
-title = "voice check"
-check_command = "bin/videocraft voice check talk"
-check_at = 26.9
-check_step = 0.4
-check = ['^CAPTION\s+nibs-1', '^VOICE\s+nibs-1', '^RESULT']
+type = "mcvoice"
+from = 25.0
+to = 30.1
+clip = { media = "nibs", in = 0.0 }
+offset = 0.0
+box_title = "Subtitles: Nibs (qwen3, voice ryan)"
+box_title_v = "Nibs, word by word"
+shot = "s01-nibs"
 
 [[scene]]
-type = "timeline"
-from = 29.0
-to = 40.0
-header = "Then it edits: cuts on words, music under every line."
-header_v = "Then it edits: cuts on\nwords, music under lines."
+type = "mcedit"
+from = 30.0
+to = 40.1
 media = "nibs"
-media_label = "nibs-vs-duke 0012"
-step = 15
-slide_at = 29.8
-lanes_at = 31.6
-scrub_at = 32.6
-scrub_dur = 6.0
+title = "§fcut/timeline.json §7nibs-vs-duke 0012: 34 clips, 76.87 s"
+title_v = "§ftimeline.json §734 clips"
+step = 8
+slide_at = 30.1
+lanes_at = 31.3
+scrub_at = 31.0
+scrub_dur = 9.0
 
 [[scene]]
-type = "review"
-from = 39.8
-to = 49.1
-header = "Reviewed by agents. Kept only if it scores higher."
-header_v = "Reviewed by agents.\nKept if it scores higher."
-card_title = "nibs-vs-duke · 0012"
-card_sub = "6 reviewer agents · rubric pinksheep-style"
-average_label = "average"
-pass_note = "pass is 7.0: not there yet"
-chart_title = "the climb"
-chart_sub = "each review round · the best so far, kept"
-pass_label = "pass 7.0"
-best_label = "best 6.61, +0.11"
-x_label = "review round"
-y_min = 6.2
-y_max = 7.0
-y_step = 0.2
-per = 0.28
-quote_at = 45.0
-quote = "“Every word starts exactly on its cut frame …\nThis is the best-cut stretch in the film.”"
-quote_v = "“Every word starts exactly on its\ncut frame … This is the best-cut\nstretch in the film.”"
-quote_by = "the pacing reviewer, round 9, on the montage"
+type = "mcscores"
+from = 40.0
+to = 45.1
+clip = { media = "nibs", in = 25.2 }
+toast_title = "Climb: kept the better take"
+toast = ["average 6.50 -> 6.61 (+0.11)", "best of 9 review rounds"]
+toast_v = ["6.50 -> 6.61", "(+0.11), kept"]
+toast_at = 43.0
 
 [[scene]]
-type = "footage"
-from = 48.9
-to = 56.3
-clips = [
-  { at = 48.9, dur = 7.4, media = "nibs", in = 55.52, media_v = "short", in_v = 0.02, intro = 0.6, label = "nibs-vs-duke  ·  the finished film", tag = "the same premise, climbed for 12 iterations: voiced, scored, cut on words", tag_v = "the same premise, after 12 iterations" },
-]
+type = "mcfilm"
+from = 45.0
+to = 55.0
+clip = { media = "nibs", in = 59.4, media_v = "short", in_v = 3.9 }
 
 [[scene]]
-type = "end"
-from = 56.1
-to = 66.0
+type = "mcend"
+from = 55.0
+to = 60.0
+clip = { media = "pano", in = 23.5 }
 name = "videocraft"
-tagline = "Shot script in. Filmed video out."
-tagline_v = "Shot script in.\nFilmed video out."
-url = "github.com/alexandros-lekkas/videocraft"
+tagline = "Agent-directed films, shot inside Minecraft."
+tagline_v = "Agent-directed films,\nshot inside Minecraft."
 command = '$ bin/videocraft make "<prompt>"'
+url = "github.com/alexandros-lekkas/videocraft"
+url_v = "github.com/\nalexandros-lekkas/\nvideocraft"
 disclaimer = "Unofficial. Not affiliated with Mojang or Microsoft."
 disclaimer_v = "Unofficial. Not affiliated\nwith Mojang or Microsoft."
-
-[[chapter]]
-from = 29.2
-to = 39.6
-n = "03"
-text = "edit"
-
-[[chapter]]
-from = 39.9
-to = 48.7
-n = "04"
-text = "review"
 
 # ---------------------------------------------------------------- sound
 # An original bed (videocraft audio synth), stems faded by section; original library sounds; the two voiced lines
 # of runs/talk/0001. No Mojang audio anywhere. make.py adds the typing, node, tick and check sounds from the scenes.
 [audio]
+lufs = -14.0
+ceiling = -1.5
+# The main sound track is the game's own: music picked from the mood map, the GUI's sounds, the film's own mix.
+# The `-original-audio` twin swaps each for an original one (synth bed, library sounds, the film's original mix).
+mood = "upbeat"
 style = "keynote"
 bpm = 120
 seed = 7
-lufs = -14.0
-ceiling = -1.5
-type_db = -16.0
-voice = [
-  { t = 23.9, file = "cache/voice/lines/b7692ba27f26d4478460.pf04ab922d5ee.wav", db = 4.0 },
-]
-# The finished film plays with its own sound (its original-audio export: synth bed, library sounds, its voices).
 film = [
-  { t = 48.9, file = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4", start = 55.52, dur = 7.4, db = 0.0, fade = 0.3 },
+  { t = 25.0, start = 0.0, dur = 5.1, db = 0.0 },
+  { t = 45.0, start = 59.4, dur = 10.0, db = 0.0 },
 ]
-
-[audio.stems]
-melody = [[0.0, -60], [0.4, -60], [1.2, -12], [3.6, -8], [7.9, -8], [8.1, -3], [23.1, -3], [23.5, -17], [28.8, -17], [29.2, -6], [48.6, -6], [48.9, -30], [56.0, -30], [56.3, -5], [64.0, -5], [66.0, -60]]
-bass = [[0.0, -60], [3.4, -60], [3.8, -8], [7.9, -8], [8.1, -3], [23.1, -3], [23.5, -18], [28.8, -18], [29.2, -5], [48.6, -5], [48.9, -40], [56.0, -40], [56.3, -4], [63.5, -4], [66.0, -60]]
-drums = [[0.0, -60], [8.0, -60], [8.1, -2], [23.1, -2], [23.4, -60], [29.1, -60], [29.2, -7], [39.7, -7], [39.8, -4], [48.6, -4], [48.8, -60], [56.2, -60], [56.3, -6], [59.0, -6], [60.0, -60]]
-
-[[audio.sfx]]
-t = 3.6
-sound = "click"
-db = -12
-
-[[audio.sfx]]
-t = 3.62
-sound = "pop"
-db = -18
-
-[[audio.sfx]]
-t = 7.95
-sound = "whoosh"
-db = -10
-
-[[audio.sfx]]
-t = 8.1
-sound = "cymbal"
-db = -16
-
-[[audio.sfx]]
-t = 23.25
-sound = "whoosh-fast"
-db = -14
-
-[[audio.sfx]]
-t = 28.95
-sound = "whoosh-fast"
-db = -14
-
-[[audio.sfx]]
-t = 39.75
-sound = "whoosh-fast"
-db = -14
-
-[[audio.sfx]]
-t = 48.8
-sound = "whoosh"
-db = -14
-
-[[audio.sfx]]
-t = 56.1
-sound = "whoosh"
-db = -14
-
-[[audio.sfx]]
-t = 56.4
-sound = "sparkle"
-db = -12
-
-[[audio.sfx]]
-t = 57.3
-sound = "ding"
-db = -16
+film_game = "runs/nibs-vs-duke/0012/cut/x-1080p60.mp4"
+film_original = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
+music = [[0.0, -60], [0.3, -7], [4.9, -7], [5.0, -1], [24.8, -1], [25.0, -16], [29.9, -16], [30.0, -3], [44.8, -3], [45.0, -60], [54.9, -60], [55.0, -4], [59.0, -4], [60.0, -60]]

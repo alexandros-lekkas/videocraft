@@ -129,6 +129,37 @@ def timeline(spec, layout):
             sc['lines'] = sorted(lines, key=lambda l: l['t'])
             story = find_line(data_lines(spec['data']['make']), '^STORY')
             sc['footer'] = sc['footer'].format(story=story.split()[1] if story else '?')
+        if sc['type'] == 'mcchat':
+            for l in sc['lines']:
+                if 'mc' in l:
+                    continue
+                text = l.get('text') or find_line(data_lines(spec['data'][l.get('data', 'make')]), l['match'])
+                if text is None:
+                    continue
+                if l.get('strip'):
+                    text = re.sub(l['strip'], '', text)
+                text = re.sub(r'\s+\./stories/\S+$', '', text)   # the story's file path: the chat has no room
+                l['mc'] = mc_term(text)
+        if sc['type'] == 'mcmonitor':
+            for c in sc['clips']:
+                if layout == 'v' and 'toast_v' in c:
+                    c['toast'] = c['toast_v']
+                if c.get('shot_dir'):
+                    c['track'] = raw_track(ROOT / 'runs' / c['shot_dir'], c['in'], c['dur'] * c.get('step', 1))
+                else:
+                    c['track'] = shot_track(c['run'], c['in'], c['dur'] * c.get('step', 1))
+                c['shot'] = c['track'].pop('shot')
+        if sc['type'] == 'mcvoice':
+            edit = json.loads((ROOT / 'runs' / 'nibs-vs-duke/0012/edit.json').read_text(encoding='utf-8'))
+            sc['words'] = [{'w': w['word'].replace('*', ''), 'at': round(dl['at'] + w['start'] - sc['clip']['in'], 3)}
+                           for dl in edit['dialogue'] if dl['shot'] == sc['shot'] for w in dl['words']]
+        if sc['type'] == 'mcedit':
+            sc.update(edit_data('nibs-vs-duke/0012'))
+        if sc['type'] == 'mcscores':
+            r = json.loads((DATA / spec['data']['review']).read_text(encoding='utf-8'))
+            sc['criteria'] = [[k.replace('_', ' '), v] for k, v in r['criteria'].items()]
+            if layout == 'v' and 'toast_v' in sc:
+                sc['toast'] = sc['toast_v']
         if sc['type'] == 'chat':
             for m in sc['messages']:
                 if m['kind'] != 'tool':
@@ -178,8 +209,61 @@ def timeline(spec, layout):
     return {
         'width': w, 'height': h, 'fps': spec['fps'], 'frames': round(spec['seconds'] * spec['fps']),
         'ffmpeg': tools.ffmpeg(), 'colors': spec['colors'], 'media': media(spec), 'scenes': scenes,
-        'chapters': spec.get('chapter', []), 'logo': logo_quads(),
+        'chapters': spec.get('chapter', []), 'logo': logo_quads(), 'mc': str(mc_assets()),
     }
+
+
+def mc_assets():
+    """The game's GUI, font, item and map textures, unpacked from the local client jar into runs/trailer/mc/ (read at
+    render time, never committed)."""
+    root = OUT / 'mc' / 'assets' / 'minecraft' / 'textures'
+    if not (root / 'font' / 'ascii.png').exists():
+        import zipfile
+        jar = Path(os.environ.get('VIDEOCRAFT_CLIENT_JAR') or Path.home() / '.gradle/caches/fabric-loom/26.3/minecraft-client.jar')
+        with zipfile.ZipFile(jar) as z:
+            for n in z.namelist():
+                if n.startswith(('assets/minecraft/textures/gui/', 'assets/minecraft/textures/font/', 'assets/minecraft/font/',
+                                 'assets/minecraft/textures/map/', 'assets/minecraft/textures/item/')):
+                    z.extract(n, OUT / 'mc')
+    return root
+
+
+def mc_term(text):
+    """CLI output in the game's chat colours: the first word dark grey, verdicts green, the rest grey."""
+    if text.startswith('$ '):
+        return '§8$ §f' + text[2:]
+    words = text.split(' ')
+    out = []
+    for i, w in enumerate(words):
+        if w in ('PASS', 'ok', 'locked', 'READY'):
+            out.append('§a' + w + '§7')
+        elif i == 0 and w.isupper() and len(w) >= 3:
+            out.append('§8' + w + '§7')
+        else:
+            out.append(w)
+    return '§7' + ' '.join(out)
+
+
+def raw_track(shot_dir, start, seconds):
+    """The recording monitor's data for a shot's own video (no cut): frames.csv from `start` seconds."""
+    fr = {int(r['frame']): r for r in read_csv(shot_dir / 'frames.csv')}
+    ac = {}
+    if (shot_dir / 'actors.csv').exists():
+        for r in read_csv(shot_dir / 'actors.csv'):
+            ac.setdefault(int(r['frame']), []).append(r)
+    frames, cam, actors = [], [], {}
+    for k in range(int(seconds * 30) + 1):
+        f = min(max(fr), round((start + k / 30) * 60))
+        row = fr[f]
+        frames.append(f)
+        cam.append([round(float(row['cam_x']), 2), round(float(row['cam_z']), 2), round(float(row['cam_yaw']), 1)])
+        for a in ac.get(f, []):
+            actors.setdefault(a['actor'], []).append([round(float(a['x']), 2), round(float(a['z']), 2)])
+    pts = [p[:2] for p in cam] + [p for ps in actors.values() for p in ps]
+    xs, zs = [p[0] for p in pts], [p[1] for p in pts]
+    pad = max(4.0, 0.25 * max(max(xs) - min(xs), max(zs) - min(zs)))
+    return {'shot': shot_dir.name, 'f': frames, 'c': cam, 'n': len(fr), 'a': [{'id': k, 'p': v} for k, v in actors.items() if k != 'player'],
+            'b': [min(xs) - pad, min(zs) - pad, max(xs) + pad, max(zs) + pad]}
 
 
 def read_csv(path):
@@ -337,95 +421,96 @@ def env_gain(points, n):
     return g
 
 
-def sound(spec):
+# The UI's sounds, as (the game's event, the library's stand-in, dB).
+UI = {'send': ('ui.button.click', 'click', -10), 'line': ('block.note_block.hat', 'tick', -26),
+      'toast_in': ('ui.toast.in', 'whoosh-fast', -8), 'toast_out': ('ui.toast.out', None, -10),
+      'bar': ('entity.experience_orb.pickup', 'tick', -20), 'climb': ('ui.toast.challenge_complete', 'success-chime', -8),
+      'end': ('entity.player.levelup', 'sparkle', -10), 'clip': ('block.note_block.hat', 'tick', -24),
+      'cut': ('ui.button.click', 'click', -18)}
+
+
+def ui_events(spec):
+    out = []
+    for sc in spec['scene']:
+        ty = sc['type']
+        if ty == 'mcchat':
+            out.append((sc['send_at'], 'send'))
+            out += [(l['t'], 'line') for l in sc['lines']]
+        if ty == 'mcmonitor':
+            for c in sc['clips']:
+                out += [(c['at'] + 0.05, 'toast_in'), (c['at'] + c['dur'] - 0.5, 'toast_out')]
+        if ty == 'mcedit':
+            out += [(sc['slide_at'] + i * 0.04 * 3, 'clip') for i in range(12)]
+            ed = edit_data('nibs-vs-duke/0012')
+            out += [(sc['scrub_at'] + sc['scrub_dur'] * c[0] / ed['seconds'], 'cut') for c in ed['cuts']]
+        if ty == 'mcscores':
+            out += [(sc['from'] + 0.3 + i * 0.22, 'bar') for i in range(9)]
+            out.append((sc['toast_at'], 'climb'))
+        if ty == 'mcend':
+            out.append((sc['from'] + 0.1, 'end'))
+    return out
+
+
+def game_sound(event):
+    from videocraft.audio import assets
+    files = assets.event_files('minecraft:' + event)
+    got = assets.decode(files[0], channels=1)
+    return got
+
+
+def sound(spec, variant='game'):
+    """The sound track: `game` (the game's music, GUI sounds and the film's own mix) or `original` (a synth bed,
+    library sounds and the film's original-audio mix: no Mojang audio)."""
     a = spec['audio']
     n = int(spec['seconds'] * SR)
     left = array.array('f', bytes(4 * n))
     right = array.array('f', bytes(4 * n))
-    bed = OUT / 'audio' / 'bed.wav'
-    if not bed.exists() or a.get('rebuild_bed'):
-        bed.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run([str(ROOT / 'bin' / 'videocraft'), 'audio', 'synth', '-o', str(bed), '--style', a['style'],
-                        '--bpm', str(a['bpm']), '--seconds', str(spec['seconds'] + 2), '--seed', str(a['seed']), '--stems'],
-                       check=True)
-    for stem, points in a['stems'].items():
-        l, r = read_wav(bed.with_name(f'bed-{stem}.wav'))
-        g = env_gain(points, n)
-        for i in range(min(n, len(l))):
-            left[i] += l[i] * g[i]
-            right[i] += r[i] * g[i]
-    events = list(a.get('sfx', [])) + scene_sounds(spec)
-    # Typing: one soft click per character of the typed command (two alternating seeds, a little level wobble).
-    for sc in spec['scene']:
-        if sc['type'] in ('make', 'chat'):
-            cmd = '$ ' + (sc.get('command') or sc['prompt'])
-            for k in range(2, len(cmd)):
-                if cmd[k] == ' ':
-                    continue
-                events.append({'t': sc['type_at'] + k / sc['cps'], 'sound': 'click-soft', 'db': a['type_db'] - (k % 3) * 1.5,
-                               'seed': 1 + k % 3, 'pan': ((k * 7) % 5 - 2) * 0.06})
-    for e in events:
-        mono = library.render(e['sound'], e.get('seed', 1))
-        place(left, right, mono, e['t'], e.get('db', -12), e.get('pan', 0.0))
-    for v in a.get('film', []):
-        f = ROOT / v['file']
-        l, r = read_wav_part(f, v['start'], v['dur'])
-        fade = int(v.get('fade', 0.2) * SR)
+    env = env_gain(a['music'], n)
+    if variant == 'game':
+        from videocraft.audio import assets, resolve
+        file, row, why = resolve.pick_track(a['mood'], seconds=spec['seconds'])
+        say(f'music   {file} ({why}) from {row["entry"]:.2f} s')
+        l, r = read_wav_part(assets.object_path(assets.sound_key(file)), row['entry'], spec['seconds'])
+    else:
+        bed = OUT / 'audio' / 'bed.wav'
+        if not bed.exists():
+            bed.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run([str(ROOT / 'bin' / 'videocraft'), 'audio', 'synth', '-o', str(bed), '--style', a['style'],
+                            '--bpm', str(a['bpm']), '--seconds', str(spec['seconds'] + 2), '--seed', str(a['seed'])], check=True)
+        l, r = read_wav(bed)
+    for i in range(min(n, len(l))):
+        left[i] += l[i] * env[i]
+        right[i] += r[i] * env[i]
+    for t0, what in ui_events(spec):
+        event, stand_in, db = UI[what]
+        if variant == 'game':
+            mono = game_sound(event)
+        elif stand_in:
+            mono = library.render(stand_in, 1)
+        else:
+            continue
+        place(left, right, mono, t0, db, 0.0)
+    src = ROOT / (a['film_game'] if variant == 'game' else a['film_original'])
+    for v in a['film']:
+        fl, fr = read_wav_part(src, v['start'], v['dur'])
+        fade = int(0.15 * SR)
         g = 10 ** (v.get('db', 0) / 20)
         start = int(v['t'] * SR)
-        for i in range(len(l)):
-            e = min(1.0, i / fade, (len(l) - i) / fade) * g
+        for i in range(len(fl)):
+            e = min(1.0, i / fade, (len(fl) - i) / fade) * g
             j = start + i
             if 0 <= j < n:
-                left[j] += l[i] * e
-                right[j] += r[i] * e
-    for v in a.get('voice', []):
-        f = ROOT / v['file']
-        if not f.exists():
-            say(f'audio   voice {v["file"]} missing: the voice section plays without it')
-            continue
-        l, _ = read_wav(f)
-        place(left, right, l, v['t'], v.get('db', 0), 0.0)
-    raw = OUT / 'audio' / 'mix.f32'
+                left[j] += fl[i] * e
+                right[j] += fr[i] * e
+    raw = OUT / 'audio' / f'mix-{variant}.f32'
+    raw.parent.mkdir(parents=True, exist_ok=True)
     inter = array.array('f', bytes(8 * n))
     inter[0::2] = left
     inter[1::2] = right
     raw.write_bytes(inter.tobytes())
-    out = OUT / 'audio' / 'master.wav'
+    out = OUT / 'audio' / f'master-{variant}.wav'
     m = loudness.master(raw, out, target=a['lufs'], ceiling=a['ceiling'])
     say(f'audio   {out.relative_to(ROOT)}  {m["integrated"]:.1f} LUFS, true peak {m["true_peak"]:.1f} dBTP')
-    return out
-
-
-def scene_sounds(spec):
-    """The small sounds that follow the picture: a pop as each pipeline step lights, ticks while the frame counter
-    runs (slowing with it), a click per voice-check line, a tick per review bar."""
-    out = []
-    for sc in spec['scene']:
-        if sc['type'] == 'make':
-            out += [{'t': n['t'], 'sound': 'pop-high', 'db': -19, 'seed': 1 + i % 3} for i, n in enumerate(sc['nodes'])]
-        if sc['type'] == 'chat':
-            for m in sc['messages']:
-                if m['kind'] == 'tool':
-                    out += [{'t': l['t'], 'sound': 'tick', 'db': -25} for l in m['lines']]
-                else:
-                    out.append({'t': m['t'], 'sound': 'pop-high', 'db': -21})
-        if sc['type'] == 'timeline':
-            out += [{'t': sc['slide_at'] + i * 0.15, 'sound': 'tick', 'db': -26} for i in range(12)]
-            ed = edit_data('nibs-vs-duke/0012')
-            out += [{'t': sc['scrub_at'] + sc['scrub_dur'] * c[0] / ed['seconds'], 'sound': 'click', 'db': -16} for c in ed['cuts']]
-        if sc['type'] == 'monitor':
-            out += [{'t': c['at'], 'sound': 'click-soft', 'db': -20} for c in sc['clips'][1:]]
-        if sc['type'] == 'determinism':
-            # The counter eases out (1 - (1-u)^3): a tick at every 1/16 of the count lands where the count does.
-            run, done = sc['run'], sc['done']
-            for k in range(1, 16):
-                u = 1 - (1 - k / 16) ** (1 / 3)
-                out.append({'t': run + u * (done - run), 'sound': 'tick', 'db': -26})
-        if sc['type'] == 'voice':
-            out += [{'t': sc['check_at'] + i * sc['check_step'], 'sound': 'click-soft', 'db': -17} for i in range(len(sc['check']))]
-        if sc['type'] == 'review':
-            out += [{'t': sc['from'] + 0.6 + i * 0.08, 'sound': 'tick', 'db': -24} for i in range(9)]
     return out
 
 
@@ -444,8 +529,8 @@ def place(left, right, mono, t, db, pan):
 
 # ---------------------------------------------------------------- exports
 
-def export(spec, layout, pic, audio):
-    name = spec['exports'][layout]
+def export(spec, layout, pic, audio, suffix=''):
+    name = spec['exports'][layout].replace('.mp4', suffix + '.mp4')
     out = OUT / name
     subprocess.run([tools.ffmpeg(), '-y', '-v', 'error', '-i', str(pic), '-i', str(audio), '-map', '0:v', '-map', '1:a',
                     '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', str(out)],
@@ -509,13 +594,14 @@ def main(argv):
         for lay in layouts:
             strip(spec, lay, a, b, every=args.every)
         return 0
-    audio = None if args.no_audio else sound(spec)
+    audio = None if args.no_audio else {v: sound(spec, v) for v in ('game', 'original')}
     if args.audio_only:
         return 0
     for lay in layouts:
         pic = OUT / f'picture-{lay}.mp4' if args.mux_only else picture(spec, lay)
         if audio:
-            export(spec, lay, pic, audio)
+            export(spec, lay, pic, audio['game'])
+            export(spec, lay, pic, audio['original'], suffix='-original-audio')
     poster(spec, 'h')
     return 0
 
