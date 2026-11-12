@@ -1,0 +1,8 @@
+reference/
+build/
+.gradle/
+run*/
+out/
+*.mp4.part
+__pycache__/
+.DS_Store
