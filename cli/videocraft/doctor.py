@@ -13,6 +13,57 @@ def _line(ok, what, detail, required=True):
     return ok or not required
 
 
+def _extras():
+    """The pieces after the take: sound assets, the reviewers' model, then whatever each command group reports."""
+    import json
+    import os
+    import shutil
+    assets = Path.home() / '.gradle/caches/fabric-loom/assets'
+    indexes = sorted((assets / 'indexes').glob('*.json')) if assets.exists() else []
+    sounds = 0
+    if indexes:
+        try:
+            objects = json.loads(indexes[-1].read_text()).get('objects', {})
+            sounds = sum(1 for k in objects if k.startswith('minecraft/sounds/'))
+        except (OSError, ValueError):
+            pass
+    _line(sounds > 0, 'game sounds', f'{sounds} sound files in {indexes[-1].name} (sound effects and music for the mix)' if sounds
+          else 'no asset index with sounds yet: the first run downloads it; the mix needs it (or --silent)', required=False)
+    cache = ROOT / 'cache'
+    for name, what in (('audio', 'decoded sounds'), ('voice', 'voice tool')):
+        d = cache / name
+        _line(True, f'cache/{name}', f'{d} ({what}; git-ignored)' if d.exists() else f'{d} not made yet ({what}; made on first use)', required=False)
+    venv = next((p for p in (cache / 'voice/venv/bin/python', cache / 'voice/.venv/bin/python', ROOT / '.venv-voice/bin/python') if p.exists()), None)
+    _line(venv is not None, 'voice venv', str(venv) if venv else 'none: dialogue uses estimated reading timings (the voice group installs one)', required=False)
+    claude = shutil.which('claude')
+    key = bool(os.environ.get('ANTHROPIC_API_KEY'))
+    from videocraft import agents
+    _line(bool(claude or key), 'reviewers', (f'claude CLI {claude}' if claude else '') + (' and ' if claude and key else '')
+          + ('ANTHROPIC_API_KEY set' if key else '') + (f'; model {agents.model_name()}' if claude or key else
+          'no `claude` CLI and no ANTHROPIC_API_KEY: review run and climb are off (review add still works)'), required=False)
+    _groups()
+
+
+def _groups():
+    """Each command group may define doctor() -> [(ok, what, detail)] in videocraft.<group>.commands or its package."""
+    import importlib
+    from videocraft.cli import GROUPS
+    for name in GROUPS:
+        for module_name in (f'videocraft.{name}', f'videocraft.{name}.commands'):
+            try:
+                module = importlib.import_module(module_name)
+            except Exception:
+                continue
+            check = getattr(module, 'doctor', None)
+            if callable(check):
+                try:
+                    for ok, what, detail in check() or []:
+                        _line(ok, what, detail, required=False)
+                except Exception as e:
+                    _line(False, name, f'its doctor() failed: {e!r}', required=False)
+                break
+
+
 def doctor(args=None):
     print('videocraft doctor')
     good = True
@@ -50,6 +101,7 @@ def doctor(args=None):
             detail, free = f'{port} free', free + 1
         _line(True, f'slot {index}', detail, required=False)
     _line(free > 0, 'slots', f'{free} of {len(SLOT_PORTS)} free ({SLOT_DIR})' + ('' if free else '; a take waits for one'), required=False)
+    _extras()
     if PORT_OVERRIDE is not None:
         _line(True, 'port', f'VIDEOCRAFT_PORT={PORT_OVERRIDE}: takes skip the slot choice', required=False)
     print(f'  runs in {RUNS}')
