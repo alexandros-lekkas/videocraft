@@ -18,6 +18,26 @@ plugin API.
 - The modpack in `modpack/pack.toml` references other mods by download (Lithium, FerriteCore, ImmediatelyFast) under
   their own licences; none of their code is in this repository.
 
+## Voice models
+
+The voice tool (`cli/videocraft/voice/`, [docs/VOICE.md](docs/VOICE.md)) downloads these into your Hugging Face cache
+on `voice setup`; no weights are in this repository. Licences as stated on each model's page on 2026-11-11.
+
+- [Qwen3-TTS 12Hz 1.7B CustomVoice](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) by the Qwen team
+  (Apache-2.0 code and weights), in the 8-bit MLX conversion by
+  [mlx-community](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit), run with
+  [mlx-audio](https://github.com/Blaizzy/mlx-audio) (MIT) on [MLX](https://github.com/ml-explore/mlx) (MIT).
+- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad (Apache-2.0 code and weights), with
+  [misaki](https://github.com/hexgrad/misaki) (Apache-2.0), spaCy's `en_core_web_sm` (MIT), and for words misaki
+  does not know `phonemizer-fork` and espeak-ng (both GPL-3.0; installed into your venv or by you, not distributed
+  here).
+- [wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) by Meta AI (Apache-2.0) through
+  Hugging Face [transformers](https://github.com/huggingface/transformers) (Apache-2.0) and
+  [PyTorch](https://pytorch.org/) (BSD-style), for word timings.
+
+The voices are model presets steered by text descriptions; none is cloned from a person. Generated voices must not
+imitate real people.
+
 ## Minecraft
 
 **Minecraft is a trademark of Mojang Synergies AB / Microsoft. videocraft is an unofficial tool. It is not approved by

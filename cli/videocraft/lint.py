@@ -59,6 +59,13 @@ def _positions(value, where):
 
 
 def lint(raw, rubric=None):
+    from videocraft.voice import resolve as dialogue  # lint what the take plays: say lines resolved (voice group)
+    if dialogue.has_say(raw):
+        try:
+            resolved = dialogue.resolve(raw, log=lambda line: None)
+        except script.ScriptError as e:
+            return [{'severity': 'error', 'rule': 'say', 'where': 'dialogue', 'message': str(e)}]
+        return dialogue.lint_spoken(lint(resolved, rubric), resolved)
     problems = []
 
     def add(severity, rule, where, message):

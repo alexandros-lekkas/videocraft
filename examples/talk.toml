@@ -1,0 +1,83 @@
+# Dialogue: two characters trade four lines. Each `say` is synthesized with the character's voice from the cast
+# (cast/nibs-vs-duke.toml), aligned word by word, and turned into a caption whose words pop on their onsets, a voice
+# line in the mix, the character's game sound on the first word, and a shot exactly as long as its line. The second
+# line ends its shot on the word "Duke", so the cut lands on it. docs/VOICE.md.
+#   bin/videocraft voice script examples/talk.toml     synthesize (cached) and print the lines' timings
+#   bin/videocraft run examples/talk.toml
+#   bin/videocraft voice check talk                    caption words, the cut and the voice against the timings
+# Without a voice installed it still runs: estimated timings, captions, no voice (a warning says so).
+name = "talk"
+seed = 3
+
+[cast]
+file = "cast/nibs-vs-duke.toml"
+
+[world]
+seed = "videocraft"
+time = 1000
+weather = "clear"
+
+# A lawn at spawn; a one-horned goat and a snow fox stand on it facing south, still and silent (the script speaks
+# for them). The cameras look north at them.
+[[world.stage]]
+do = "command"
+commands = [
+    "execute at @p run fill ~-8 ~-1 ~-4 ~8 ~-1 ~10 minecraft:grass_block",
+    "execute at @p run fill ~-8 ~ ~-4 ~8 ~6 ~10 minecraft:air",
+    "execute at @p run fill ~-4 ~ ~2 ~4 ~ ~2 minecraft:oak_fence",
+    "execute at @p run summon minecraft:goat ~-1.5 ~ ~4.5 {NoAI:1b,Silent:1b,HasLeftHorn:0b,Rotation:[15f,0f]}",
+    "execute at @p run summon minecraft:fox ~1.6 ~ ~4.5 {NoAI:1b,Silent:1b,Type:\"snow\",Rotation:[-20f,0f]}",
+]
+
+# 1. Nibs to the lens. No duration: the shot lasts as long as the line, plus a quarter second.
+[[shot]]
+name = "nibs"
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [-1.9, 1.5, 7.6] }, at = { anchor = "spawn", offset = [-1.5, 1.0, 4.5] }, fov = 60 }
+
+[[shot.cue]]
+at = 0.3
+do = "say"
+actor = "nibs"
+text = "Hey. It's me. *Nibs. Best jumper in the whole valley."
+
+# 2. The challenge, wide on both. The shot ends on the onset of "Duke": the next shot starts on the word, and the
+#    rest of the caption carries over while the voice plays on.
+[[shot]]
+name = "challenge"
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [0, 2.2, 10.0] }, at = { anchor = "spawn", offset = [0, 0.8, 4.5] }, fov = 70 }
+
+[[shot.cue]]
+at = 0.2
+do = "say"
+actor = "nibs"
+style = "excited"
+text = "So today, I challenge *Duke to a jump-off!"
+cut_on = "Duke"
+
+# 3. Duke, close. His line follows the carried words (no `at`).
+[[shot]]
+name = "duke"
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [2.0, 1.0, 6.9] }, at = { anchor = "spawn", offset = [1.6, 0.5, 4.5] }, fov = 55 }
+
+[[shot.cue]]
+do = "say"
+actor = "duke"
+text = "Thank you. Thank you. A standing *ovation."
+pause_after = 0.4
+
+# 4. Nibs, deadpan.
+[[shot]]
+name = "reply"
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [-0.6, 1.3, 7.3] }, at = { anchor = "spawn", offset = [-1.5, 1.0, 4.5] }, fov = 55 }
+
+[[shot.cue]]
+at = 0.35
+do = "say"
+actor = "nibs"
+style = "deadpan"
+text = "That was a *yawn."
+
+[edit.music]
+source = "synth"
+style = "sneaky"
+gain = -4

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
+  CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
+  snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that
+  pops on the word onsets, an `edit.voice` line, an optional bark, and the shot's length (`fit = extend | cut-on |
+  none`; `cut_on` ends the shot on a word). Lines are cached by content hash; `voice.json` in each iteration; without a
+  voice installed, estimated timings. Commands `voice setup | doctor | say | script | check`; `examples/talk.toml`.
 - Long form and clipping (`docs/CLIPS.md`): `assemble` joins runs or a series into one video with in-game chapter
   cards, YouTube and mp4 chapters, one −14 LUFS master and a timeline back to every source shot; `clips find` ranks
   moments from words, key words, outline beats and jokes, marks, sounds and loudness, never cutting mid-word; `clips
