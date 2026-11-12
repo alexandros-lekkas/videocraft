@@ -238,6 +238,13 @@ They protect the owner's machine and game. They are not preferences.
   header's sample rate equals ffprobe's duration to the millisecond, so `audio catalog --refresh` measures all 4941
   sound files in about 2 s without decoding. Mood-picked game music starts at its measured entry: C418's ambient
   tracks have almost no steady pulse (autocorrelation peak under 0.15), so their bpm is only a hint.
+- **An `[[edit.sfx]]` rings through a black gap** (edit sounds are not silenced over black), so a sting on the last
+  shot before a dip must be a shot cue: shot sounds stop at their clip's end. A 0.7 s dip measured silent (−70 LUFS)
+  in `audio.json` but not in measure's momentary list; 0.8 s shows in both.
+- **Test changed shots alone.** A copy of the script with only the shots that changed (same header, sets and actors)
+  films in about a minute instead of eight to fifteen; a cast or camera change can be checked in a few takes.
+- **A `claude -p` reviewer can hang** past the ask timeout after a network outage (76 min, one role); stop it and
+  rerun only the missing roles (`review run x --reviewers camera,pacing`): the score reads every review file.
 
 ## Working with agents
 
