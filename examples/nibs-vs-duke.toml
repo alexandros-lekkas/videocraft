@@ -106,7 +106,7 @@ gait = "strut"
 path = { path = "market-lane:shot-01" }
 
 [[shot.cue]]
-at = 0.2
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "proud"
@@ -273,7 +273,7 @@ target = "camera"
 # 6. On past the well, a lantern and the flower pots.
 [[shot]]
 name = "s06-notice"
-duration = 3.6
+duration = 4.0
 preroll = 1.0
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.4, height = 1.0, pitch = 5, fov = 100, side = -1.0, yaw_drift = 6, drift = 0.6 }
@@ -293,10 +293,11 @@ gait = "strut"
 path = { path = "market-lane:shot-06" }
 
 [[shot.cue]]
-at = 0.1
+at = 0.0
 do = "say"
 actor = "nibs"
-text = "Then I walked past the *notice board."
+text = "Then I passed the *notice board."
+speed = 1.2
 
 [[shot.cue]]
 at = 1.5
@@ -327,6 +328,12 @@ actor = "nibs"
 path = { path = "market-lane:shot-07" }
 speed = 1.2
 arrive = 0.9
+
+[[shot.cue]]
+at = 1.0
+do = "stop"
+actor = "nibs"
+arrive = 0.45
 
 [[shot.cue]]
 at = 0.05
@@ -368,19 +375,19 @@ volume = 0.6
 [[shot]]
 name = "s09-remember"
 duration = 2.8
-preroll = 1.0
+preroll = 1.5
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.0, height = 1.0, pitch = 5, fov = 95, side = -0.8 }
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-09" }
 facing = -103
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "walk"
 actor = "nibs"
 path = { path = "market-lane:shot-09", to = 0.4 }
@@ -394,7 +401,7 @@ actor = "nibs"
 target = { anchor = "market-lane:poster.look" }
 
 [[shot.cue]]
-at = 0.15
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "sad"
@@ -413,7 +420,7 @@ seconds = 1.6
 # 10. Fading up from black: Duke sits centre stage, chin up.
 [[shot]]
 name = "s10-duke"
-duration = 2.0
+duration = 2.6
 preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-duke" }
@@ -430,6 +437,13 @@ at = -1.0
 do = "state"
 actor = "duke"
 state = "sit"
+
+[[shot.cue]]
+at = 0.0
+do = "sound"
+id = "videocraft:sting"
+relative = true
+volume = 0.5
 
 [[shot.cue]]
 at = 0.05
@@ -454,7 +468,7 @@ volume = 0.8
 # 11. High and wide: Duke trots across the stage to the note blocks; the chickens on the rail.
 [[shot]]
 name = "s11-trot"
-duration = 0.9
+duration = 1.4
 preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-high-wide" }
@@ -491,7 +505,7 @@ volume = 0.8
 # 12. Insert, close: Duke dips its head to the first note block, which plays on that frame.
 [[shot]]
 name = "s12-note"
-duration = 1.2
+duration = 1.6
 preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-note-close" }
@@ -539,7 +553,7 @@ actor = "duke"
 state = "sit"
 
 [[shot.cue]]
-at = 0.3
+at = 0.05
 do = "say"
 actor = "duke"
 style = "smug"
@@ -569,7 +583,7 @@ bpm = 120
 # 14. The note-block row plays on its own, notes rising from each block in time.
 [[shot]]
 name = "s14-notes"
-duration = 2.8
+duration = 2.2
 preroll = 1.0
 time = 18000
 camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [6.8, 0.95, 1.9] }, at = { anchor = "barn-stage:stage-center", offset = [2.4, 0.1, 0.0] }, fov = 50 }
@@ -666,7 +680,7 @@ actor = "duke"
 seconds = 0.9
 
 [[shot.cue]]
-at = 0.3
+at = 0.05
 do = "say"
 actor = "duke"
 style = "smug"
@@ -697,8 +711,8 @@ camera = { view = "barn-stage:cam-trophy", fov = 50 }
 at = -1.0
 do = "place"
 actor = "duke"
-to = { anchor = "barn-stage:trophy", offset = [0.9, -1, -2.8] }
-facing = 20
+to = { anchor = "barn-stage:trophy", offset = [1.6, -1, -0.6] }
+facing = 60
 
 [[shot.cue]]
 at = 0.0
@@ -712,7 +726,7 @@ at = 0.0
 do = "walk"
 actor = "duke"
 gait = "trot"
-to = { anchor = "barn-stage:trophy", offset = [0.25, -1, -1.0] }
+to = { anchor = "barn-stage:trophy", offset = [0.75, -1, 0.35] }
 arrive = 0.3
 face = { anchor = "barn-stage:trophy" }
 
@@ -726,6 +740,13 @@ at = 0.85
 do = "hold"
 actor = "duke"
 item = "minecraft:gold_block"
+
+[[shot.cue]]
+at = 0.85
+do = "sound"
+id = "videocraft:ding"
+relative = true
+volume = 0.6
 
 [[shot.cue]]
 at = 1.1
@@ -769,10 +790,10 @@ volume = 0.8
 # 18. Wide on the room: Duke on stage, the trophy in its mouth, satisfied. The flashback ends with the shot.
 [[shot]]
 name = "s18-ovation"
-duration = 2.9
+duration = 2.5
 preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [7.8, 1.25, 0.0] }, at = { anchor = "barn-stage:stage-center", offset = [11.3, 0.95, 0.0] }, fov = 56 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [7.8, 1.25, 0.0] }, at = { anchor = "barn-stage:stage-center", offset = [11.3, 0.95, 0.0] }, fov = 66 }
 
 [[shot.cue]]
 at = -1.0
@@ -807,6 +828,12 @@ text = "A *standing ovation."
 speed = 1.15
 
 [[shot.cue]]
+at = 1.6
+do = "look"
+actor = "hen-4"
+target = { anchor = "barn-stage:rail-4", offset = [0, 0.4, 3] }
+
+[[shot.cue]]
 at = 0.0
 do = "ambience"
 id = "videocraft:cricket"
@@ -818,48 +845,48 @@ volume = 0.9
 # 19. A new stretch, the farm: Nibs walks with its head down, then lifts it with resolve.
 [[shot]]
 name = "s19-jump"
-duration = 4.5
-preroll = 1.0
+duration = 3.6
+preroll = 1.5
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.0, height = 1.2, pitch = 8, fov = 90, yaw_drift = -3, drift = 0.6 }
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-19" }
 facing = -119
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "walk"
 actor = "nibs"
-path = { path = "market-lane:shot-19", to = 0.35 }
+path = { path = "market-lane:shot-19", to = 0.3 }
 arrive = 0.6
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "state"
 actor = "nibs"
 state = "lower"
 seconds = 2.6
 
 [[shot.cue]]
-at = 0.6
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "angry"
 text = "That fox can't even *jump."
 
 [[shot.cue]]
-at = 2.4
+at = 1.8
 do = "shake"
 actor = "nibs"
 size = 0.5
 seconds = 0.45
 
 [[shot.cue]]
-at = 3.0
+at = 2.4
 do = "look"
 actor = "nibs"
 target = "camera"
@@ -868,19 +895,19 @@ target = "camera"
 [[shot]]
 name = "s20-least"
 duration = 1.4
-preroll = 1.0
+preroll = 1.5
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, lag = 0.45 }
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-20" }
 facing = -113
 
 [[shot.cue]]
-at = -1.0
+at = -1.5
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -1124,7 +1151,7 @@ position = "bottom"
 
 [[shot]]
 name = "s26-him"
-duration = 0.5
+duration = 0.7
 preroll = 1.4
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
@@ -1207,7 +1234,7 @@ name = "s28-challenge"
 duration = 4.6
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 2.6, height = 0.95, pitch = 4, fov = 84, side = 0.9, swing = true }
+camera = { rig = "lead", subject = "nibs", distance = 2.6, height = 0.95, pitch = 4, fov = [84, 50], side = 0.9, swing = true }
 
 [[shot.cue]]
 at = -1.0
@@ -1220,19 +1247,18 @@ facing = 103
 at = -1.0
 do = "walk"
 actor = "nibs"
-path = { path = "market-lane:shot-28", to = 0.3 }
+path = { path = "market-lane:shot-28", to = 0.15 }
 arrive = 1.0
 
 [[shot.cue]]
-at = 0.1
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "excited"
 text = "I *challenge Duke to a jump-off!"
-caption = { position = "top" }
 
 [[shot.cue]]
-at = 0.9
+at = 1.0
 do = "turn"
 actor = "nibs"
 to = "camera"
@@ -1429,7 +1455,6 @@ shot = "s27-today"
 [[edit.clip]]
 shot = "s28-challenge"
 fade_out = 12
-push = [{ at = 214, zoom = 1.4, x = 960, y = 660, ramp = 4 }]
 [[edit.clip]]
 black = 0.6
 [[edit.clip]]
@@ -1459,13 +1484,6 @@ fade_in = 0.0
 fade_out = 0.6
 duck = -9
 
-# One beat of dropout as Nibs looks at the lens.
-[[edit.music.cue]]
-shot = "s05-snacks"
-at = 1.0
-do = "drop"
-length = 0.75
-
 # The bed thins to drums as Nibs sees the board, then out with the picture at the dip.
 [[edit.music.cue]]
 shot = "s07-saw"
@@ -1489,12 +1507,6 @@ fade = 0.6
 shot = "s13-hit"
 at = 0.85
 do = "hit"
-
-[[edit.music.cue]]
-shot = "s16-bow"
-at = 1.6
-do = "out"
-fade = 0.8
 
 [[edit.music.cue]]
 shot = "s19-jump"

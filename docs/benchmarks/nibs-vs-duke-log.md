@@ -23,6 +23,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 1 | 0006 | 8.0 | 7.0 | 7.0 | 5.0 | 6.5 | 6.5 | 6.0 | 6.0 | 6.5 | **6.5** | 5 | pass |
 | 2 | 0007 | 8.0 | 7.5 | 7.0 | 5.5 | 6.5 | 6.0 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
 | 3 | 0009 | 8.0 | 6.5 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 7.0 | 6.5 | **6.61** | 5.5 | pass |
+| 4 | 0010 | 8.0 | 7.0 | 7.0 | 5.0 | 6.0 | 7.0 | 6.0 | 7.0 | 6.5 | **6.61** | 5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -62,3 +63,14 @@ bow (Duke at about a third of the frame, caption at the bottom) and a 2.1 s s16b
 the trophy; s18 a medium on the four hens on the rail, all to the lens, Duke's line over them; `stop` before the
 s02 `place` and the lens low, looking up, so the horn is against the sky; s05 from the side; s19 stops on "jump",
 shakes its head and looks to the lens; s06 3.6 s; s10 2.0 s with a chin-up; s11 0.9 s; s17 and s18 a beat longer.
+
+Round 4 (0010, 31 shots in the edit) held the average again: text +0.5, camera +0.5, acting -0.5, comedic timing
+-0.5. Two reviewers traced the strut tracks' judder to the numbers (turn jerk 40-56 against about 1 on walk tracks):
+the lead rig followed the puppet's body yaw, which the strut sways; fixed in `camera/Follow.java` (the axis follows
+the subject's travel while it moves). Others: captions start 11-41 frames after their cuts; the challenge is
+delivered in the same walking wide as nine other shots; the snap zoom read as a camera jump; the flashback speeds
+up after the dip; the trophy grab is hidden behind the post; two hens are cut by the frame; the bed still drops out
+(s05's scripted dropout, the silent wait). Applied for 0011: every line starts on its cut; Nibs halts at the board
+(s07); s19 3.6 s; s28 stops early, turns square and a slow optical push (fov 84 to 50) replaces the snap zoom;
+s10 2.6 s, s11 1.4 s, s12 1.6 s, s14 2.2 s, s18 2.5 s; the grab on the camera side of the post with a ding; all four
+hens in frame, one getting bored; the bed under everything but the two black dips; more preroll on s09/s19/s20.
