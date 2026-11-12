@@ -12,14 +12,14 @@ the script format is [docs/SCRIPT.md](docs/SCRIPT.md).
 
 ```sh
 export JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home   # for raw Gradle; bin/videocraft finds it itself
-bin/videocraft doctor                      # JDK 25, ffmpeg/ffprobe/libx264, folders, control port, running client
+bin/videocraft doctor                      # JDK 25, ffmpeg/ffprobe/libx264, folders, the three slots, running client
 ./gradlew build                           # mod jar (build/libs/videocraft-<v>.jar) + plain-JVM checks (PlanChecks, RigChecks)
 python3 -m unittest discover -s cli/tests # CLI checks (script compiling); also refreshes cli/tests/plans/hello.plan.json
 bin/videocraft compile examples/hello.toml # check a script, print the plan
 bin/videocraft run examples/hello.toml     # take → cut → measure as runs/hello/<n>/; about 30 s
 bin/videocraft runs hello                  # iterations and verdicts
 bin/videocraft cut hello · measure hello   # re-cut / re-measure the latest iteration (or hello/3, or a path)
-bin/videocraft status · stop               # the running client, over the control port
+bin/videocraft status · stop               # this checkout's client, over its control port
 ```
 
 Every run ends like this, so a script or an agent can act on it (exit 0 PASS, 1 FAIL, 2 no verdict):
@@ -62,11 +62,13 @@ They protect the owner's machine and game. They are not preferences.
    `~/.minecraft`, their `options.txt`, worlds or mods. The game runs only in this checkout's `run-game/`
    (`paths.is_real_minecraft` refuses the others).
 2. **Hidden, muted, own folder, own port.** Takes go through `bin/videocraft run` (hidden unless `--show`, master
-   volume 0 in `run-game/options.txt`, control port 25750). Never use 25590 (a real game's Minecraft MCP port) or
-   T3 Craft's 25611/25680–25690/25720.
+   volume 0 in `run-game/options.txt`, control port 25750–25752 by slot). Never use 25590 (a real game's Minecraft
+   MCP port) or T3 Craft's 25611/25680–25690/25720; `--port` refuses them.
 3. **No OS input automation, no screen capture, nothing brought to the front.** Frames come from the game's own
    framebuffer.
-4. **One Minecraft client at a time** per machine; `bin/videocraft stop` when you are done with one you started.
+4. **One client per checkout, at most three per machine.** A take holds one of three machine-wide slots (a lock in
+   `/tmp/videocraft-slots-<uid>/`, ports 25750–25752) and waits for a free one when all are busy;
+   `bin/videocraft stop` when you are done with one you started.
 5. **Never commit Mojang assets** (music, sounds, textures) or anything from `runs/`, `run-game/` or `reference/`.
    Music is read from `~/.gradle/caches/fabric-loom/assets` at export time.
 6. **Commit with explicit paths** (never `git add -A`): others work in this checkout (`docs/benchmarks/`, `reference/`).
@@ -88,6 +90,10 @@ They protect the owner's machine and game. They are not preferences.
   third person keeps the player as camera entity and moves the camera in `CameraMixin`. But a *spectator* local player
   *is* drawn (as a head) once the camera is another entity: the operator's parked spectator showed up in frame until
   `ParkedPlayerMixin` hid it.
+- **Slots.** A slot is an exclusive `flock` the CLI holds for the whole take; the OS drops it if the CLI dies. A slot
+  whose port something else already listens on (an older client without slots) is skipped. The checkout's
+  `run-game/videocraft.pid` records `{pid, port}`, so `status` and `stop` need no flags; `--port` skips the slot
+  choice (and still holds that slot's lock if it is one of the three).
 - **The control server must stop with the client.** `HttpServer`'s dispatcher is not a daemon thread; left running it
   keeps the JVM alive after `Minecraft.stop()`, the shutdown watchdog writes a crash report and Gradle reports exit 248.
 - **Fresh camera positions need a beat.** Right after a camera moves, fog and sections are still settling; each shot

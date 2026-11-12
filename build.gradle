@@ -30,7 +30,7 @@ loom {
 			// -Ptake=<dir>: play <dir>/plan.json, write the take into <dir>, quit (see docs/DESIGN.md).
 			if (project.hasProperty('take')) vmArg "-Dvideocraft.take=${project.property('take')}"
 			if (project.hasProperty('ffmpeg')) vmArg "-Dvideocraft.ffmpeg=${project.property('ffmpeg')}"
-			// Loopback control port; never 25590 (the Minecraft MCP port of a real game).
+			// Loopback control port: bin/videocraft passes its slot's port (25750-25752); never 25590 (a real game's MCP port).
 			vmArg "-Dvideocraft.port=${project.findProperty('controlPort') ?: '25750'}"
 			if (hiddenRun()) vmArg "-Dvideocraft.hidden=true"
 			if (project.hasProperty('width') && project.hasProperty('height')) programArgs "--width", project.property('width'), "--height", project.property('height')

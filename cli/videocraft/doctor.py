@@ -1,11 +1,10 @@
 """`videocraft doctor`: is this machine ready to run a take? Every line says what it found and, if not, what to do."""
-import socket
 import subprocess
 import sys
 from pathlib import Path
 
 from videocraft import game, tools
-from videocraft.paths import CONTROL_PORT, GAME_DIR, ROOT, RUNS, is_real_minecraft
+from videocraft.paths import GAME_DIR, PORT_OVERRIDE, ROOT, RUNS, SLOT_DIR, SLOT_PORTS, is_real_minecraft
 
 
 def _line(ok, what, detail, required=True):
@@ -35,11 +34,24 @@ def doctor(args=None):
     assets = Path.home() / '.gradle/caches/fabric-loom/assets'
     _line(assets.exists(), 'game assets', f'{assets} (music for the edit is read from here, never committed)' if assets.exists()
           else 'not downloaded yet: the first run downloads them', required=False)
-    pid = game.running_pid()
-    _line(pid is None, 'client', 'none running' if pid is None else f'pid {pid} is running: videocraft stop', required=False)
-    with socket.socket() as s:
-        free = s.connect_ex(('127.0.0.1', CONTROL_PORT)) != 0
-    _line(free or pid is not None, 'control port', f'{CONTROL_PORT} ' + ('free' if free else 'in use by something else: set VIDEOCRAFT_PORT'), required=False)
+    client = game.running()
+    _line(client is None, 'client', 'none running in this checkout' if client is None
+          else f'pid {client[0]} on port {client[1]} is running: videocraft stop', required=False)
+    free = 0
+    for index, port in enumerate(SLOT_PORTS):
+        holder = game.slot_holder(index)
+        if holder:
+            pid, _, checkout = holder.partition(' ')
+            here = ' (this checkout)' if checkout == str(ROOT) else ''
+            detail = f'{port} held by a take: pid {pid} in {checkout or "?"}{here}'
+        elif not game.port_free(port):
+            detail = f'{port} in use by something else (an older client without slots?); takes skip it'
+        else:
+            detail, free = f'{port} free', free + 1
+        _line(True, f'slot {index}', detail, required=False)
+    _line(free > 0, 'slots', f'{free} of {len(SLOT_PORTS)} free ({SLOT_DIR})' + ('' if free else '; a take waits for one'), required=False)
+    if PORT_OVERRIDE is not None:
+        _line(True, 'port', f'VIDEOCRAFT_PORT={PORT_OVERRIDE}: takes skip the slot choice', required=False)
     print(f'  runs in {RUNS}')
     print('READY' if good else 'NOT READY')
     return 0 if good else 1

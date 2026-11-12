@@ -24,7 +24,7 @@ The system was prototyped as the launch-video recorder in T3 Craft (`DemoRecorde
 | Script format | **TOML**, compiled by the CLI to canonical **JSON** (`plan.json`) | Comments, no indentation errors or `no`/`on` coercions (YAML's failure modes for agents), Python reads it with stdlib `tomllib`, and one cue per `[[shot.cue]]` block makes diffs between iterations one hunk per change. |
 | What the mod reads | `plan.json` only, with every default filled in | The mod parses one shape with Gson and never guesses; two scripts that mean the same compile to the same plan. |
 | CLI language | **Python 3.11+, standard library only** | Nothing to install (`bin/videocraft` runs from a checkout); tomllib, json, subprocess and http are all stdlib; T3 Craft's `scripts/mc` already proved it. |
-| Mod ↔ CLI | **Take directory + system properties** for the take; a **loopback HTTP control port** (127.0.0.1:25750) for status and quit | A take is a batch job: a file in, files out, a verdict in `result.json` is the simplest thing that is reproducible and inspectable. The control port is for a running client (status, clean stop now; a warm client that takes several plans later). |
+| Mod ↔ CLI | **Take directory + system properties** for the take; a **loopback HTTP control port** (127.0.0.1:25750–25752, one per slot) for status and quit | A take is a batch job: a file in, files out, a verdict in `result.json` is the simplest thing that is reproducible and inspectable. The control port is for a running client (status, clean stop now; a warm client that takes several plans later). At most three clients per machine: a take holds one of three slots (a `flock`, ports 25750+n), so several checkouts can take at once without overloading the machine. |
 | Time | **Fixed step per captured frame** (1/fps of game time per frame) | Video is steady however slow capture is; the take is a function of the script and the seed, not of the machine. |
 | Capture | **Framebuffer → raw RGBA → ffmpeg child per shot**, near-lossless (CRF 12) | No screen capture, no window; the cut re-encodes once. Proven at 1080p60 (65–85 fps real time on an M4 Pro). |
 | Text | **Drawn in the game**, on a HUD layer that also draws over screens | Homebrew ffmpeg has no `drawtext`; the game's font matches the game; a Screen-based caption cannot overlap another screen. |
@@ -138,8 +138,9 @@ starts it.
 ```
 bin/videocraft run x.toml
   ├─ compile x.toml → runs/x/0007/plan.json (+ edit.json); copy to take/plan.json
-  ├─ prepare run-game/ (muted options.txt, never a real Minecraft folder), take the one-client pid lock
-  ├─ ./gradlew runClient -Ptake=<take dir> -PgameDir=run-game -Pffmpeg=<path> -PcontrolPort=25750 -Pwidth=960 -Pheight=540
+  ├─ prepare run-game/ (muted options.txt, never a real Minecraft folder); the checkout's pid lock (one client each)
+  ├─ hold a free machine slot n of 3 (flock in /tmp/videocraft-slots-<uid>/; waits up to --slot-wait if all are busy)
+  ├─ ./gradlew runClient -Ptake=<take dir> -PgameDir=run-game -Pffmpeg=<path> -PcontrolPort=2575n -Pwidth=960 -Pheight=540
   │     the mod: Director plays plan.json, writes take/{result.json, shots/*}, quits
   │     the CLI: streams the log to take/game.log, enforces --timeout (POST /quit, then kill the process group)
   ├─ cut (edit.json + take/) → cut/master.mp4, poster.png
