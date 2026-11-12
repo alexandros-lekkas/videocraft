@@ -19,12 +19,17 @@ workstream in brackets.
 | Key | Default | Meaning |
 |:--|:--|:--|
 | `seed` | random | A new world from this seed (text or number, as on the Create World screen). |
-| `save` | | Instead of `seed`: a copy of a saved world (the CLI copies it into `run-game/saves/` for the take) [a]. |
+| `save` | | Instead of `seed`: a copy of the saved world `cache/worlds/<save>/` (git-ignored), made fresh for every take, so no take sees what the last one built [a]. |
 | `gamemode` | `creative` | `survival`, `creative`, `adventure`, `spectator`: the player's mode in player shots. |
 | `time` | `6000` | Time of day; the daylight cycle is stopped. |
 | `weather` | `clear` | `clear`, `rain`, `thunder`; the weather cycle is stopped. |
 | `settle` | `4.0` | Seconds after arrival before staging, and then until every section in view is drawn. |
+| `preset` | `default` | For a seed world: `default`, `flat` (grass to the horizon) or `void` (nothing but a small platform at the origin); `flat` and `void` have no structures, so they make stages [a]. |
 | `[[world.stage]]` | | Cues (below) run once before the first shot, never recorded. |
+
+On arrival the world is made to hold still: mob spawning, random ticks (leaf decay, crops), fire spread, vines,
+raids, traders and advancement toasts are off, new chunks generate without their animals, and the player is put on
+the world spawn point (the `spawn` anchor is the same in every take of one seed).
 
 ## `[[actor]]` [b]
 
@@ -40,9 +45,20 @@ always there as `player`.
 | `camera` | required | `{ rig = "<id>", … }`, the rig's parameters below. |
 | `hud` | `true` | First-person shots only: draw the hotbar, hearts and crosshair. |
 | `bob` | `true` | First-person shots only: view bobbing. Always off for camera and third-person rigs. |
+| `preroll` | `0` | Seconds the timeline and the rig run before frame 0, unrecorded: the shot opens with the subject already walking and the operator settled. Cues may have `at` down to `-preroll` [a]. |
+| `time` | the world's | Time of day for this shot (ticks), set when it starts preparing [a]. |
+| `weather` | the world's | `clear`, `rain`, `thunder` for this shot, at once (no easing in) [a]. |
 | `[[shot.cue]]` | | The timeline. |
 
-Before recording, each shot waits at least one second of game time and until the world around the camera is drawn.
+Before recording, each shot waits at least one second of game time and until the world around the camera is drawn:
+every chunk in reach has arrived, nothing is left to compile, the weather is at its target and the drawn section
+count has held for half a second. Then the client is put back to a known state (game time, randoms, animation
+frames), so the same plan gives the same `frames.csv`.
+
+**The whole plan is checked before the world loads** [a]: unknown actions and rigs, actors that are not staged
+(`[[actor]]`, a `stand_in`, or `player`), cue times outside their shot, and every rig's and action's own parameter
+checks. The take fails in seconds with the first problem, naming its shot and cue (`shots.lead.camera: fov is 30.0
+to 110.0 degrees, not 150.0`); the rest are in `game.log`.
 
 ## Cues
 
@@ -54,6 +70,9 @@ Cues at the same time start in the order written.
 | `command` | `command = "…"` or `commands = […]` | **Implemented.** Runs on the integrated server, output suppressed. |
 | `mark` | `label` | **Implemented.** Notes the frame in `marks.json` for the edit and measure. |
 | `wait` | `seconds` | **Implemented.** Holds a staging block. |
+| `command` (long lists) | `commands = […]`, `forceload = [x1, z1, x2, z2]`, `strict` (`true`) | **Implemented** [a]. Runs in batches of 30 ms of server time per frame, positioned at the `spawn` anchor (so `~ ~ ~` is there); `forceload` loads the area first and waits for it; the take fails with the first command that errors (its index and the game's message) unless `strict = false`. |
+| `stand_in` | `id`, `place` (position), `facing` (0), `entity` (`minecraft:mannequin`) | **Implemented** [a]. A subject for checking camera rigs, in `[[world.stage]]`: a client-side entity the runtime moves exactly. Not a character (no gait). |
+| `glide` | `actor` (a stand-in), `path` (positions), `speed` (1.4), `ease` (0.5 s), `mark` | **Implemented** [a]. Along a smooth curve through the points at a steady speed, easing in and out, facing the way it goes. Its first point is where the stand-in is put on the cue's frame. |
 | `walk`, `run`, `look`, `turn`, `jump`, `crouch`, `swing`, `use`, `break`, `place`, `select`, `type`, `open`, `close`, `point`, `click`, `pose` | see DESIGN.md | [b] |
 | `caption`, `title`, `card`, `lower_third`, `keycap`, `clear` | see [Text](#text) | **Implemented.** |
 | `<modid>:<name>` | the plugin's | Another mod's action ([DESIGN.md](DESIGN.md#6-extension-point)). |
@@ -88,16 +107,34 @@ word with its `frame` and `box`.
 
 ## Positions
 
-`[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival.
+`[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival. Or on an actor,
+where it stands when the position is read: `{ actor = "nibs", offset = [x, y, z] }` (world axes) or
+`{ actor = "nibs", front = 3, right = 0.5, up = 1.2 }` (along the way it faces).
 
 ## Camera rigs
 
-| `rig` | Keys | Status |
-|:--|:--|:--|
-| `orbit` | `center` (position), `radius` (8), `height` (3, above the center), `from` (0°, south of the center), `sweep` (90°, clockwise from above), `look` (position, default the center), `ease` (`linear`, `smooth`, `out`), `fov` (70) | **Implemented.** |
-| `fixed` | `eye`, `at` (positions), `fov` | **Implemented.** |
-| `first` | `fov` | **Implemented** (the player's eyes; needs actor actions to be interesting). |
-| `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot` | | [a] |
+Every rig takes `fov` (degrees, 30 to 110; or `fov = [from, to]` eased over the shot with `fov_ease`) and `drift`
+(0 to 3 degrees of slow, seeded handheld wander in yaw and pitch; default 0). Rigs that film a `subject` (an actor
+id) follow where its feet are on the ground, never its head, so steps and jumps do not bob the camera; they trail it
+by `lag` seconds through a critically damped operator (no overshoot), pull in front of blocks between them and the
+subject (and rise a little if they would come very close) instead of passing through them, and pick the subject up at
+once when a cue puts it somewhere new. All [a], **implemented**, checked in `RigMoveChecks` and `examples/rigs.toml`.
+
+| `rig` | Keys (defaults) |
+|:--|:--|
+| `lead` | The lead track: the camera travels backwards in front of a subject walking toward it. `subject`, `distance` (4, in front along its smoothed heading), `height` (1.0 above its feet), `pitch` (5, down), `fov` (105), `side` (0, lateral offset to the camera's right), `yaw_drift` (0, degrees the camera swings round the subject over the shot), `swing` (false: true lets the camera arc round when the subject turns where it stands), `lag` (0.25). Holds the subject's centre and size; eases to a stop with it. |
+| `chase` | Behind the subject looking over it: `subject`, `distance` (4), `height` (1.6), `look` (1.0, aim height above its feet), `side` (0), `fov` (70), `lag` (0.3). |
+| `track` | Alongside, moving parallel: `subject`, `side` (`right` or `left`), `distance` (4), `height` (1.2), `look` (0.9), `ahead` (0, forward along its way), `fov` (70), `lag` (0.3). |
+| `dolly` | The eye moves `from` → `to` (positions) over the shot (`ease`: `smooth`, `linear`, `out`), looking at `at` (a position) or a `subject` (with `look`, `lag` 0.4). `fov` (70). |
+| `crane` | From `eye`, rises by `rise` (3; negative comes down) or moves to `to`, looking at `at` or a `subject`. `ease`, `fov` (70). |
+| `locked` | A tripod at `eye` that pans and tilts to keep a `subject`, trailing by `lag` (0.5). `look`, `fov` (70). |
+| `two_shot` | Two subjects in one frame: `subjects = ["a", "b"]`; the camera stands off the line between them (`side` 1 or -1) far enough that both fit side by side and head to feet with `margin` (1.0) around them, at least `min_distance` (2.5); `height` (1.4), `look` (0.8), `lag` (0.4), `fov` (60). |
+| `face` | A close-up: `distance` (1.2) in front of the subject's eyes on its heading, `angle` (0, degrees round to its right), `height` (0, above the eyes), `fov` (30), `lag` (0.3). The lens never comes nearer the head than the model reaches. |
+| `orbit` | `center` (position), `radius` (8), `height` (3, above the center), `from` (0°, south of the center), `sweep` (90°, clockwise from above), `look` (position, default the center), `ease` (`linear`, `smooth`, `out`), `fov` (70). |
+| `fixed` | `eye`, `at` (positions; either may be on an actor, read when the shot starts), `fov`. |
+| `first` | The player's own eyes; `fov`. |
+
+Camera rigs draw a clean frame: no hotbar, hand, crosshair, chat, name tags, boss bars, toasts or held item.
 
 ## `[edit]`
 

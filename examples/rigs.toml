@@ -1,0 +1,183 @@
+# Every camera rig once, on stand-ins (mannequins the runtime glides exactly along a curve) in a flat world with a
+# few posts and a brick wall: a check of the rigs, not a film. Each shot puts its subjects on their marks with its
+# first cue; the camera picks them up there at once.
+#   bin/videocraft run examples/rigs.toml
+name = "rigs"
+seed = 1
+
+[world]
+seed = "videocraft"
+preset = "flat"                # a stage: grass to the horizon, no villages
+time = 9000                    # afternoon
+weather = "clear"
+settle = 2.0
+
+[[world.stage]]
+do = "command"
+commands = [
+    "fill ~-14 ~ ~-14 ~-14 ~2 ~-14 minecraft:white_concrete",
+    "fill ~-14 ~ ~-10 ~-14 ~3 ~-10 minecraft:orange_concrete",
+    "fill ~-14 ~ ~-6 ~-14 ~1 ~-6 minecraft:magenta_concrete",
+    "fill ~-14 ~ ~-2 ~-14 ~2 ~-2 minecraft:light_blue_concrete",
+    "fill ~-14 ~ ~2 ~-14 ~3 ~2 minecraft:yellow_concrete",
+    "fill ~-14 ~ ~6 ~-14 ~1 ~6 minecraft:lime_concrete",
+    "fill ~-14 ~ ~10 ~-14 ~2 ~10 minecraft:pink_concrete",
+    "fill ~-14 ~ ~14 ~-14 ~3 ~14 minecraft:cyan_concrete",
+    "fill ~-10 ~ ~-14 ~-10 ~1 ~-14 minecraft:purple_concrete",
+    "fill ~-10 ~ ~-10 ~-10 ~2 ~-10 minecraft:blue_concrete",
+    "fill ~-10 ~ ~-6 ~-10 ~3 ~-6 minecraft:red_concrete",
+    "fill ~-10 ~ ~-2 ~-10 ~1 ~-2 minecraft:green_concrete",
+    "fill ~-10 ~ ~2 ~-10 ~2 ~2 minecraft:white_concrete",
+    "fill ~-10 ~ ~14 ~-10 ~3 ~14 minecraft:orange_concrete",
+    "fill ~-6 ~ ~-14 ~-6 ~1 ~-14 minecraft:magenta_concrete",
+    "fill ~-6 ~ ~2 ~-6 ~2 ~2 minecraft:light_blue_concrete",
+    "fill ~-6 ~ ~14 ~-6 ~3 ~14 minecraft:yellow_concrete",
+    "fill ~-2 ~ ~-14 ~-2 ~1 ~-14 minecraft:lime_concrete",
+    "fill ~-2 ~ ~-10 ~-2 ~2 ~-10 minecraft:pink_concrete",
+    "fill ~-2 ~ ~14 ~-2 ~3 ~14 minecraft:cyan_concrete",
+    "fill ~2 ~ ~-14 ~2 ~1 ~-14 minecraft:purple_concrete",
+    "fill ~2 ~ ~-10 ~2 ~2 ~-10 minecraft:blue_concrete",
+    "fill ~2 ~ ~14 ~2 ~3 ~14 minecraft:red_concrete",
+    "fill ~6 ~ ~-14 ~6 ~1 ~-14 minecraft:green_concrete",
+    "fill ~6 ~ ~-10 ~6 ~2 ~-10 minecraft:white_concrete",
+    "fill ~6 ~ ~-2 ~6 ~3 ~-2 minecraft:orange_concrete",
+    "fill ~6 ~ ~14 ~6 ~1 ~14 minecraft:magenta_concrete",
+    "fill ~10 ~ ~-14 ~10 ~2 ~-14 minecraft:light_blue_concrete",
+    "fill ~10 ~ ~-10 ~10 ~3 ~-10 minecraft:yellow_concrete",
+    "fill ~10 ~ ~-6 ~10 ~1 ~-6 minecraft:lime_concrete",
+    "fill ~10 ~ ~-2 ~10 ~2 ~-2 minecraft:pink_concrete",
+    "fill ~10 ~ ~2 ~10 ~3 ~2 minecraft:cyan_concrete",
+    "fill ~10 ~ ~10 ~10 ~1 ~10 minecraft:purple_concrete",
+    "fill ~10 ~ ~14 ~10 ~2 ~14 minecraft:blue_concrete",
+    "fill ~12 ~ ~0 ~12 ~4 ~9 minecraft:bricks"
+]
+
+[[world.stage]]
+do = "stand_in"
+id = "nibs"
+place = { anchor = "spawn", offset = [0, 0, -6] }
+
+[[world.stage]]
+do = "stand_in"
+id = "duke"
+place = { anchor = "spawn", offset = [3, 0, -6] }
+
+# The lead track: walking toward a camera that travels backwards in front, round a bend, up to a wall. The camera
+# keeps the subject centred and the same size, eases to a stop with it and stays in front of the bricks.
+[[shot]]
+name = "lead"
+duration = 8.0
+preroll = 1.0
+camera = { rig = "lead", subject = "nibs", distance = 4 }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [0, 0, -6] }, { anchor = "spawn", offset = [0, 0, -1] }, { anchor = "spawn", offset = [3, 0, 3] }, { anchor = "spawn", offset = [7, 0, 4.5] }, { anchor = "spawn", offset = [9, 0, 4.5] }]
+speed = 2.0
+
+[[shot]]
+name = "chase"
+duration = 4.0
+preroll = 1.0
+camera = { rig = "chase", subject = "nibs" }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [-6, 0, -10] }, { anchor = "spawn", offset = [-6, 0, -2] }, { anchor = "spawn", offset = [-3, 0, 2] }]
+speed = 2.0
+
+[[shot]]
+name = "track"
+duration = 4.0
+preroll = 1.0
+camera = { rig = "track", subject = "nibs", side = "right", distance = 4 }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [-10, 0, 8] }, { anchor = "spawn", offset = [6, 0, 8] }]
+speed = 2.0
+
+[[shot]]
+name = "dolly"
+duration = 4.0
+camera = { rig = "dolly", from = { anchor = "spawn", offset = [-5, 1.6, -4] }, to = { anchor = "spawn", offset = [5, 1.6, -4] }, subject = "nibs" }
+
+[[shot.cue]]
+at = 0.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [-3, 0, 2] }, { anchor = "spawn", offset = [3, 0, 2] }]
+speed = 1.2
+
+[[shot]]
+name = "crane"
+duration = 4.0
+camera = { rig = "crane", eye = { anchor = "spawn", offset = [0, 1, -6] }, rise = 6, subject = "nibs" }
+
+[[shot.cue]]
+at = 0.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [0, 0, -0.5] }, { anchor = "spawn", offset = [0, 0, 0] }]
+speed = 1.0
+
+[[shot]]
+name = "locked"
+duration = 4.0
+preroll = 1.0
+camera = { rig = "locked", eye = { anchor = "spawn", offset = [-5.5, 3.5, 0] }, subject = "nibs" }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [-4, 0, 6] }, { anchor = "spawn", offset = [4, 0, -6] }]
+speed = 2.0
+
+[[shot]]
+name = "two-shot"
+duration = 4.0
+preroll = 1.0
+camera = { rig = "two_shot", subjects = ["nibs", "duke"] }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [-1, 0, -6] }, { anchor = "spawn", offset = [-1, 0, 4] }]
+speed = 1.6
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "duke"
+path = [{ anchor = "spawn", offset = [1, 0, -6] }, { anchor = "spawn", offset = [1, 0, 4] }]
+speed = 1.6
+
+[[shot]]
+name = "face"
+duration = 3.0
+camera = { rig = "face", subject = "nibs", angle = 25 }
+
+[[shot.cue]]
+at = 0.0
+do = "glide"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [0, 0, -0.5] }, { anchor = "spawn", offset = [0, 0, 0] }]
+speed = 1.0
+
+[[shot]]
+name = "fixed-zoom"
+duration = 3.0
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [-5, 2, -5] }, at = { actor = "nibs", offset = [0, 1, 0] }, fov = [70, 40], drift = 0.4 }
+
+[[shot]]
+name = "orbit-actor"
+duration = 3.0
+camera = { rig = "orbit", center = { actor = "nibs" }, look = { actor = "nibs", offset = [0, 1, 0] }, radius = 5, height = 2, sweep = 90 }

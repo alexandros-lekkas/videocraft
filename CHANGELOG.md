@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Camera rigs for the benchmark: `lead` (the lead track), `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`,
+  `face`, with `fov` (or eased `[from, to]`), seeded `drift`, block avoidance and positions on actors; shot keys
+  `preroll`, `time`, `weather`; `world.preset` (`flat`, `void`) and `world.save` from `cache/worlds/`; batched,
+  checked staging commands; `stand_in`/`glide` subjects; the whole plan checked before the world loads;
+  `examples/rigs.toml` films every rig.
 - The story pipeline (`docs/STORY.md`): `story new/draft/revise/build/show/diff/lock/list`, `series new/status`
   and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
   `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
