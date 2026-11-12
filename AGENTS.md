@@ -107,6 +107,9 @@ They protect the owner's machine and game. They are not preferences.
 - **Homebrew's ffmpeg has no `drawtext`** (`bin/videocraft doctor` shows it), so all text is rendered in the game. A
   caption drawn as a Screen cannot overlap another screen, so text is drawn on the HUD layer and again after any
   screen draws (`TextLayer`).
+- **Exact push-in holds** need the crop at even offsets and sizes (yuv420p chroma); ffmpeg's `scale=flags=neighbor`
+  then equals source index `floor((2x+1)·cw / 2W)` on every plane (`videocraft edit verify` checks it). Sub-pixel
+  zooms use `perspective=…:eval=frame` with `in` (ffmpeg 9 has no `n` there).
 - **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype, not yet re-checked here** (no
   third-person or actor shots exist yet): view bobbing must be off for third-person cameras, and the camera must
   follow a ground reference, not the player's head, or it bobs with steps and jumps; auto-jump must be off (it is, in
@@ -119,6 +122,15 @@ They protect the owner's machine and game. They are not preferences.
   `javap -cp ~/.gradle/caches/fabric-loom/26.3/minecraft-merged.jar <class>` (`-p` for private) before assuming an API.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
+
+- **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
+  drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or
+  pitch) comes from the instance's own `RandomSource`, which vanilla seeds from the level's or an entity's unseeded
+  random: `SoundEngineMixin` swaps in a seeded one at `play` HEAD, else two takes log different files.
+- **ffmpeg audio.** Homebrew's ffmpeg has no `soxr` resampler, and `alimiter` delays its output by its attack unless
+  `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
+- **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
+  `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
 
 ## Working with agents
 

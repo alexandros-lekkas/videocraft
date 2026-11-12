@@ -1,0 +1,141 @@
+# The picture edit, frame-exact: a caption on a voice timeline under a slow push, a dip to black into a framed sepia
+# flashback of two clips, three sub-second clips of exactly 15, 21 and 30 frames, a push-in that holds an exact
+# nearest-neighbour crop of a caption, a speed ramp, and an end card. Exports for X, a README, a GIF and a poster.
+#   bin/videocraft run examples/edit.toml          then look at runs/edit/<n>/cut/timeline.json
+name = "edit"
+seed = 1
+
+[world]
+seed = "videocraft"
+time = 1000
+weather = "clear"
+
+[[shot]]
+name = "open"
+duration = 3.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 16, height = 7, from = 20, sweep = 20, ease = "smooth" }
+
+# Words land on the frames a voice timeline gives: cue 0.3 s + at → frames 18, 33, 54, 72.
+[[shot.cue]]
+at = 0.3
+do = "caption"
+words = [{ w = "Hey.", at = 0.0 }, { w = "It's", at = 0.25 }, { w = "me.", at = 0.6 }, { w = "*Nibs.", at = 0.9 }]
+
+[[shot]]
+name = "memory-a"
+duration = 2.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 11, height = 4, from = 140, sweep = 15 }
+
+[[shot]]
+name = "memory-b"
+duration = 2.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 22, height = 12, from = 220, sweep = -15 }
+
+[[shot]]
+name = "montage"
+duration = 2.5
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 9, height = 3, from = 300, sweep = 60 }
+
+[[shot]]
+name = "word"
+duration = 3.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 18, height = 8, from = 330, sweep = 10 }
+
+[[shot.cue]]
+at = 0.2
+do = "caption"
+text = "Six times more *goat."
+position = "center"
+
+[[shot.cue]]
+at = 1.0
+do = "mark"
+label = "push"
+
+[[shot]]
+name = "end"
+duration = 2.5
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 20, height = 10, from = 0, sweep = 10 }
+
+[[shot.cue]]
+at = 0.0
+do = "card"
+title = "NIBS vs DUKE"
+subtitle = "The Jump-Off"
+style = "drop"
+fade_out = 0.5
+
+[edit]
+# The slow push, then a dip to black: fade out, 0.8 s of black, fade up into the flashback.
+[[edit.clip]]
+shot = "open"
+push = { from = 1.0, to = 1.15, x = 960, y = 760 }
+fade_out = 24
+
+[[edit.clip]]
+black = 0.8
+
+[[edit.clip]]
+shot = "memory-a"
+fade_in = 30
+
+[[edit.clip]]
+shot = "memory-b"
+trim = [0, 30]
+fade_out = 18
+
+[[edit.clip]]
+black = 0.5
+
+# Three jump cuts of exactly 0.25, 0.35 and 0.5 s (15, 21 and 30 frames).
+[[edit.clip]]
+shot = "montage"
+in = 0
+length = 0.25
+
+[[edit.clip]]
+shot = "montage"
+in = 50
+length = 0.35
+
+[[edit.clip]]
+shot = "montage"
+in = 100
+length = 0.5
+
+# A push-in on the caption: ramp in on the mark, hold an exact 1.5x crop for 60 frames, ramp out.
+[[edit.clip]]
+shot = "word"
+push = [{ at = "push", zoom = 1.5, x = 960, y = 540, hold = 60 }]
+
+# A speed ramp: full speed easing down to 0.4x.
+[[edit.clip]]
+shot = "montage"
+in = 0
+out = 90
+speed = [{ at = 0, speed = 1.0 }, { at = 90, speed = 0.4 }]
+
+[[edit.clip]]
+shot = "end"
+
+# The flashback look over the two memory clips: an amber frame with a soft inner glow and a sepia grade.
+[[edit.look]]
+from = "memory-a"
+to = "memory-b"
+frame = { color = "#e8a23a", width = 28, glow = 12 }
+grade = "sepia"
+
+[[edit.export]]
+preset = "x-1080p60"
+
+[[edit.export]]
+preset = "readme-720p30"
+
+[[edit.export]]
+preset = "gif"
+from = 0.0
+seconds = 3.0
+
+[[edit.export]]
+preset = "poster"
+at = 13.5

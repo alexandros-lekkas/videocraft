@@ -131,9 +131,14 @@ def compile_script(raw, source='script'):
     edit = dict(raw.get('edit', {}))
     clips = edit.get('clip') or [{'shot': s['name']} for s in shots]
     for i, clip in enumerate(clips):
-        if clip.get('shot') not in names:
+        if clip.get('shot') not in names and 'black' not in clip:  # a black gap has no shot (edit/timeline.py)
             raise ScriptError(f'edit.clip[{i}]: shot = "{clip.get("shot")}" is not a shot in this script; shots: {sorted(names)}')
     edit['clip'] = clips
+    from videocraft.edit import timeline  # the edit's own grammar: trims, push-ins, speed, looks, exports
+    try:
+        timeline.check(edit, names, fps=output['fps'])
+    except timeline.EditError as e:
+        raise ScriptError(str(e)) from e
     return plan, edit
 
 

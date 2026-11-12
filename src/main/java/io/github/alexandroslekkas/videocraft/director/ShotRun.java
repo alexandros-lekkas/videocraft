@@ -75,6 +75,7 @@ final class ShotRun implements ShotContext {
 	/** Once per game frame, after the capture of the last one. */
 	void advance() {
 		if (finished) return;
+		io.github.alexandroslekkas.videocraft.sound.SoundLog.frame(this);
 		if (!recording) {
 			if (records) {
 				prepared++;
@@ -131,6 +132,7 @@ final class ShotRun implements ShotContext {
 		director.endSegment();
 		try {
 			log.write(director.take().shot(name).resolve("frames.csv"));
+			io.github.alexandroslekkas.videocraft.sound.SoundLog.write(this, director.take().shot(name));
 			Files.writeString(director.take().shot(name).resolve("marks.json"), marks + "\n", StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			VideocraftLog.LOGGER.warn("VIDEOCRAFT could not write the logs of {}", name, e);
