@@ -1,0 +1,33 @@
+name: Feature request
+description: A new action, camera rig, edit move, export, or command.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: shot
+    attributes:
+      label: The shot or video you want to make
+      description: Start from the result. What should a viewer see or hear that you cannot get today?
+    validations:
+      required: true
+  - type: textarea
+    id: script
+    attributes:
+      label: How you would like to write it
+      description: The script lines you wish worked (see docs/SCRIPT.md), or the command you wish existed.
+      render: toml
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today instead
+      description: Workarounds, other tools, or "nothing works".
+  - type: textarea
+    id: check
+    attributes:
+      label: How we would know it works
+      description: What a frame of the result should show, or what `measure` should report.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Helping
+      options:
+        - label: I would like to build this myself (see CONTRIBUTING.md, "Adding an action or a rig").
