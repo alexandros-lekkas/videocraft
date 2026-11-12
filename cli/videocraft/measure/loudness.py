@@ -68,5 +68,7 @@ def measure(path, start=None, end=None):
     text = subprocess.run(cmd, capture_output=True, text=True).stderr
     samples, integrated, peak, lra = parse(text)
     seconds = samples[-1][0] if samples else 0.0
-    return {'integrated': integrated, 'true_peak': peak, 'lra': lra, 'momentary_per_second': per_second(samples, seconds),
-            'silences': silences(samples), 'seconds': round(seconds, 2)}
+    finite = lambda v: v if v is None or abs(v) != float('inf') else None   # JSON has no -inf: a silent track's peak is null
+    return {'integrated': finite(integrated), 'true_peak': finite(peak), 'lra': finite(lra),
+            'momentary_per_second': [finite(v) for v in per_second(samples, seconds)],
+            'silences': silences(samples), 'seconds': round(seconds, 2), 'silent': peak is not None and peak == float('-inf')}
