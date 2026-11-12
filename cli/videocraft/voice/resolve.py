@@ -190,6 +190,9 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
     queue = list(lines)   # in script order; a line's cue may be a normalised copy (cut_on without fit)
     shots = raw.get('shot') or []
     carry = None
+    # A caption never carries over a black gap of the edit (into the shot after the dip).
+    order = [c for c in (edit.get('clip') or []) if isinstance(c, dict)]
+    before_black = {order[i - 1].get('shot') for i, c in enumerate(order) if i and 'black' in c}
     for si, shot in enumerate(shots):
         sname = shot.get('name')
         new, prev_end, need_end, cut = [], None, 0.0, None
@@ -205,7 +208,7 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
             carry['entry'].setdefault('carried_to', sname)
             if not carry.get('extend', True):
                 carry['entry'].setdefault('carried_through', []).append(sname)
-                onward = _carry_on(carry, written, si + 1 < len(shots))
+                onward = _carry_on(carry, written, si + 1 < len(shots) and sname not in before_black)
             carry = None
         n = 0
         for cue in shot.get('cue') or []:
@@ -264,14 +267,18 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                         carry['caption']['words'][0]['at'] = 0.0
             elif fit == 'extend':
                 need_end = max(need_end, end + tail)
-            elif fit == 'none' and written > 0 and si + 1 < len(shots) and c.get('carry', True):
+            elif fit == 'none' and written > 0 and si + 1 < len(shots) and c.get('carry', True) and sname not in before_black:
                 # A line written to run over the cut (the shot keeps its length): its caption goes on in the next
-                # shot(s), the whole line, the words already said there settled and the rest popping on their onsets.
+                # shot(s), the whole line, the words already said there settled and the rest popping on their onsets;
+                # a line that ends just before the cut stays up there for the rest of LINGER.
                 k = next((i for i, (d, s) in enumerate(words) if at + s >= written - 1e-9), None)
-                if k is not None:
-                    shown = words[:k]
-                    carry = {'caption': _caption(line, 0.0, [(d, at + s - written) for d, s in words], actor, c, ch, False, settled=True),
-                             'end': end - written, 'tail': tail, 'entry': entry, 'extend': False,
+                if k is not None or end + LINGER > written + 1e-9:
+                    if k is not None:
+                        shown = words[:k]
+                    cap = _caption(line, 0.0, [(d, at + s - written) for d, s in words], actor, c, ch, False, settled=True)
+                    if k is None and 'hold' not in cap:
+                        cap['hold'] = round(end - (at + words[-1][1]) + LINGER, 4)
+                    carry = {'caption': cap, 'end': end - written, 'tail': tail, 'entry': entry, 'extend': False,
                              'pause_after': float(c.get('pause_after', GAP))}
             if shown and c.get('caption', True) is not False:
                 new.append(_caption(line, at, shown, actor, c, ch, True))
@@ -306,16 +313,25 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
     return raw
 
 
+LINGER = 0.8   # seconds a finished line's caption stays up after its last word when a cut comes first
+
+
 def _carry_on(carry, written, more):
     """The carried caption of a fit = "none" line trimmed to the words that start inside this shot; returns the carry
-    into the shot after when words remain past this one's end (a line over a run of short shots), else None."""
+    into the shot after when words remain past this one's end (a line over a run of short shots) or the line ended
+    less than LINGER before it (its caption then holds to LINGER after the last word), else None."""
     cap = carry['caption']
-    k = next((i for i, w in enumerate(cap['words']) if w['at'] >= written - 1e-9), None) if written > 0 else None
-    if k is None or not more:
+    if written <= 0 or not more:
+        return None
+    k = next((i for i, w in enumerate(cap['words']) if w['at'] >= written - 1e-9), None)
+    if k is None and carry['end'] + LINGER <= written + 1e-9:
         return None
     words = cap['words']
-    cap['words'] = words[:k]
+    if k is not None:
+        cap['words'] = words[:k]
     nxt = {**cap, 'words': [{**w, 'at': round(w['at'] - written, 4)} for w in words]}
+    if k is None and 'hold' not in nxt:
+        nxt['hold'] = round(carry['end'] - words[-1]['at'] + LINGER, 4)
     return {**carry, 'caption': nxt, 'end': carry['end'] - written}
 
 

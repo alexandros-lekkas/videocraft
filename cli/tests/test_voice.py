@@ -151,6 +151,18 @@ class Resolver(unittest.TestCase):
         d = out['edit']['dialogue'][0]
         self.assertEqual((d['carried_to'], d['carried_through']), ('b', ['b', 'c']))
 
+    def test_fit_none_caption_lingers_over_a_cut_just_after_its_last_word_but_not_over_black(self):
+        # "one two": onsets 0.6, 1.0 from at = 0.5, ends 1.3; the cut at 1.4 comes 0.1 s after the last word
+        scene_ = scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'one two', 'at': 0.5, 'fit': 'none'}], duration=1.4),
+                       shot('b', [], duration=1.0))
+        out = self.run_resolve(scene_)
+        cb = out['shot'][1]['cue'][0]
+        self.assertEqual([(w['w'], w['at']) for w in cb['words']], [('one', -0.8), ('two', -0.4)])
+        self.assertAlmostEqual(cb['hold'], 0.3 + 0.8)   # to 0.8 s after the last word's end
+        scene_['edit'] = {'clip': [{'shot': 'a'}, {'black': 1.0}, {'shot': 'b'}]}
+        out = self.run_resolve(scene_)
+        self.assertFalse([c for c in out['shot'][1]['cue'] if c['do'] == 'caption'])
+
     def test_cut_on_checks_the_word_and_late_cues(self):
         with self.assertRaisesRegex(script.ScriptError, 'not a word of the line'):
             self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'Hey there.', 'cut_on': 'nope'}]), shot('b', [])))
