@@ -345,11 +345,13 @@ def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
         report['notes'].append('original audio: the game music track is replaced by the synth bed')
         source = 'synth'
     if source == 'synth':
-        bed = synth.render(length, style=music.get('style', 'upbeat'), bpm=music.get('bpm'), key=music.get('key'),
+        skip = float(music.get('start', 0))  # seconds into the bed (past its two-bar intro, say)
+        bed = synth.render(length + skip, style=music.get('style', 'upbeat'), bpm=music.get('bpm'), key=music.get('key'),
                            seed=int(music.get('seed', it.plan().get('seed', 1))))
-        stems = {k: (v, v) for k, v in bed.stems.items()}
+        first = dsp.seconds_to_samples(skip)
+        stems = {k: (v[first:],) * 2 for k, v in bed.stems.items()}  # mono stems: the same array left and right
         beat = bed.beat
-        report['music'] = {'source': 'synth', 'style': bed.style, 'bpm': bed.bpm, 'key': bed.key, 'at': start_at}
+        report['music'] = {'source': 'synth', 'style': bed.style, 'bpm': bed.bpm, 'key': bed.key, 'start': skip, 'at': start_at}
     elif source == 'game':
         track = music.get('track')
         if not track:
