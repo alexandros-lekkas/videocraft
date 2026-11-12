@@ -49,10 +49,16 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `…/actor/` | `Hand` (human input model, no Minecraft classes), `Cast`, `PlayerActor`, `Actions` | b |
 | `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
-| `cli/videocraft/` | `cli.py` (commands), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
+| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
+| `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
 | `modpack/pack.toml` | The distributable pack definition | d |
+
+A new CLI command lives in its own subpackage's `commands.py` with `register(subparsers)`; do not add commands to
+`cli.py`. `cli.py` imports `videocraft.<group>.commands` for each name in `cli.GROUPS` after the built-ins: a
+missing group is skipped, one that fails to import is reported on stderr, and a group's command replaces a
+not-yet placeholder of the same name (`lint`, `review`, `climb`, `modpack`). A new group name goes into `GROUPS`.
 
 ## Hard rules
 

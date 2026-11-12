@@ -14,6 +14,7 @@ and waits for a free one when all three are busy. One client per checkout.
 Exit codes: 0 PASS, 1 FAIL (a verdict), 2 no verdict (build error, timeout, crash, not implemented).
 """
 import argparse
+import importlib
 import json
 import sys
 import time
@@ -22,6 +23,9 @@ from videocraft import __version__, game, script, store
 from videocraft.paths import PORT_OVERRIDE, SLOT_PORTS
 
 NOT_YET = {'lint': 'd', 'review': 'd', 'climb': 'd', 'modpack': 'd'}
+# Optional command groups: videocraft.<name>.commands with register(subparsers), loaded after the built-ins. A new
+# command lives in its own subpackage's commands.py, so parallel work does not collide in this file.
+GROUPS = ('edit', 'audio', 'voice', 'sets', 'story', 'review', 'series', 'clips')
 
 
 def say(text=''):
@@ -172,7 +176,31 @@ def not_yet(name):
     return run
 
 
-def main(argv=None):
+def load_groups(sub, groups=None):
+    """Calls register(sub) of every group that exists. A missing group is skipped; a broken one is reported (stderr)
+    and skipped, so one group's bug does not take down every command."""
+    for name in GROUPS if groups is None else groups:
+        module_name = f'videocraft.{name}.commands'
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError as e:
+            if e.name in (f'videocraft.{name}', module_name):
+                continue
+            print(f'videocraft: command group {name} failed to load: {e!r}', file=sys.stderr)
+            continue
+        except Exception as e:
+            print(f'videocraft: command group {name} failed to load: {e!r}', file=sys.stderr)
+            continue
+        register = getattr(module, 'register', None)
+        if not callable(register):
+            continue
+        try:
+            register(sub)
+        except Exception as e:
+            print(f'videocraft: command group {name} failed to register: {e!r}', file=sys.stderr)
+
+
+def build_parser():
     parser = argparse.ArgumentParser(prog='videocraft', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--version', action='version', version=f'videocraft {__version__}')
     sub = parser.add_subparsers(dest='command', required=True)
@@ -203,7 +231,13 @@ def main(argv=None):
         p = sub.add_parser(name)
         p.add_argument('--port', type=int, help="another client's control port (default: this checkout's client)")
         p.set_defaults(run=fn)
+    load_groups(sub)
     for name in NOT_YET:
-        sub.add_parser(name).set_defaults(run=not_yet(name))
-    args = parser.parse_args(argv)
+        if name not in sub.choices:  # a group that implements it replaces the placeholder
+            sub.add_parser(name).set_defaults(run=not_yet(name))
+    return parser
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     return args.run(args)

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,
+  `sets`, `story`, `review`, `series` and `clips`, so new commands land in their own files instead of `cli.py`.
 - Takes in several checkouts at once: each take holds one of three machine-wide slots (control ports
   25750–25752) and waits (`--slot-wait`, default 1800 s) when all are busy; the checkout's pid file records the port,
   so `status` and `stop` find its client; `--port` refuses the ports of other tools; `doctor` shows the slots.
