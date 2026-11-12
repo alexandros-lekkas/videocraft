@@ -134,6 +134,7 @@ it is (overlapping into a steady buzz, the aggressive loop when angry), a bat's 
 | `preroll` | `0` | Seconds the timeline and the rig run before frame 0, unrecorded: the shot opens with the subject already walking and the operator settled. Cues may have `at` down to `-preroll` [a]. |
 | `time` | the world's | Time of day for this shot (ticks), set when it starts preparing [a]. |
 | `weather` | the world's | `clear`, `rain`, `thunder` for this shot, at once (no easing in) [a]. |
+| `until` | | A mark label: the shot ends on the frame an action notes that mark (that frame is the first not recorded, so the next shot cuts in on the beat; `marks.json` has it at the shot's length). `duration` becomes the cap: a shot whose mark never comes fails the take, naming the shot and the mark [a]. |
 | `[shot.vertical]` | | `camera` keys applied over `camera` when the output is taller than wide (a vertical re-shoot), and the re-frame `subject` (an actor id or `[x, y, z]`): [CLIPS.md](CLIPS.md#shotvertical). **Implemented** (clips). |
 | `[[shot.cue]]` | | The timeline. |
 
@@ -404,6 +405,6 @@ unknown actor or camera subject, an anchor naming a set no `[[world.set]]` place
 up at once (a caption replacing a caption is fine). Warnings: an action or camera rig that is not built in and not
 namespaced (lint's lists are the mod's registries; a test fails when they drift),
 over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
-clip's `in`/`out` (or a shot `until`, which is not built yet) naming a mark no cue makes. Notes: one-word montage
+clip's `in`/`out` (or a shot `until`) naming a mark no cue makes. Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
 are in `measure/report.md` (docs/REVIEW.md).

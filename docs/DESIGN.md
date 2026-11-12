@@ -111,9 +111,9 @@ What it expresses, and who implements it:
 | Dialogue | `[cast]`, `say` cues | voice |
 | Sets | `[[world.set]]`, anchors `<set>:<mark>` | sets |
 
-**End conditions.** v1: every shot ends on `duration`. Planned (a): `until = "<mark label>"` with `duration` as the
-upper bound, so a shot can end when an action reports its beat (a walk arriving) without guessing seconds; a shot
-whose `until` never comes fails the take.
+**End conditions.** A shot ends on `duration`, or with `until = "<mark label>"` on the frame an action reports its
+beat (a walk arriving), without guessing seconds; `duration` is then the upper bound, and a shot whose `until` never
+comes fails the take.
 
 **Positions** everywhere are `[x, y, z]` or `{ anchor = "<name>", offset = [x, y, z] }`. `spawn` (the player's feet on
 arrival) always exists; actions can define more (`ShotContext.anchor(name, at)`), and plugins define their own
@@ -296,8 +296,8 @@ change request to its owner (or a one-line hook you add and tell them about). Sh
 - **Status (2026-11-12).** Built: every rig above plus `lead` and `face`, with `fov` (eased), seeded `drift`, block
   avoidance and positions on actors; `preroll`; per-shot `time` and `weather`; `world.preset` and `world.save`;
   `hud`, `bob`; batched, checked staging commands; `stand_in`/`glide`; the whole plan checked before the world loads;
-  determinism (two takes of `examples/rigs.toml` match by framemd5 and `frames.csv`). Not built: server tick
-  lockstep, `until`, the warm client (`POST /take`).
+  determinism (two takes of `examples/rigs.toml` match by framemd5 and `frames.csv`); `until`. Not built: server
+  tick lockstep, the warm client (`POST /take`).
 
 ### (b) Actors: the human input model, movement and actions, NPCs
 

@@ -58,6 +58,8 @@ final class ShotRun implements ShotContext {
 	private Phase phase = Phase.PREPARE;
 	private int prepared, frame, drawnFor, lastVisible = -1;
 	private boolean rebuilt;
+	private String until;
+	private int untilFrame = -1;
 	private boolean finished;
 	private int poseFrame = -1;
 	private Pose pose;
@@ -123,6 +125,7 @@ final class ShotRun implements ShotContext {
 			if (records) VideocraftLog.LOGGER.info("VIDEOCRAFT film {} frame 0 after {} frames, {} sections; {}", name, prepared, lastVisible, Film.state(minecraft()));
 		} else if (phase == Phase.RECORD) {
 			boolean over = records ? frame >= Math.round(duration * fps()) : due.isEmpty() && running.isEmpty();
+			if (over && until != null) director.fail(name + ": until '" + until + "' never came within its " + duration + " s (no cue noted that mark)");
 			if (over) { finish(); return; }
 		}
 		for (Actor actor : director.actors()) actor.frame(this);
@@ -133,7 +136,15 @@ final class ShotRun implements ShotContext {
 			running.add(new Running(cue, action));
 		}
 		running.removeIf(r -> r.action().frame(this));
+		// until: the frame its mark is noted on is the first one not recorded, so the next shot cuts in on the beat.
+		if (untilFrame >= 0) {
+			if (untilFrame == 0) director.fail(name + ": until '" + until + "' came on frame 0, so nothing was recorded");
+			finish();
+		}
 	}
+
+	/** Ends the shot on the frame a mark of this label is noted ({@code until} in the script); duration is the cap. */
+	void until(String label) { until = label; }
 
 	/** Whether the client's rain and thunder have reached the shot's weather (the sky and fog follow them). */
 	private boolean weatherSettled() {
@@ -272,6 +283,7 @@ final class ShotRun implements ShotContext {
 
 	@Override
 	public void mark(String label) {
+		if (label.equals(until) && recording() && untilFrame < 0) untilFrame = frame;
 		JsonObject m = new JsonObject();
 		m.addProperty("label", label);
 		m.addProperty("frame", frame());
@@ -280,6 +292,7 @@ final class ShotRun implements ShotContext {
 
 	@Override
 	public void mark(String label, double value) {
+		if (label.equals(until) && recording() && untilFrame < 0) untilFrame = frame;
 		JsonObject m = new JsonObject();
 		m.addProperty("label", label);
 		m.addProperty("frame", frame());
