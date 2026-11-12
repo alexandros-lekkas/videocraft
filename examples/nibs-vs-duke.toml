@@ -133,6 +133,7 @@ do = "say"
 actor = "nibs"
 style = "proud"
 text = "Hey, it's me, *Nibs."
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
@@ -141,12 +142,14 @@ style = "proud"
 text = "Best jumper in the whole *valley."
 at = 1.9
 beat = true
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
 actor = "nibs"
 style = "proud"
 text = "Ask anyone, nobody jumps like *me."
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
@@ -254,6 +257,7 @@ do = "say"
 actor = "nibs"
 style = "smug"
 text = "One's *plenty."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.25
@@ -295,6 +299,7 @@ at = 0.05
 do = "say"
 actor = "nibs"
 text = "Anyway, I was heading to the *market..."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.7
@@ -358,6 +363,7 @@ do = "say"
 actor = "nibs"
 style = "deadpan"
 text = "...for *snacks, obviously."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.42
@@ -407,11 +413,13 @@ do = "say"
 actor = "nibs"
 text = "Then I strolled past the *notice board, totally normal day."
 beat = true
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
 actor = "nibs"
 text = "Not a care in the *world."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.9
@@ -446,7 +454,7 @@ name = "s07-saw"
 duration = 2.7
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.3, height = 1.5, pitch = 20, fov = 108, side = -1.2, drift = 0.4 }
+camera = { rig = "lead", subject = "nibs", distance = 3.3, height = 1.5, pitch = 20, fov = 108, side = -1.2, drift = 1.2 }
 
 [[shot.cue]]
 at = -1.0
@@ -475,6 +483,7 @@ do = "say"
 actor = "nibs"
 style = "deadpan"
 text = "And then I *saw it."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 2.45
@@ -484,7 +493,7 @@ style = "deadpan"
 text = "*Duke, again, three years running."
 cut_on = "Duke"
 beat = true
-caption = { position = "top" }
+caption = { style = "whole", position = "top" }
 
 [[shot.cue]]
 at = 0.35
@@ -512,6 +521,13 @@ do = "sound"
 palette = "whoosh"
 relative = true
 volume = 0.7
+
+[[shot.cue]]
+at = 2.15
+do = "nod"
+actor = "nibs"
+size = 0.3
+seconds = 0.4
 
 [[shot.cue]]
 at = 1.8
@@ -575,6 +591,7 @@ do = "say"
 actor = "nibs"
 style = "sad"
 text = "I remember last year's *show like it was yesterday."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.9
@@ -614,13 +631,6 @@ relative = true
 volume = 0.5
 
 [[shot.cue]]
-at = 0.0
-do = "ambience"
-id = "videocraft:cricket"
-relative = true
-volume = 0.9
-
-[[shot.cue]]
 at = 0.35
 do = "nod"
 actor = "duke"
@@ -642,6 +652,7 @@ actor = "nibs"
 style = "deadpan"
 text = "There he was, the *champ, strutting around like he owns the place."
 cut_on = "strutting"
+caption = { style = "whole", position = "top" }
 
 [[shot.cue]]
 at = -0.9
@@ -657,13 +668,6 @@ actor = "duke"
 gait = "trot"
 path = [{ anchor = "barn-stage:stage-center" }, { anchor = "barn-stage:note-1", offset = [-1.4, 0, 1.2] }, { anchor = "barn-stage:note-1", offset = [-1.2, 0, 0] }]
 face = 90
-
-[[shot.cue]]
-at = 0.0
-do = "ambience"
-id = "videocraft:cricket"
-relative = true
-volume = 0.9
 
 # 12. Insert, close: Duke steps onto the first note block, dips his head, and it plays on that frame.
 [[shot]]
@@ -700,13 +704,6 @@ do = "tune"
 block = { anchor = "barn-stage:note-1" }
 notes = "c5"
 instrument = "harp"
-
-[[shot.cue]]
-at = 0.0
-do = "ambience"
-id = "videocraft:cricket"
-relative = true
-volume = 0.9
 
 [[shot.cue]]
 at = 1.0
@@ -748,6 +745,7 @@ do = "say"
 actor = "duke"
 style = "smug"
 text = "Hit *it."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.85
@@ -786,12 +784,14 @@ actor = "nibs"
 style = "deadpan"
 text = "Then he played the *notes, with his feet."
 beat = true
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
 actor = "nibs"
 style = "deadpan"
 text = "Every single *one."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = -1.0
@@ -866,6 +866,7 @@ do = "say"
 actor = "nibs"
 style = "deadpan"
 text = "Total *show-off."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = -1.0
@@ -931,7 +932,7 @@ name = "s16-bow"
 duration = 3.8
 preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:rail-2", offset = [1.2, 1.1, 1.0] }, at = { anchor = "barn-stage:note-4", offset = [0.5, -0.6, 0.5] }, fov = 38 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:rail-2", offset = [1.2, 1.1, 1.0] }, at = { anchor = "barn-stage:note-4", offset = [0.5, -0.2, 0.5] }, fov = 30 }
 
 [[shot.cue]]
 at = -1.0
@@ -958,6 +959,7 @@ position = "top"
 beat = true
 speed = 1.15
 fit = "none"
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.2
@@ -994,6 +996,7 @@ actor = "nibs"
 style = "deadpan"
 text = "Then he just *took the trophy."
 beat = true
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = -1.0
@@ -1088,6 +1091,15 @@ time = 18000
 camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [8.7, 1.2, -1.0] }, at = { anchor = "barn-stage:stage-center", offset = [11.0, 0.8, -1.0] }, fov = 34 }
 
 [[shot.cue]]
+at = 0.05
+do = "say"
+actor = "nibs"
+style = "deadpan"
+text = "Meanwhile, the crowd went... *mild."
+beat = true
+caption = { style = "whole" }
+
+[[shot.cue]]
 at = -1.0
 do = "look"
 actor = "hen-2"
@@ -1174,6 +1186,7 @@ actor = "duke"
 style = "smug"
 text = "A *standing ovation."
 speed = 1.15
+caption = { style = "whole", position = "top" }
 
 [[shot.cue]]
 at = 0.25
@@ -1275,12 +1288,14 @@ actor = "nibs"
 style = "angry"
 text = "That fox can't even *jump."
 beat = true
+caption = { style = "whole" }
 
 [[shot.cue]]
 do = "say"
 actor = "nibs"
 style = "excited"
-text = "Watch me *fly, like a bird, baby."
+text = "Watch me *fly, baby."
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 1.22
@@ -1370,9 +1385,10 @@ do = "say"
 actor = "nibs"
 style = "excited"
 text = "Honestly? I'm at *least six times more goat than him!"
+beat = true
 cut_on = "six"
 carry = false
-
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.7
@@ -1711,6 +1727,7 @@ do = "say"
 actor = "nibs"
 style = "proud"
 text = "So *today, in front of everyone,"
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.35
@@ -1768,6 +1785,7 @@ actor = "nibs"
 style = "excited"
 text = "I *challenge Duke to a jump-off!"
 hold = 0.8
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.8
@@ -1916,19 +1934,6 @@ do = "voice"
 actor = "duke"
 sound = "ambient"
 pitch = 0.8
-
-[[shot.cue]]
-at = 0.7
-do = "state"
-actor = "duke"
-state = "sit"
-on = false
-
-[[shot.cue]]
-at = 0.72
-do = "crouch"
-actor = "duke"
-seconds = 0.3
 
 [[shot.cue]]
 at = 1.05
