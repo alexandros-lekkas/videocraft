@@ -22,6 +22,7 @@ Rules (each problem: severity error | warn | info, rule, where, message):
 Owned by workstream (d).
 """
 import json
+from pathlib import Path
 
 from videocraft import script
 
@@ -100,7 +101,9 @@ def lint(raw, rubric=None):
             keys(a, actor_keys, f'actor[{i}]')
         if a.get('id'):
             actors.add(str(a['id']))
-    sets = {str(s.get('name')) for s in (world.get('set') or []) if isinstance(s, dict)}
+    # A placed set's marks go by its `as` prefix, else its name (a set given by path: the file's stem).
+    sets = {str(s.get('as') or (Path(str(s.get('name'))).stem if str(s.get('name')).endswith('.toml') else s.get('name')))
+            for s in (world.get('set') or []) if isinstance(s, dict)}
     max_shot = (rubric or {}).get('pass', {}).get('max_shot_seconds')
 
     def anchors(value, where):
