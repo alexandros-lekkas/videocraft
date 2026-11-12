@@ -1,0 +1,77 @@
+# Builds the mod and checks the CLI on every push and pull request. No game is launched here: a take needs a GPU
+# and a window server, so `bin/videocraft run` stays a local check (see CONTRIBUTING.md).
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  mod:
+    name: mod (JDK 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # Loom downloads and remaps Minecraft on the first build (several minutes); keep it in its own cache keyed on
+      # the versions that decide it, so a code change never throws it away.
+      - name: Cache Loom (Minecraft jars and mappings)
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches/fabric-loom
+          key: loom-${{ runner.os }}-${{ hashFiles('gradle.properties', 'gradle.lockfile') }}
+          restore-keys: loom-${{ runner.os }}-
+
+      # Caches the rest of the Gradle home and validates the checked-in wrapper jar.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-excludes: caches/fabric-loom
+
+      - name: Build (jar + plain-JVM checks)
+        run: ./gradlew build --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: videocraft-jar
+          path: build/libs/videocraft-*.jar
+          if-no-files-found: error
+          retention-days: 14
+
+  cli:
+    name: cli (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      # Standard library only: no install step, on purpose.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Unit checks
+        run: python3 -m unittest discover -s cli/tests -v
+
+      # The tests refresh the plan fixtures the Java checks read; a diff means a fixture was not committed.
+      - name: Plan fixtures are committed
+        run: git diff --exit-code -- cli/tests/plans/
+
+      - name: Compile the hello example
+        run: bin/videocraft compile examples/hello.toml > /dev/null
