@@ -113,8 +113,14 @@ final class Commands {
 				int[] a = area;
 				if (waited++ == 0) {
 					pending = server.submit(() -> {
-						String e = run(server, at, "forceload add " + a[0] + " " + a[1] + " " + a[2] + " " + a[3]);
-						if (e != null && !e.contains("already")) error = where + ": forceload failed: " + e;
+						// Vanilla's forceload takes at most 256 chunks a command: add the area in tiles of 16x16 chunks.
+						for (int x = a[0]; x <= a[2]; x = Math.floorDiv(x, 16) * 16 + 256) {
+							for (int z = a[1]; z <= a[3]; z = Math.floorDiv(z, 16) * 16 + 256) {
+								int x2 = Math.min(a[2], Math.floorDiv(x, 16) * 16 + 255), z2 = Math.min(a[3], Math.floorDiv(z, 16) * 16 + 255);
+								String e = run(server, at, "forceload add " + x + " " + z + " " + x2 + " " + z2);
+								if (e != null && !e.contains("already") && error == null) error = where + ": forceload failed: " + e;
+							}
+						}
 						return 0;
 					});
 					return false;
