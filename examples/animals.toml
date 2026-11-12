@@ -1,0 +1,210 @@
+# Animal actors: client-side puppets the script alone moves, deterministic from the plan and the seed.
+#   bin/videocraft run examples/animals.toml
+# A one-horned slate-blue goat struts a curved lane toward the lens (over a step of slabs), stops, turns its head to
+# the camera, lowers its head as if to ram, raises it and screams. A snow fox trots across a plank floor, sits, bows,
+# picks berries off a bush into its mouth, lies down and sleeps. A chicken on a fence rail lays an egg.
+name = "animals"
+seed = 7
+description = "Mob puppets: walk with gaits, head to the lens, the animals' own poses and sounds on cue."
+
+[world]
+seed = "videocraft"
+time = 9000                     # afternoon
+settle = 3.0
+
+# A small floating stage high above the spawn, so nothing natural wanders in: a lane with a pale centre line and a
+# step of slabs across it, a plank floor with a berry bush, and a fence rail.
+[[world.stage]]
+do = "command"
+commands = [
+  "fill -18 99 -18 18 99 18 grass_block",
+  "fill -3 99 -14 3 99 8 dirt_path",
+  "fill 0 99 -14 0 99 8 smooth_stone",
+  "fill -3 100 -2 3 100 -2 oak_slab",
+  "fill -3 100 -1 3 100 -1 oak_slab",
+  "fill 7 99 -7 16 99 4 spruce_planks",
+  "setblock 14 100 0 sweet_berry_bush[age=3]",
+  "fill -10 100 -5 -10 100 2 oak_fence",
+  "setblock -4 100 -10 lantern",
+  "setblock 4 100 -12 barrel",
+  "setblock 4 101 -12 flower_pot",
+]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "goat"
+at = [-1.0, 100, -7.5]
+facing = 0
+left_horn = false               # one horn: the goat's own state, not a texture
+screaming = true
+tint = "#8c9fc2"                # slate blue-grey, multiplied over the white coat
+
+[[actor]]
+id = "duke"
+kind = "mob"
+entity = "fox"
+variant = "snow"
+at = [8.0, 100, -5.5]
+facing = -60
+
+[[actor]]
+id = "hen"
+kind = "mob"
+entity = "chicken"
+at = [-9.5, 101, -1.5]         # on top of the fence rail
+facing = -15                    # in profile, so the egg drops in sight
+
+[[actor]]
+id = "hen2"
+kind = "mob"
+entity = "chicken"
+at = [-9.5, 101, 0.5]
+facing = -100
+
+# ---- The goat ----
+[[shot]]
+name = "goat"
+duration = 10.8
+# Three-quarter on, low at a goat's eye height: the head turning to the lens and lowering read in silhouette.
+camera = { rig = "fixed", eye = [3.6, 100.95, 5.6], at = [0.2, 100.55, 1.2], fov = 55 }
+
+[[shot.cue]]
+at = 0.25
+do = "walk"
+actor = "nibs"
+gait = "strut"
+path = [[1.2, 100, -4.5], [-0.6, 100, -1.0], [0.3, 100, 2.6]]
+mark = "arrived"
+
+[[shot.cue]]
+at = 7.45
+do = "look"
+actor = "nibs"
+target = "camera"
+
+[[shot.cue]]
+at = 8.3
+do = "state"
+actor = "nibs"
+state = "lower"
+seconds = 0.9
+
+[[shot.cue]]
+at = 9.4
+do = "voice"
+actor = "nibs"
+sound = "scream"
+
+[[shot.cue]]
+at = 9.45
+do = "nod"
+actor = "nibs"
+size = -0.6
+
+# ---- The fox ----
+[[shot]]
+name = "fox"
+duration = 12.0
+camera = { rig = "fixed", eye = [12.9, 100.95, 3.4], at = [11.8, 100.3, -1.6], fov = 58 }
+
+[[shot.cue]]
+at = 0.3
+do = "walk"
+actor = "duke"
+gait = "trot"
+path = [[10.5, 100, -3.5], [12.6, 100, -0.4]]
+
+[[shot.cue]]
+at = 2.6
+do = "turn"
+actor = "duke"
+to = "camera"
+
+[[shot.cue]]
+at = 3.2
+do = "state"
+actor = "duke"
+state = "sit"
+seconds = 1.6
+
+[[shot.cue]]
+at = 5.2
+do = "state"
+actor = "duke"
+state = "crouch"                # the fox's own crouch, as a bow
+seconds = 1.0
+
+[[shot.cue]]
+at = 6.5
+do = "walk"
+actor = "duke"
+to = [13.35, 100, 0.15]          # up to the berry bush
+arrive = 0.4
+
+[[shot.cue]]
+at = 7.4
+do = "look"
+actor = "duke"
+target = [14.5, 100.2, 0.5]
+hold = 0.9
+
+[[shot.cue]]
+at = 7.95
+do = "hold"
+actor = "duke"
+item = "minecraft:sweet_berries"
+
+[[shot.cue]]
+at = 8.0
+do = "voice"
+actor = "duke"
+sound = "eat"
+
+[[shot.cue]]
+at = 8.8
+do = "turn"
+actor = "duke"
+to = "camera"
+
+[[shot.cue]]
+at = 9.9
+do = "state"
+actor = "duke"
+state = "sleep"
+
+[[shot.cue]]
+at = 10.6
+do = "voice"
+actor = "duke"
+sound = "sleep"
+
+# ---- The chicken ----
+[[shot]]
+name = "egg"
+duration = 5.0
+camera = { rig = "fixed", eye = [-6.6, 101.55, -0.3], at = [-9.5, 101.3, -0.5], fov = 58 }
+
+[[shot.cue]]
+at = 0.8
+do = "voice"
+actor = "hen"
+
+[[shot.cue]]
+at = 2.2
+do = "emit"
+actor = "hen"
+
+[[shot.cue]]
+at = 2.25
+do = "state"
+actor = "hen"
+state = "flap"
+seconds = 0.35
+
+[[shot.cue]]
+at = 3.3
+do = "look"
+actor = "hen2"
+target = "hen"
+hold = 1.2
