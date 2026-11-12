@@ -29,7 +29,7 @@ final class LowerThird extends Message {
 	void start() {
 		double[] safe = layout.safe();
 		roleK = Math.max(TextLayout.fontScale(TextLayout.MIN_CAP), k - 2);
-		float pad = 2.2f * roleK, bar = 1.1f * k;
+		float pad = 2.8f * roleK, bar = 1.8f * k;
 		float w = (Ink.width(name) - 1) * k;
 		if (role != null) w = Math.max(w, (Ink.width(role) - 1) * roleK);
 		float h = TextLayout.CAP * k + (role != null ? 3.5f * roleK + TextLayout.CAP * roleK : 0);
@@ -55,7 +55,7 @@ final class LowerThird extends Message {
 		if (in <= 0) return false;
 		float travel = (x1 - x0 + 60) * (float) (1 - in) * (side.equals("left") ? -1 : 1);
 		float alpha = (float) Math.min(1, in * 1.6);
-		float pad = 2.2f * roleK, bar = 1.1f * k;
+		float pad = 2.8f * roleK, bar = 1.8f * k;
 		ink.box(x0 + travel, y0, x1 + travel, y1, Ink.fade(0xB0101418, alpha));
 		float barX = side.equals("left") ? x0 : x1 - bar;
 		ink.box(barX + travel, y0, barX + bar + travel, y1, Ink.fade(accent, alpha));

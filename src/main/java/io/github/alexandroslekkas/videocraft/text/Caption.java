@@ -16,7 +16,7 @@ import java.util.List;
 final class Caption extends Message {
 	/** Default seconds between words popping in. */
 	static final double STAGGER = 0.12;
-	static final double DEFAULT_CAP = 63, TAG_CAP = 35;
+	static final double DEFAULT_CAP = 63, TAG_CAP = 42;
 
 	private record Word(String text, boolean key, boolean breakBefore, double at) {}
 
@@ -142,7 +142,7 @@ final class Caption extends Message {
 		boxY0 = Math.round(top);
 		boxY1 = Math.round(top + blockH + k);   // the descenders
 		if (speaker != null) {
-			tagK = Math.max(4, Math.min(k - 2, TextLayout.fontScale(TAG_CAP)));
+			tagK = Math.max(5, Math.min(k - 2, TextLayout.fontScale(TAG_CAP)));
 			float w = (Ink.width(speaker) - 1) * tagK, pad = 1.5f * tagK;
 			tagX1 = Math.round(layout.width() / 2 + w / 2 + pad);
 			tagX0 = Math.round(layout.width() / 2 - w / 2 - pad);
@@ -170,7 +170,7 @@ final class Caption extends Message {
 		endFrame = holdEnd(shownFrame());
 	}
 
-	private float tagHeight() { return (TextLayout.CAP + 2.2f) * Math.max(4, TextLayout.fontScale(TAG_CAP)) + 0.9f * TextLayout.fontScale(cap); }
+	private float tagHeight() { return (TextLayout.CAP + 2.2f) * Math.max(5, TextLayout.fontScale(TAG_CAP)) + 0.9f * TextLayout.fontScale(cap); }
 
 	@Override
 	int shownFrame() { return wordFrames[wordFrames.length - 1]; }
@@ -192,7 +192,7 @@ final class Caption extends Message {
 			int age = frame - wordFrames[0];
 			float pop = whole ? 1 : TextLayout.pop(age, fps), alpha = (whole ? 1 : TextLayout.popAlpha(age, fps)) * out;
 			float cx = (tagX0 + tagX1) / 2, cy = (tagY0 + tagY1) / 2, hw = (tagX1 - tagX0) / 2 * pop, hh = (tagY1 - tagY0) / 2 * pop;
-			ink.pill(cx - hw - tagK * 0.5f, cy - hh - tagK * 0.5f, cx + hw + tagK * 0.5f, cy + hh + tagK * 0.5f, tagK, Ink.fade(Ink.INK, alpha * 0.9f));
+			ink.pill(cx - hw - tagK * 0.7f, cy - hh - tagK * 0.7f, cx + hw + tagK * 0.7f, cy + hh + tagK * 0.7f, tagK, Ink.fade(Ink.INK, alpha));
 			ink.pill(cx - hw, cy - hh, cx + hw, cy + hh, tagK, Ink.fade(speakerColor, alpha));
 			float w = Ink.width(speaker) * tagK;
 			ink.text(speaker, cx - w / 2 + tagK * 0.5f, cy - TextLayout.CAP * tagK / 2f, tagK, pop, Ink.on(speakerColor), alpha, false);
