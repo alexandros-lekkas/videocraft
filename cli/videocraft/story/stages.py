@@ -132,7 +132,9 @@ def _check_script(text, story, store, path):
     if not any(l.startswith('## ') for l in text.splitlines()):
         problems.append('script.md needs scene headings ("## Scene 1: <set>, <time>")')
     for speaker, line in dialogue(text):
-        if line.count('*') > 1:
+        if re.search(r'\w\*', line):
+            problems.append(f'{speaker}: "{line}": mark a key word with a leading * only (*word, not *word*)')
+        elif line.count('*') > 1:
             problems.append(f'{speaker}: "{line}" has {line.count("*")} *key words; at most one (the word the cut lands on)')
     return problems
 
