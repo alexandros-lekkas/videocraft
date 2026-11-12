@@ -578,7 +578,7 @@ def place_edit_sfx(it, timeline, edit, mode):
     """[[edit.sfx]]: sounds the edit places itself, not logged by the take: (placed, buffers by index). Game audio
     first (a deterministic variant of the event, from the local assets), the original library in original mode or
     when the catalog has no Minecraft sound for it."""
-    placed, buffers = [], []
+    placed, buffers, fades = [], [], []
     fps = timeline.fps
     for i, entry in enumerate(edit.get('sfx') or []):
         where = f'edit.sfx[{i}]'
@@ -596,20 +596,30 @@ def place_edit_sfx(it, timeline, edit, mode):
             clip = next((c for c in clips if c.contains(frame)), clips[0])
             t = clip.out_frame(frame) / fps
         gain = dsp.from_db(float(entry.get('gain', 0))) * volume
+        # `start` seconds into the sound, `length` seconds of it (then a `fade`-second fade out): a record from a
+        # jukebox under one stretch of the cut.
+        offset = max(0.0, float(entry.get('start', 0)))
+        stop = min(timeline.seconds, t + float(entry['length'])) if entry.get('length') is not None else timeline.seconds
+        if 'fade' in entry:
+            fades.append(float(entry['fade']))
+        else:
+            fades.append(0.25 if entry.get('length') is not None else 0.0)
         if event and mode == 'game':
             files = assets.event_files(event)
             if files:
                 file = files[sfx.hash_name(f'{it.plan().get("seed", 1)}:{i}:{event}') % len(files)]
                 buffers.append(assets.decode(file, 1))
                 placed.append(Placed(source='game', event=f'minecraft:{event}', file=file, shot=entry.get('shot') or '', frame=-1, clip=-1,
-                                     time=t, gain=gain, pan=float(entry.get('pan', 0)), rate=max(0.5, min(2.0, pitch)), stop=timeline.seconds))
+                                     time=t, offset=offset, gain=gain, pan=float(entry.get('pan', 0)), rate=max(0.5, min(2.0, pitch)), stop=stop))
                 continue
         if not lib:
             raise SystemExit(f'{where}: no original sound for it in an original-only mix; give library = "<name>" too')
         buffers.append(library.render(lib))
         placed.append(Placed(source='synth', event=f'videocraft:lib/{lib}', file='', shot=entry.get('shot') or '', frame=-1, clip=-1, time=t,
-                             gain=gain, pan=float(entry.get('pan', 0)), rate=1.0 if event else max(0.5, min(2.0, pitch)), stop=timeline.seconds,
+                             offset=offset, gain=gain, pan=float(entry.get('pan', 0)), rate=1.0 if event else max(0.5, min(2.0, pitch)), stop=stop,
                              stand_in=lib if event else ''))
+    for p, f in zip(placed, fades):
+        p.fade = f
     return placed, buffers
 
 
@@ -617,7 +627,13 @@ def render_edit_sfx(placed, buffers, n):
     left, right = dsp.zeros(n), dsp.zeros(n)
     for p, buf in zip(placed, buffers):
         played = dsp.resample(buf, p.rate)
-        _add_panned(left, right, played, dsp.seconds_to_samples(p.time), p.gain, p.pan)
+        a = dsp.seconds_to_samples(p.offset)
+        keep = dsp.seconds_to_samples(max(0.0, p.stop - p.time))
+        fade = dsp.seconds_to_samples(getattr(p, 'fade', 0.0))
+        if a or keep < len(played) - a:
+            played = played[a:a + keep]
+            fade = max(fade, FADE_STOP) if keep < len(buf) else fade
+        _add_panned(left, right, played, dsp.seconds_to_samples(p.time), p.gain, p.pan, fade_out=min(fade, len(played)))
     return left, right
 
 
