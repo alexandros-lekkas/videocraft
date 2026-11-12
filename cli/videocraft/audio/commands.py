@@ -104,13 +104,13 @@ def cmd_synth(args):
 
 def cmd_events(args):
     from videocraft import store
-    from videocraft.audio import dsp, mix, onsets
+    from videocraft.audio import dsp, mix, onsets, resolve
     from videocraft.audio import timeline as tl
     it = store.open_iteration(args.iteration)
     edit = it.edit()
     mode = mix._mode(edit, args.original or None)
     timeline = tl.load(it)
-    sounds = mix.Sounds('original' if mode == 'original' else 'game')
+    sounds = mix.Sounds('original', resolve.original_hints(it.plan())) if mode == 'original' else mix.Sounds('game')
     mixcfg = edit.get('mix') or {}
     placed, skipped = mix.place_sfx(it, timeline, sounds, mixcfg.get('duck') or (), mixcfg.get('lift'))
     say(f'{"time":>8}  {"shot":12} {"frame":>6}  {"gain":>6} {"pan":>5} {"rate":>5}  {"source":8} event / file')

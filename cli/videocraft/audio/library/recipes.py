@@ -629,14 +629,14 @@ def applause(rnd):
 
 @recipe('cheer')
 def cheer(rnd):
-    n = n_of(2.4)
+    n = n_of(1.6)
     out = [0.0] * n
     for v in range(5):
         f0 = rnd.uniform(220, 420)
         out = add(out, gain(vowel(n, lambda t, f0=f0: f0 * (1 + 0.25 * math.sin(math.pi * min(1.0, t / 0.8))), [(700, 5, 1.0), (1200, 6, 0.6), (2600, 8, 0.25)],
                                   rnd, breath=0.6, jitter=0.02), 0.3))
     out = add(out, gain(applause(rnd)[:n], 0.6))
-    return mul(out, env_points(n, [(0, 0), (0.15, 1), (1.6, 0.8), (2.4, 0)]))
+    return mul(out, env_points(n, [(0, 0), (0.015, 1), (1.0, 0.8), (1.6, 0)]))
 
 
 # ---- cartoon motion ----
