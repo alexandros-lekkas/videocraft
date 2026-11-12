@@ -8,6 +8,11 @@
   pops on the word onsets, an `edit.voice` line, an optional bark, and the shot's length (`fit = extend | cut-on |
   none`; `cut_on` ends the shot on a word). Lines are cached by content hash; `voice.json` in each iteration; without a
   voice installed, estimated timings. Commands `voice setup | doctor | say | script | check`; `examples/talk.toml`.
+- Long form and clipping (`docs/CLIPS.md`): `assemble` joins runs or a series into one video with in-game chapter
+  cards, YouTube and mp4 chapters, one −14 LUFS master and a timeline back to every source shot; `clips find` ranks
+  moments from words, key words, outline beats and jokes, marks, sounds and loudness, never cutting mid-word; `clips
+  cut` makes 9:16 shorts by re-shooting the range at 1080x1920 (`[shot.vertical]`) or re-framing the master with a
+  look-ahead operator; `clips pack` writes titles, hashtags and a thumbnail frame.
 - Camera rigs for the benchmark: `lead` (the lead track), `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`,
   `face`, with `fov` (or eased `[from, to]`), seeded `drift`, block avoidance and positions on actors; shot keys
   `preroll`, `time`, `weather`; `world.preset` (`flat`, `void`) and `world.save` from `cache/worlds/`; batched,
