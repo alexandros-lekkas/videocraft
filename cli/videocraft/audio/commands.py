@@ -91,7 +91,8 @@ def cmd_events(args):
     mode = mix._mode(edit, args.original or None)
     timeline = tl.load(it)
     sounds = mix.Sounds('original' if mode == 'original' else 'game')
-    placed, skipped = mix.place_sfx(it, timeline, sounds, (edit.get('mix') or {}).get('duck') or ())
+    mixcfg = edit.get('mix') or {}
+    placed, skipped = mix.place_sfx(it, timeline, sounds, mixcfg.get('duck') or (), mixcfg.get('lift'))
     say(f'{"time":>8}  {"shot":12} {"frame":>6}  {"gain":>6} {"pan":>5} {"rate":>5}  {"source":8} event / file')
     for p in placed:
         say(f'{p.time:8.3f}  {p.shot:12} {p.frame:6d}  {dsp.db(p.gain):6.1f} {p.pan:5.2f} {p.rate:5.2f}  {p.source:8} {p.event}  {p.file}')

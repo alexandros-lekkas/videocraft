@@ -37,7 +37,7 @@ from videocraft.paths import ROOT
 
 SR = dsp.SR
 BLOCK = 480  # 10 ms: the resolution of ducking and level curves
-MUSIC_REF_DB = -21.0  # bed RMS before `gain`; voice lines are levelled to VOICE_REF_DB
+MUSIC_REF_DB = -22.0  # bed RMS before `gain`; voice lines are levelled to VOICE_REF_DB
 VOICE_REF_DB = -17.0
 FADE_STOP = int(0.004 * SR)  # a sound cut at its clip's end fades over 4 ms instead of clicking
 
@@ -150,8 +150,14 @@ class Sounds:
         return self.rate_cache[k]
 
 
-def place_sfx(it, timeline, sounds, duck_patterns=()):
+# Foley lift by event pattern (dB): footsteps are logged at the game's own volume (0.15 for most mobs), which puts
+# them some 30 dB under everything else; a video lifts them so a step reads. `[edit.mix] lift` adds or overrides.
+LIFT = {'*.step': 9.0}
+
+
+def place_sfx(it, timeline, sounds, duck_patterns=(), lift=None):
     placed, skipped = [], []
+    lifts = [(pat, dsp.from_db(float(db))) for pat, db in {**LIFT, **(lift or {})}.items()]
     shots = {c.shot for c in timeline.clips if c.kind == 'shot'}
     fps = timeline.fps
     for shot in sorted(shots):
@@ -190,6 +196,10 @@ def place_sfx(it, timeline, sounds, duck_patterns=()):
                     skipped.append({**base, 'reason': 'out of earshot of the camera'})
                     continue
                 name = row['event'].split(':', 1)[-1]
+                for pat, g in lifts:
+                    if fnmatch.fnmatch(name, pat) or fnmatch.fnmatch(row['event'], pat):
+                        gain *= g
+                        break
                 duck = any(fnmatch.fnmatch(name, p) or fnmatch.fnmatch(row['event'], p) for p in duck_patterns)
                 placed.append(Placed(source=source, event=row['event'], file=row['file'], shot=shot, frame=f, clip=c.index, time=t,
                                      offset=offset, gain=gain, pan=pan, rate=rate, stop=c.out_end / fps, looping=row['looping'], duck=duck))
@@ -462,7 +472,7 @@ def build(it, original=None, keep_raw=False):
     sounds = Sounds(mode)
     report = {'mode': mode, 'fps': timeline.fps, 'seconds': timeline.seconds, 'notes': []}
 
-    placed, skipped = place_sfx(it, timeline, sounds, mixcfg.get('duck') or ())
+    placed, skipped = place_sfx(it, timeline, sounds, mixcfg.get('duck') or (), mixcfg.get('lift'))
     sfx_l, sfx_r = render_sfx(placed, sounds, n)
     picture = picture_envelope(timeline, n)
     dsp.multiply(sfx_l, picture)
