@@ -205,6 +205,13 @@ public final class Director {
 			return;
 		}
 		mc.options.pauseOnLostFocus = false;
+		// The whole plan, before any world: a typo fails the take now, naming its shot and cue, not minutes in.
+		List<String> problems = PlanCheck.problems(plan, registries::action, registries::rig, mc);
+		if (!problems.isEmpty()) {
+			for (String p : problems) VideocraftLog.LOGGER.error("VIDEOCRAFT plan: {}", p);
+			finish(mc, false, problems.getFirst() + (problems.size() > 1 ? " (and " + (problems.size() - 1) + " more in game.log)" : ""));
+			return;
+		}
 		levelId = WorldBoot.enter(mc, plan.world(), plan.name());
 		VideocraftLog.LOGGER.info("VIDEOCRAFT world {}", levelId);
 		go(Step.WORLD);
