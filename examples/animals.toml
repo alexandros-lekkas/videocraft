@@ -65,8 +65,9 @@ facing = -100
 # ---- The goat ----
 [[shot]]
 name = "goat"
-duration = 10.0
-camera = { rig = "fixed", eye = [0.5, 101.1, 7.4], at = [-0.2, 100.6, -3.0], fov = 60 }
+duration = 10.8
+# Three-quarter on, low at a goat's eye height: the head turning to the lens and lowering read in silhouette.
+camera = { rig = "fixed", eye = [3.6, 100.95, 5.6], at = [0.2, 100.55, 1.2], fov = 55 }
 
 [[shot.cue]]
 at = 0.25
@@ -77,26 +78,26 @@ path = [[1.2, 100, -4.5], [-0.6, 100, -1.0], [0.3, 100, 2.6]]
 mark = "arrived"
 
 [[shot.cue]]
-at = 6.3
+at = 7.45
 do = "look"
 actor = "nibs"
 target = "camera"
 
 [[shot.cue]]
-at = 7.3
+at = 8.3
 do = "state"
 actor = "nibs"
 state = "lower"
 seconds = 0.9
 
 [[shot.cue]]
-at = 8.45
+at = 9.4
 do = "voice"
 actor = "nibs"
 sound = "scream"
 
 [[shot.cue]]
-at = 8.5
+at = 9.45
 do = "nod"
 actor = "nibs"
 size = -0.6
