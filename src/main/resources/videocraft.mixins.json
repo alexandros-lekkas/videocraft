@@ -6,7 +6,15 @@
     "ClockMixin",
     "CameraMixin",
     "ParkedPlayerMixin",
-    "NoNaturalsMixin"
+    "NoNaturalsMixin",
+    "TimerAccessor",
+    "TextureManagerAccessor",
+    "AtlasAccessor",
+    "AnimationStateAccessor",
+    "FilmTimeMixin",
+    "FilmRandomMixin",
+    "FogAccessor",
+    "RainFogAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

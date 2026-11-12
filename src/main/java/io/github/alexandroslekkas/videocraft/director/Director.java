@@ -161,6 +161,7 @@ public final class Director {
 		if (step == Step.DONE) return;
 		ticks++;
 		stepTicks++;
+		Film.tick();
 		try {
 			if (failure == null && capture.error() != null) failure = capture.error();
 			if (failure != null) { finish(mc, false, failure); return; }
@@ -222,9 +223,15 @@ public final class Director {
 		mc.options.guiScale().set(4);
 		mc.resizeGui();
 		mc.options.particles().set(net.minecraft.server.level.ParticleStatus.ALL);
+		// Occlusion culling decides which sections to draw on a background thread from whatever had compiled by then,
+		// so a take now and then left out a whole section nearby. Every section in view is drawn instead.
+		mc.smartCull = false;
+		// Sections fade in over wall-clock time when they are first drawn: that was the haze on a take's first frames,
+		// and it differed from take to take. They appear at once instead (preparation waits until all are drawn).
+		mc.options.chunkSectionFadeInTime().set(0.0);
 		var w = plan.world();
 		command("time set " + w.time());
-		command("weather " + w.weather());
+		weatherNow(w.weather());
 		command("gamerule advance_time false");
 		command("gamerule advance_weather false");
 		command("difficulty peaceful");
@@ -287,8 +294,30 @@ public final class Director {
 		shot.rig(rig);
 		// The world as this shot wants it (a lane in late afternoon, a barn at night), from the start of preparation.
 		if (spec.params().has("time")) command("time set " + (long) spec.params().number("time"));
-		if (spec.params().has("weather")) command("weather " + weather(spec.params().string("weather"), spec.params().where()));
+		if (spec.params().has("weather")) weatherNow(weather(spec.params().string("weather"), spec.params().where()));
 		view(mc, rig, spec);
+	}
+
+	/**
+	 * The weather, at once: the command sets where the weather is going, and the server would then ease its rain and
+	 * thunder there over five seconds and send every step to the client, so a shot started part-way through a new
+	 * world's shower. The levels are set to their end on the server as well.
+	 */
+	private void weatherNow(String weather) {
+		command("weather " + weather);
+		var server = Minecraft.getInstance().getSingleplayerServer();
+		if (server == null) return;
+		float rain = weather.equals("clear") ? 0 : 1, thunder = weather.equals("thunder") ? 1 : 0;
+		server.execute(() -> {
+			server.overworld().setRainLevel(rain);
+			server.overworld().setThunderLevel(thunder);
+		});
+	}
+
+	/** The weather of the shot being prepared (its own, or the world's). */
+	String shotWeather() {
+		Plan.Shot spec = shotIndex >= 0 && shotIndex < plan.shots().size() ? plan.shots().get(shotIndex) : null;
+		return spec != null && spec.params().has("weather") ? spec.params().string("weather") : plan.world().weather();
 	}
 
 	static String weather(String weather, String where) {
@@ -333,6 +362,15 @@ public final class Director {
 			mc.options.bobView().set(first && spec.params().bool("bob", true));
 			hud = first && spec.params().bool("hud", true);
 		}
+	}
+
+	/**
+	 * A shot's deterministic part starts: the virtual clock goes to a whole millisecond (so the 17, 17, 16 ms pattern
+	 * of 60 fps starts in the same place) and the client is put back to a known state (Film).
+	 */
+	void rebase(ShotRun run) {
+		if (virtualMs >= 0) virtualMs = Math.round(virtualMs);
+		Film.rebase(Minecraft.getInstance(), run.seed(), run.name, shotWeather());
 	}
 
 	void beginSegment(ShotRun run) {

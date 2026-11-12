@@ -37,7 +37,7 @@ final class ShotRun implements ShotContext {
 	 * camera that has just moved is drawn, and fog and sky colours (which ease over game time) settle. At least the first
 	 * number, then until every section in view is drawn, at most the second.
 	 */
-	static final int PREPARE_FRAMES = 60, PREPARE_MAX_FRAMES = 60 * 15;
+	static final int PREPARE_FRAMES = 60, PREPARE_MAX_FRAMES = 60 * 15, DRAWN_FRAMES = 30;
 
 	private record Running(Plan.Cue cue, Action action) {}
 
@@ -56,13 +56,17 @@ final class ShotRun implements ShotContext {
 
 	private final int prerollFrames;
 	private Phase phase = Phase.PREPARE;
-	private int prepared, frame;
+	private int prepared, frame, drawnFor, lastVisible = -1;
+	private boolean rebuilt;
 	private boolean finished;
 	private int poseFrame = -1;
 	private Pose pose;
 	private double lens = 70;
 
+	private final long seed;
+
 	ShotRun(Director director, String name, double duration, double preroll, List<Plan.Cue> timeline, boolean records, long seed) {
+		this.seed = seed;
 		this.director = director;
 		this.prerollFrames = (int) Math.round(Math.max(0, preroll) * director.plan().output().fps());
 		this.name = name;
@@ -77,6 +81,8 @@ final class ShotRun implements ShotContext {
 
 	CameraRig rig() { return rig; }
 
+	long seed() { return seed; }
+
 	boolean finished() { return finished; }
 
 	/** Once per game frame, after the capture of the last one. */
@@ -85,19 +91,35 @@ final class ShotRun implements ShotContext {
 		if (phase == Phase.PREPARE) {
 			if (records) {
 				prepared++;
-				boolean drawn = minecraft().levelRenderer.hasRenderedAllSections();
+				// Drawn means: every chunk in reach has arrived and nothing has been left to compile for half a second
+				// (a section that has just arrived is only queued on a later frame, so one quiet frame is not enough).
+				int visible = minecraft().levelRenderer.visibleSections().size();
+				boolean quiet = minecraft().levelRenderer.hasRenderedAllSections() && chunksAround() && weatherSettled() && visible == lastVisible;
+				lastVisible = visible;
+				drawnFor = quiet ? drawnFor + 1 : 0;
+				boolean drawn = drawnFor >= DRAWN_FRAMES;
+				if (drawn && !rebuilt) {
+					// Sections whose chunk was not ready when the section graph was last built wait in a side list that
+					// is not always looked at again: rebuild the graph once from what is loaded now, then settle again.
+					rebuilt = true;
+					drawnFor = 0;
+					drawn = false;
+					minecraft().levelRenderer.sectionOcclusionGraph().invalidate();
+				}
 				if (prepared < PREPARE_FRAMES || (!drawn && prepared < PREPARE_MAX_FRAMES)) return;
 				if (!drawn) VideocraftLog.LOGGER.warn("VIDEOCRAFT {} records before every section in view is drawn", name);
 			}
 			// Pre-roll: the timeline and the rig run from -preroll, unrecorded, so frame 0 starts mid-action.
 			phase = Phase.ROLL;
 			frame = -prerollFrames;
+			if (records) director.rebase(this);
 		} else {
 			frame++;
 		}
 		if (phase == Phase.ROLL && frame >= 0) {
 			phase = Phase.RECORD;
 			if (records) director.beginSegment(this);
+			if (records) VideocraftLog.LOGGER.info("VIDEOCRAFT film {} frame 0 after {} frames, {} sections; {}", name, prepared, lastVisible, Film.state(minecraft()));
 		} else if (phase == Phase.RECORD) {
 			boolean over = records ? frame >= Math.round(duration * fps()) : due.isEmpty() && running.isEmpty();
 			if (over) { finish(); return; }
@@ -110,6 +132,35 @@ final class ShotRun implements ShotContext {
 			running.add(new Running(cue, action));
 		}
 		running.removeIf(r -> r.action().frame(this));
+	}
+
+	/** Whether the client's rain and thunder have reached the shot's weather (the sky and fog follow them). */
+	private boolean weatherSettled() {
+		var level = minecraft().level;
+		if (level == null) return false;
+		String w = director.shotWeather();
+		float rain = w.equals("clear") ? 0 : 1, thunder = w.equals("thunder") ? 1 : 0;
+		return Math.abs(level.getRainLevel(1) - rain) < 1e-4 && Math.abs(level.getThunderLevel(1) - thunder) < 1e-4;
+	}
+
+	/**
+	 * Whether every chunk within render distance of the camera has reached the client. The server sends chunks a few
+	 * at a time, and "all sections drawn" only covers those that have arrived: without this, two takes of one plan
+	 * differed in which far hills were there.
+	 */
+	private boolean chunksAround() {
+		var mc = minecraft();
+		if (mc.level == null) return false;
+		var at = mc.gameRenderer.mainCamera().position();
+		int cx = (int) Math.floor(at.x) >> 4, cz = (int) Math.floor(at.z) >> 4, r = mc.options.getEffectiveRenderDistance();
+		// Exactly the chunks the server sends a player there (ChunkTrackingView.isWithinDistance with neighbours), so
+		// the outermost ring is there in every take, not only in the ones where it happened to arrive in time.
+		for (int dx = -r - 2; dx <= r + 2; dx++)
+			for (int dz = -r - 2; dz <= r + 2; dz++) {
+				long x = Math.max(0, Math.abs(dx) - 2), z = Math.max(0, Math.abs(dz) - 2);
+				if (x * x + z * z < (long) r * r && !mc.level.hasChunk(cx + dx, cz + dz)) return false;
+			}
+		return true;
 	}
 
 	/** The camera for the frame being rendered; computed once per frame and logged while recording. */
@@ -151,6 +202,7 @@ final class ShotRun implements ShotContext {
 	void finish() {
 		if (finished) return;
 		finished = true;
+		if (records) Film.cut();
 		for (Running r : running) r.action().stop(this);
 		running.clear();
 		for (Actor actor : director.actors()) actor.cut(this);
