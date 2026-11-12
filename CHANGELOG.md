@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `trailer/`: a 68 s launch trailer for the CLI, drawn by code (CoreGraphics, CoreText) from real command output, with
+  footage filmed by videocraft, a 9:16 cut laid out for its own frame, an original sound track and its own reviewers.
 - An actor's starting `states` (`states = ["sleep"]` on a fox, `["lower"]` on a goat) work: they were applied before
   the puppet's entity existed, so every one but `flap` failed the take ("fox has no state 'sleep'").
 - The mix is mastered to -2 dBTP (was -1): the AAC encode of the master overshoots the mix by 0.8-0.9 dB, so a
