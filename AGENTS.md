@@ -20,6 +20,8 @@ bin/videocraft run examples/hello.toml     # take → cut → measure as runs/he
 bin/videocraft runs hello                  # iterations and verdicts
 bin/videocraft cut hello · measure hello   # re-cut / re-measure the latest iteration (or hello/3, or a path)
 bin/videocraft status · stop               # this checkout's client, over its control port
+bin/videocraft lint x.toml · measure --video f.mp4 --from 0 --to 82.2 --out /tmp/m   # before a take; any video
+bin/videocraft review packet x · review run x · score x · compare x/1 x/2 · climb x.toml --budget 3   # docs/REVIEW.md
 ```
 
 Every run ends like this, so a script or an agent can act on it (exit 0 PASS, 1 FAIL, 2 no verdict):
@@ -119,6 +121,18 @@ They protect the owner's machine and game. They are not preferences.
   `javap -cp ~/.gradle/caches/fabric-loom/26.3/minecraft-merged.jar <class>` (`-p` for private) before assuming an API.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
+- **Uploaded 60 fps video repeats frames.** The benchmark's reference is lower-rate footage in a 60 fps file: about
+  one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
+  difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
+  so finds 28 shots with a median of 2.59 s on 0:00–1:22.2 (the doc's hand count is 30 and 2.6 s).
+- **Frames by number from ffmpeg:** `-vf "select='eq(n,12)+eq(n,90)',scale=640:360,format=rgb24" -fps_mode
+  passthrough -f rawvideo -` gives exactly those frames in order. Pass it as one argv item (no shell), so ffmpeg's own
+  quotes protect the commas. Review packets and `compare` use this; there is no drawtext, so labels are a built-in
+  bitmap font.
+- **Reviewers through `claude -p`:** prompt on stdin, `--allowedTools Read --add-dir <packet>` so it can open the PNGs,
+  `--output-format json` (the answer is `result`, or `structured_output` with `--json-schema`). A reviewer that is
+  told it sees stills only, and is given frames.csv numbers, cites timecodes and gives fixes that can be applied
+  (`runs/hello/*/review/camera.json`).
 
 ## Working with agents
 

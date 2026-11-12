@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `measure` sees what a reviewer needs, on a run or any video (`--video f --from s --to s --out dir`): shots by scene
+  detection, cuts per minute, the length histogram, runs of sub-0.6 s shots, detected cuts against the edit's own
+  joins, black and frozen stretches, repeated frames at cuts, EBU R128 loudness, camera speed/acceleration/jerk,
+  subject framing projected from `frames.csv` + `actors.csv`, and the section 5 text rules from `text.json`;
+  `measure/report.md` and `measure/signals.csv` join `metrics.json`. `review packet` (strips, contact sheets, cut
+  pairs, captions, prompts), `review add`, `review run` (`claude -p` or the Anthropic API through `agents.ask`),
+  `score`, `compare`, `notes`, `lint` (also written as `lint.json` before every take), `climb`, `modpack`
+  (an `.mrpack`), `runs` with scores, and `index.json` with the parent chain. Rubrics: `docs/REVIEW.md` (general) and
+  `docs/benchmarks/pinksheep-style.rubric.toml`. `doctor` also checks game sounds, the voice venv and the reviewers,
+  and runs a `doctor()` from any command group that defines one.
 - `AGENTS.md`: a "Working with agents" section (orchestrator, builders in worktrees, reviewer agents, probing
   accounts); T3 Craft is linked by its public repository.
 - Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,

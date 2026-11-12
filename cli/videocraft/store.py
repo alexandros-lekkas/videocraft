@@ -1,7 +1,8 @@
 """The run store: every stage of every iteration on disk, so agents can compare iterations and hill-climb.
 
     runs/<script name>/
-      index.json                  one line per iteration: verdict, scores, parent (rewritten after each stage)
+      index.json                  one line per iteration: verdict, scores, parent and chain, best (rewritten after each stage)
+      climb.json, proposals/      the hill-climb's log and the scripts it proposed
       latest -> 0007              symlink to the newest iteration
       0007/
         meta.json                 iteration, parent, created, script and plan hashes, videocraft git commit
@@ -10,9 +11,12 @@
         edit.json                 the cut as compiled (order, trims, music, exports)
         take/                     written by the mod: result.json, game.log, shots/<name>/{video.mp4,frames.csv,marks.json}
         cut/                      written by the edit: <export>.mp4, graph.txt, poster.png
-        measure/metrics.json      written by measure
-        lint.json                 written by lint
-        review/<reviewer>.json    one per reviewer agent: scores per criterion, notes with timestamps
+        measure/metrics.json      written by measure (stable keys; measure/__init__.py lists them)
+        measure/report.md         the same for reading; measure/signals.csv the per-frame picture signals
+        lint.json                 written by lint before the take
+        review/packet/            strips, contact sheets, cut pairs, captions, prompts, packet.json (docs/REVIEW.md)
+        review/<reviewer>.json    one per reviewer agent: scores per criterion, gates, notes, three fixes
+        compare/<name>-<n>/       compare against another iteration: compare.md, compare.json, shots/*.png
         score.json                the aggregate the hill-climb compares
         notes.md                  what the agent changed from the parent and why
 
