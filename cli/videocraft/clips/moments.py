@@ -360,7 +360,10 @@ def find(it, shortest=SHORTEST, longest=LONGEST, ask=False, model=None, say=prin
         sc, reasons = score(s, e, evs, cuts)
         found = [{'start': s, 'end': e, 'seconds': round(e - s, 3), 'score': sc, 'reasons': [f'the whole master ({total:.2f} s is under {shortest:g} s)'] + reasons}]
     else:
-        found = rank(candidates(evs, cuts, words, total, shortest, longest), evs, cuts, keep=keep)
+        cards = [(sg.out_start / m.fps, sg.out_end / m.fps) for sg in m.segments if sg.kind == 'card']
+        cands = [c for c in candidates(evs, cuts, words, total, shortest, longest)
+                 if not any(min(c[1], b) - max(c[0], a) > 0.05 for a, b in cards)]   # a short never crosses a chapter card
+        found = rank(cands, evs, cuts, keep=keep)
     for n, mo in enumerate(found, 1):
         mo['n'] = n
         mo['title'] = title_of(mo, evs)

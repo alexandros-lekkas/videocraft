@@ -59,7 +59,7 @@ A candidate starts on a setup and ends on a payoff plus a beat (0.8 s), 15 to 60
 start snaps back to a shot boundary within 1.5 s (else the start of the line it is in), its end forward to one
 (else the end of the word it is in). Scores add what the range holds (divided by √(length/10) so long ranges do not
 win by size), a strong payoff in its last 1.5 s, a setup at its start, cut density, and a penalty outside 20-35 s.
-Overlapping candidates (over half of the shorter) are suppressed. `clips/moments.json` holds the ranked moments
+Overlapping candidates (over half of the shorter) are suppressed, and in an assembly no moment crosses a chapter card. `clips/moments.json` holds the ranked moments
 (`n`, `start`, `end`, `frames`, `score`, `reasons`, `title`, `cold`, `hook`, `shots`) and every event it scored. A
 master shorter than `--min` is one moment, the whole of it. A moment is **cold** when it neither starts the video
 nor starts on a setup beat; a cold moment gets a hook (from its joke, beat or line; none when it has only sounds).
