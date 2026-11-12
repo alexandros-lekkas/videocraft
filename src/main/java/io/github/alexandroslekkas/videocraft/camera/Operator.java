@@ -31,6 +31,9 @@ public final class Operator {
 		return at;
 	}
 
+	/** How fast the followed value is moving now, per second (smooth: the spring's own speed). */
+	public double[] speed() { return speed.clone(); }
+
 	/** Starts the spring already moving with its subject, so a shot that begins in motion does not begin by catching up. */
 	public void carry(double[] velocity) { System.arraycopy(velocity, 0, speed, 0, speed.length); }
 }

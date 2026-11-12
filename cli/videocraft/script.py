@@ -12,8 +12,8 @@ from pathlib import Path
 PLAN_VERSION = 1
 NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description', 'cast'}
-WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage'}
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note'}
+WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage', 'preset'}
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -41,7 +41,7 @@ def _unknown(table, allowed, where):
         raise ScriptError(f'{where}: unknown key(s) {", ".join(extra)}; allowed: {", ".join(sorted(allowed))}')
 
 
-def _cues(cues, where, duration=None):
+def _cues(cues, where, duration=None, preroll=0.0):
     out = []
     for i, cue in enumerate(cues or []):
         at = f'{where}[{i}]'
@@ -50,8 +50,8 @@ def _cues(cues, where, duration=None):
         cue = dict(cue)
         cue.setdefault('at', 0.0)
         cue['at'] = float(cue['at'])
-        if cue['at'] < 0 or (duration is not None and cue['at'] > duration):
-            raise ScriptError(f'{at}: at = {cue["at"]} is outside the shot (0 to {duration} s)')
+        if cue['at'] < -preroll or (duration is not None and cue['at'] > duration):
+            raise ScriptError(f'{at}: at = {cue["at"]} is outside the shot ({-preroll} to {duration} s; negative needs preroll)')
         cue.setdefault('actor', 'player')
         out.append(cue)
     return sorted(out, key=lambda c: c['at'])
@@ -107,10 +107,18 @@ def compile_script(raw, source='script'):
         camera = shot.get('camera')
         if not isinstance(camera, dict) or 'rig' not in camera:
             raise ScriptError(f'shot {sname}: camera = {{ rig = "orbit", ... }} is required')
-        out = {'name': sname, 'duration': duration, 'camera': camera, 'timeline': _cues(shot.get('cue'), f'shot {sname}.cue', duration)}
+        preroll = float(shot.get('preroll', 0))
+        if preroll < 0:
+            raise ScriptError(f'shot {sname}: preroll = <seconds> is >= 0')
+        out = {'name': sname, 'duration': duration, 'camera': camera, 'timeline': _cues(shot.get('cue'), f'shot {sname}.cue', duration, preroll)}
+        if preroll:
+            out['preroll'] = preroll
         for key in ('hud', 'bob'):
             if key in shot:
                 out[key] = bool(shot[key])
+        for key in ('time', 'weather'):
+            if key in shot:
+                out[key] = shot[key]
         shots.append(out)
     if not shots:
         raise ScriptError(f'{source}: at least one [[shot]] is required')

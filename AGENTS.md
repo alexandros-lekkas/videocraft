@@ -153,6 +153,10 @@ They protect the owner's machine and game. They are not preferences.
   random: `SoundEngineMixin` swaps in a seeded one at `play` HEAD, else two takes log different files.
 - **ffmpeg audio.** Homebrew's ffmpeg has no `soxr` resampler, and `alimiter` delays its output by its attack unless
   `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
+- **The vignette broke determinism.** Vanilla eases its strength once per rendered frame from 1 toward the light at
+  the camera, so it depended on how many frames preparation took: two takes differed on every frame of the first
+  shots and matched once it had faded. The HUD's `MISC_OVERLAYS` is hidden in filmed shots; with it, two takes of
+  `examples/rigs.toml` match frame for frame (framemd5) and byte for byte (`frames.csv`).
 - **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
   `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
 - **Voice is compiled.** `say` lines are synthesized when the script compiles (and when lint runs), cached in
