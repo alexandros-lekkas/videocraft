@@ -20,6 +20,8 @@ bin/videocraft run examples/hello.toml     # take → cut → measure as runs/he
 bin/videocraft runs hello                  # iterations and verdicts
 bin/videocraft cut hello · measure hello   # re-cut / re-measure the latest iteration (or hello/3, or a path)
 bin/videocraft status · stop               # this checkout's client, over its control port
+bin/videocraft lint x.toml · measure --video f.mp4 --from 0 --to 82.2 --out /tmp/m   # before a take; any video
+bin/videocraft review packet x · review run x · score x · compare x/1 x/2 · climb x.toml --budget 3   # docs/REVIEW.md
 ```
 
 Every run ends like this, so a script or an agent can act on it (exit 0 PASS, 1 FAIL, 2 no verdict):
@@ -49,7 +51,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `…/actor/` | `Hand` (human input model, no Minecraft classes), `Cast`, `PlayerActor`, `Actions` | b |
 | `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
-| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
+| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `tools.py`, `paths.py`, `measure/` (picture, loudness, camera, text rules), `lint.py`, `timeline.py`, `compare.py`, `climb.py`, `modpack.py`, `agents.py` (the one model call: `ask`), `review/` (packets, rubrics, prompts, reviews) | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
@@ -127,6 +129,22 @@ They protect the owner's machine and game. They are not preferences.
   back as about 1000 lines of TOML; the story pipeline allows 30 minutes a call (`VIDEOCRAFT_ASK_TIMEOUT`). A
   not-yet placeholder command (`lint`) takes no arguments, so calling it with a file is an argparse usage error
   (exit 2), not a verdict.
+- **Uploaded 60 fps video repeats frames.** The benchmark's reference is lower-rate footage in a 60 fps file: about
+  one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
+  difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
+  so finds 28 shots with a median of 2.59 s on 0:00–1:22.2 (the doc's hand count is 30 and 2.6 s).
+- **Frames by number from ffmpeg:** `-vf "select='eq(n,12)+eq(n,90)',scale=640:360,format=rgb24" -fps_mode
+  passthrough -f rawvideo -` gives exactly those frames in order. Pass it as one argv item (no shell), so ffmpeg's own
+  quotes protect the commas. Review packets and `compare` use this; there is no drawtext, so labels are a built-in
+  bitmap font.
+- **Reviewers through `claude -p`:** prompt on stdin, `--allowedTools Read --add-dir <packet>` so it can open the PNGs,
+  `--output-format json` (the answer is `result`, or `structured_output` with `--json-schema`). A reviewer that is
+  told it sees stills only, and is given frames.csv numbers, cites timecodes and gives fixes that can be applied
+  (`runs/hello/*/review/camera.json`).
+- **Reviewer scores wobble by about a point** between two runs of the same role on the same packet (camera 4, then 5,
+  on hello 0001). A climb step that gains one point on one criterion is noise; `climb` keeps ties with the parent.
+- **The proposer must see the frames.** The first hello climb spent three takes moving a subject behind the same
+  ice spikes, because it read the reviewers' words without the strips; it now gets the contact sheets and strips.
 
 - **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
   drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or

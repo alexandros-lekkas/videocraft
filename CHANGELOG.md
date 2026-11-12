@@ -6,6 +6,16 @@
   and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
   `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
   `stories/nibs-vs-duke/` holds the benchmark's script.
+- `measure` sees what a reviewer needs, on a run or any video (`--video f --from s --to s --out dir`): shots by scene
+  detection, cuts per minute, the length histogram, runs of sub-0.6 s shots, detected cuts against the edit's own
+  joins, black and frozen stretches, repeated frames at cuts, EBU R128 loudness, camera speed/acceleration/jerk,
+  subject framing projected from `frames.csv` + `actors.csv`, and the section 5 text rules from `text.json`;
+  `measure/report.md` and `measure/signals.csv` join `metrics.json`. `review packet` (strips, contact sheets, cut
+  pairs, captions, prompts), `review add`, `review run` (`claude -p` or the Anthropic API through `agents.ask`),
+  `score`, `compare`, `notes`, `lint` (also written as `lint.json` before every take), `climb`, `modpack`
+  (an `.mrpack`), `runs` with scores, and `index.json` with the parent chain. Rubrics: `docs/REVIEW.md` (general) and
+  `docs/benchmarks/pinksheep-style.rubric.toml`. `doctor` also checks game sounds, the voice venv and the reviewers,
+  and runs a `doctor()` from any command group that defines one.
 - Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
   chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
   their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and
