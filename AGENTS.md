@@ -146,6 +146,9 @@ They protect the owner's machine and game. They are not preferences.
   one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
   difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
   so finds 28 shots with a median of 2.59 s on 0:00–1:22.2 (the doc's hand count is 30 and 2.6 s).
+- **Dark cuts are small.** A hard cut between two dark sepia statics (mean grey 6-17) moves the blurred difference by
+  13-16, under the daylight minimum of 18, against a still level of 0.5; `measure` takes such a jump as a cut when it
+  is ten times the level, which nothing in the reference reaches (its fades and dim motion stay under 8).
 - **Frames by number from ffmpeg:** `-vf "select='eq(n,12)+eq(n,90)',scale=640:360,format=rgb24" -fps_mode
   passthrough -f rawvideo -` gives exactly those frames in order. Pass it as one argv item (no shell), so ffmpeg's own
   quotes protect the commas. Review packets and `compare` use this; there is no drawtext, so labels are a built-in

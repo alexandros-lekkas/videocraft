@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `measure` finds hard cuts in dark, graded footage (a brightness-scaled minimum when the jump stands ten times
+  over the stillness around it), and warns of a repeated frame at a cut only when it straddles the cut inside a
+  moving shot, not when one side is a locked-off still.
 - `review packet` writes a sound sheet for the sound reviewer: `sound.md` (every placed effect, voice word and music
   cue on its master frame, the dips' loudness, per shot the visible actions beside what is heard) and loudness charts
   `sound/loudness-<k>.png`; the sound prompt now judges sync, ducking and silence at the dips from them.
