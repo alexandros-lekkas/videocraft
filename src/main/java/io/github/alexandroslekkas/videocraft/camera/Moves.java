@@ -57,7 +57,8 @@ final class Moves {
 			if (length < 1e-6) return want;
 			Vec3 ahead = pivot.add(velocity.scale(0.5));
 			double free = Math.min(probe.free(pivot, want), probe.free(ahead, ahead.add(arm)));
-			double allowed = Math.max(0.2, Math.min(length, free - MARGIN));
+			// The margin only applies in front of something; in the open the camera is exactly where it was asked.
+			double allowed = free >= length - 1e-9 ? length : Math.max(0.2, Math.min(length, free - MARGIN));
 			double rise = allowed < minimum ? Math.min(2.0, (minimum - allowed) * 0.8) : 0;
 			double lag = !Double.isNaN(at) && allowed < at ? 0.12 : 0.6;
 			double[] r = op.follow(new double[] {allowed, rise}, lag, 1.0 / shot.fps());
@@ -359,7 +360,7 @@ final class Moves {
 				headAhead = new Vec3(h.x - g.x, 0, h.z - g.z).dot(Follow.forward(who.heading()));
 				// The model may reach past its eye point (a snout, a beak): keep the lens outside its box.
 				double width = who.entity() == null ? 0.6 : who.entity().getBbWidth();
-				nearest = Math.max(0, width / 2 - headAhead) + 0.35;
+				nearest = Math.max(0, width / 2 - headAhead) + 0.55;
 			}
 			double axis = follow.heading();
 			Vec3 head = follow.anchor().add(Follow.forward(axis).scale(headAhead)).add(0, headHeight, 0);
