@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The benchmark film `examples/nibs-vs-duke.toml` (docs/benchmarks/pinksheep-style.md): thirty shots and an end
+  card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
+  flashback, dips to black and the six-shot montage cut on the spoken words; production log in
+  `docs/benchmarks/nibs-vs-duke-log.md`.
 - Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
   CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
   snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that
