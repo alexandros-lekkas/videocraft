@@ -1,0 +1,11 @@
+CAPTION  nibs-1               ok   max 0 frame(s) off [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+CAPTION  challenge-1          ok   max 0 frame(s) off [0, 0, 0, 0]
+CAPTION  challenge-1 (carried) ok   max 0 frame(s) off [0, 0, 0, 0]
+CAPTION  duke-1               ok   max 0 frame(s) off [0, 0, 0, 0, 0, 0, 0]
+CAPTION  reply-1              ok   max 0 frame(s) off [0, 0, 0, 0]
+CUT      challenge-1          ok   on "*Duke": next clip at frame 346, word at 346.14 (-0.14 frames)
+VOICE    nibs-1               ok   at 0.300 s: lag +0 ms, r 0.97, -14.0 LUFS while it speaks (master -14.2)
+VOICE    challenge-1          ok   at 3.900 s: lag +0 ms, r 0.95, -13.7 LUFS while it speaks (master -14.2)
+VOICE    duke-1               ok   at 6.933 s: lag +0 ms, r 0.99, -14.4 LUFS while it speaks (master -14.2)
+VOICE    reply-1              ok   at 9.967 s: lag +0 ms, r 0.97, -12.9 LUFS while it speaks (master -14.2)
+RESULT   PASS dialogue check, 4 line(s); ./runs/talk/0001/measure/voice.json

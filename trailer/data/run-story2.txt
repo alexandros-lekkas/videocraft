@@ -1,0 +1,124 @@
+voice: WARNING no voice installed (bin/videocraft voice setup); timings are estimated at reading speed and the cut has no voice
+VOICE    18 line(s), estimate (estimated timings, no audio)
+  s01-wide-1       announcer s01-wide     at   0.40   1.53 s  estimate estimated
+  s01-wide-2       announcer s01-wide     at   1.99   2.05 s  estimate estimated
+  s01-wide-3       announcer s01-wide     at   4.11   1.53 s  estimate estimated
+  s02-challenge-1  lugnut   s02-challenge at   0.20   1.95 s  estimate estimated
+  s03-nap-1        announcer s03-nap      at   0.20   1.10 s  estimate estimated
+  s04-learn-1      lugnut   s04-learn    at   0.10   0.81 s  estimate estimated
+  s05-highest-1    lugnut   s05-highest  at   0.05   0.46 s  estimate estimated
+  s06-jumper-1     lugnut   s06-jumper   at   0.05   0.46 s  estimate estimated
+  s07-on-1         lugnut   s07-on       at   0.05   0.29 s  estimate estimated
+  s08-this-1       lugnut   s08-this     at   0.05   0.29 s  estimate estimated
+  s09-mountain-1   lugnut   s09-mountain at   0.05   0.46 s  estimate estimated
+  s11-century-1    announcer s11-century  at   0.20   1.67 s  estimate estimated
+  s12-leap-1       announcer s12-leap     at   0.40   1.33 s  estimate estimated
+  s14-berries-1    announcer s14-berries  at   0.30   1.50 s  estimate estimated
+  s17-judges-1     announcer s17-judges   at   0.20   0.46 s  estimate estimated
+  s21-pounce-1     announcer s21-pounce   at   0.30   0.98 s  estimate estimated
+  s23-perfect-1    announcer s23-perfect  at   0.20   0.98 s  estimate estimated
+  s24-down-1       lugnut   s24-down     at   1.10   1.33 s  estimate estimated
+videocraft 0.1.0: a-goat-challenges-a-fox-to-a-jump-off-2 iteration 0002, 25 shot(s), 1920x1080 60 fps, hidden
+  control port 25750 (slot 0 of 3)
+  VIDEOCRAFT creating world videocraft-a-goat-challenges-a-fox-to-a-jump-off-2 from seed 1798061122 (flat)
+  VIDEOCRAFT world videocraft-a-goat-challenges-a-fox-to-a-jump-off-2
+  VIDEOCRAFT step BOOT -> WORLD (17.4 s)
+  VIDEOCRAFT step WORLD -> ARRIVE (2.3 s)
+  VIDEOCRAFT step ARRIVE -> SETTLE (1.2 s)
+  VIDEOCRAFT step SETTLE -> STAGE (4.0 s)
+  VIDEOCRAFT step STAGE -> SHOTS (1.0 s)
+  VIDEOCRAFT shot s01-wide (5.9 s)
+  VIDEOCRAFT shot s01-wide recording at 1920x1080 60 fps
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 1.900s
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 2.450s
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 2.950s
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 3.500s
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 4.050s
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 4.550s
+  VIDEOCRAFT shot s02-challenge (2.6 s)
+  VIDEOCRAFT shot s01-wide closed: 354 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s02-challenge recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s03-nap (3.2 s)
+  VIDEOCRAFT shot s02-challenge closed: 156 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s03-nap recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s04-learn (1.1666666666666667 s)
+  VIDEOCRAFT shot s03-nap closed: 192 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s04-learn recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s05-highest (0.7666666666666667 s)
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 13.150s
+  VIDEOCRAFT shot s04-learn closed: 70 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s05-highest recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s06-jumper (0.7666666666666667 s)
+  VIDEOCRAFT shot s05-highest closed: 46 frames, ffmpeg exit 0
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 14.200s
+  VIDEOCRAFT shot s06-jumper recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s07-on (0.6 s)
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 15.150s
+  VIDEOCRAFT shot s06-jumper closed: 46 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s07-on recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s08-this (0.6 s)
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 16.350s
+  VIDEOCRAFT shot s07-on closed: 36 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s08-this recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s09-mountain (1.0 s)
+  VIDEOCRAFT shot s08-this closed: 36 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s09-mountain recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s10-yawn (3.6 s)
+  VIDEOCRAFT shot s09-mountain closed: 60 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s10-yawn recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s11-century (2.1333333333333333 s)
+  VIDEOCRAFT shot s10-yawn closed: 216 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s11-century recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s12-leap (2.1 s)
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 24.100s
+  VIDEOCRAFT shot s11-century closed: 128 frames, ffmpeg exit 0
+  VIDEOCRAFT actor lugnut sound minecraft:entity.goat.step at 24.450s
+  VIDEOCRAFT shot s12-leap recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s12b-lip (1.3 s)
+  VIDEOCRAFT shot s12-leap closed: 126 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s12b-lip recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s13-ram (2.6 s)
+  VIDEOCRAFT shot s12b-lip closed: 78 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s13-ram recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s14-berries (3.0 s)
+  VIDEOCRAFT shot s13-ram closed: 156 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s14-berries recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s15-eat (3.2 s)
+  VIDEOCRAFT shot s14-berries closed: 180 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s15-eat recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s16-lens (2.6 s)
+  VIDEOCRAFT shot s15-eat closed: 192 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s16-lens recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s17-judges (1.4 s)
+  VIDEOCRAFT shot s16-lens closed: 156 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s17-judges recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s18-three (1.4 s)
+  VIDEOCRAFT shot s17-judges closed: 84 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s18-three recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s19-two (1.6 s)
+  VIDEOCRAFT shot s18-three closed: 84 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s19-two recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s20-egg (2.6 s)
+  VIDEOCRAFT shot s19-two closed: 96 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s20-egg recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s21-pounce (3.4 s)
+  VIDEOCRAFT shot s20-egg closed: 156 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s21-pounce recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s22-tens (2.0 s)
+  VIDEOCRAFT shot s21-pounce closed: 204 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s22-tens recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s23-perfect (1.6 s)
+  VIDEOCRAFT shot s22-tens closed: 120 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s23-perfect recording at 1920x1080 60 fps
+  VIDEOCRAFT shot s24-down (3.0 s)
+  VIDEOCRAFT shot s23-perfect closed: 96 frames, ffmpeg exit 0
+  VIDEOCRAFT shot s24-down recording at 1920x1080 60 fps
+  VIDEOCRAFT step SHOTS -> FINISH (66.5 s)
+  VIDEOCRAFT shot s24-down closed: 180 frames, ffmpeg exit 0
+  VIDEOCRAFT RESULT PASS 3248 frames
+RESULT   PASS 1920x1080 60 fps 3308 frames 55.13 s; capture 49.0 fps real time
+VIDEO    ./runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002/cut/master.mp4
+RUN      ./runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002
+LOG      ./runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002/take/game.log
+TIME     253 s
+bin/videocraft run stories/$ID/shots.toml  301.32s user 11.37s system 123% cpu 4:13.11 total

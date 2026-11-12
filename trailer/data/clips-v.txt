@@ -1,0 +1,31 @@
+$ bin/videocraft clips cut nibs-vs-duke/0012 --method reframe --from 1.6 --to 4.0 --subject nibs
+videocraft clips cut: nibs-vs-duke/0012 1.60-4.15 s (153 frames) by reframe -> ./runs/nibs-vs-duke/0012/clips/r2
+RESULT   PASS 1080x1920 2.55 s by reframe; 153 frames 2.8 MB; 1 of 1 clip(s) fit over a blurred fill (text 1530 px wide on screen (the crop is 608 px)); -14.1 LUFS
+VIDEO    ./runs/nibs-vs-duke/0012/clips/r2/short-1080x1920.mp4
+$ bin/videocraft clips cut trailer-bees/0001 --method reframe --from 22.9 --to 25.0 --subject ben
+videocraft clips cut: trailer-bees/0001 22.82-25.00 s (131 frames) by reframe -> ./runs/trailer-bees/0001/clips/r1
+RESULT   PASS 1080x1920 2.18 s by reframe; 131 frames 0.7 MB; 1 of 1 clip(s) fit over a blurred fill (two subjects 867 px apart (the crop is 608 px)); -14.0 LUFS
+VIDEO    ./runs/trailer-bees/0001/clips/r1/short-1080x1920.mp4
+$ bin/videocraft clips cut nibs-vs-duke/0012 --method reframe --from 36.7 --to 38.8 --subject duke
+videocraft clips cut: nibs-vs-duke/0012 36.63-38.93 s (138 frames) by reframe -> ./runs/nibs-vs-duke/0012/clips/r3
+RESULT   PASS 1080x1920 2.30 s by reframe; 138 frames 0.6 MB; 1 of 1 clip(s) fit over a blurred fill (text 864 px wide on screen (the crop is 608 px)); -14.2 LUFS
+VIDEO    ./runs/nibs-vs-duke/0012/clips/r3/short-1080x1920.mp4
+$ bin/videocraft clips cut trailer-keynote/0002 --method reframe --from 1.3 --to 3.5 --subject ana
+videocraft clips cut: trailer-keynote/0002 1.20-3.50 s (138 frames) by reframe -> ./runs/trailer-keynote/0002/clips/r1
+RESULT   PASS 1080x1920 2.30 s by reframe; 138 frames 1.1 MB; 1 of 1 clip(s) fit over a blurred fill (text 1053 px wide on screen (the crop is 608 px)); -70.0 LUFS
+VIDEO    ./runs/trailer-keynote/0002/clips/r1/short-1080x1920.mp4
+$ bin/videocraft clips cut nibs-vs-duke/0012 --method reframe --from 70.07 --to 72.6 --subject duke
+videocraft clips cut: nibs-vs-duke/0012 70.07-72.67 s (156 frames) by reframe -> ./runs/nibs-vs-duke/0012/clips/r4
+RESULT   PASS 1080x1920 2.60 s by reframe; 156 frames 0.7 MB; 1 of 1 clip(s) fit over a blurred fill (text 976 px wide on screen (the crop is 608 px)); -14.1 LUFS
+VIDEO    ./runs/nibs-vs-duke/0012/clips/r4/short-1080x1920.mp4
+$ bin/videocraft clips cut trailer-keynote/0002 --method reframe --from 5.5 --to 7.6 --subject ana
+videocraft clips cut: trailer-keynote/0002 5.42-7.60 s (131 frames) by reframe -> ./runs/trailer-keynote/0002/clips/r2
+RESULT   PASS 1080x1920 2.18 s by reframe; 131 frames 1.1 MB; 1 of 1 clip(s) fit over a blurred fill (text 927 px wide on screen (the crop is 608 px)); -70.0 LUFS
+VIDEO    ./runs/trailer-keynote/0002/clips/r2/short-1080x1920.mp4
+$ bin/videocraft clips cut nibs-vs-duke/0012 --method reframe --from 65.3 --to 67.4 --subject nibs
+videocraft clips cut: nibs-vs-duke/0012 65.27-67.40 s (128 frames) by reframe -> ./runs/nibs-vs-duke/0012/clips/r5
+RESULT   PASS 1080x1920 2.13 s by reframe; 128 frames 1.9 MB; 1 of 1 clip(s) fit over a blurred fill (text 1422 px wide on screen (the crop is 608 px)); -14.0 LUFS
+VIDEO    ./runs/nibs-vs-duke/0012/clips/r5/short-1080x1920.mp4
+videocraft clips cut: a-goat-challenges-a-fox-to-a-jump-off-2/0002 49.60-51.83 s (134 frames) by reframe -> ./runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r1
+RESULT   PASS 1080x1920 2.23 s by reframe; 134 frames 0.5 MB; 2 of 2 clip(s) fit over a blurred fill (two subjects 793 px apart (the crop is 608 px)); -14.0 LUFS
+VIDEO    ./runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r1/short-1080x1920.mp4

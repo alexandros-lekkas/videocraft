@@ -1,0 +1,57 @@
+# The trailer's rubric, for trailer/review.py (fresh `claude -p` reviewers through videocraft.agents.ask).
+# Six criteria scored 1-10 on the 5 and 9 anchors. Reviewers see stills only: a contact sheet of each cut and strips
+# of consecutive frames; they cannot watch motion or hear the sound, and must say so.
+name = "trailer"
+title = "videocraft launch trailer: a calm, premium motion-graphics piece about the CLI"
+
+[pass]
+average = 8.0
+minimum = 7
+
+[[criterion]]
+id = "typography"
+name = "Typography and layout"
+measures = "Type choices, hierarchy, spacing, alignment, whitespace, legibility at phone size, both the 16:9 and the 9:16"
+anchor_5 = "Readable but generic: sizes that do not form a hierarchy, crowded or unbalanced frames, small text that will not read on a phone, the 9:16 a squeezed 16:9"
+anchor_9 = "An editorial system: a clear hierarchy, generous whitespace, consistent margins and grid, code set apart in monospace, every line readable on a phone, the 9:16 laid out for its own frame"
+role = "design"
+
+[[criterion]]
+id = "motion"
+name = "Motion quality"
+measures = "How things move between consecutive frames: easing, timing, overlap, continuity, transitions"
+anchor_5 = "Things pop on and off or move linearly; transitions are cuts to empty frames; nothing carries between sections"
+anchor_9 = "Every move eases out and settles; staggered reveals; elements carry from one section into the next; no jumps, flashes or dead frames between sections"
+role = "motion"
+
+[[criterion]]
+id = "clarity"
+name = "Clarity of what the tool does"
+measures = "After 70 s, does a viewer know what videocraft is, how it is used and what it produces"
+anchor_5 = "Pretty frames, but the viewer could not say what goes in and what comes out; terminal output too small or too fast to mean anything"
+anchor_9 = "In order and unmistakable: a script/prompt goes in, a hidden game films it, a cut comes out, it is measured and reviewed; every claim is shown with real output"
+role = "story"
+
+[[criterion]]
+id = "footage"
+name = "Footage selection"
+measures = "The game footage chosen: variety, interest, how it shows the tool's range, how it is framed in the piece"
+anchor_5 = "Repetitive or dull clips, the same set over and over, footage that does not show what the tool can do"
+anchor_9 = "Each clip shows something different (camera, set, character, edit look, format) and is a good-looking frame; clips are identified so the viewer learns what made them"
+role = "story"
+
+[[criterion]]
+id = "pacing"
+name = "Pacing and rhythm"
+measures = "Section lengths, hold times, the build, time to read what is shown (judged from timecodes and strips)"
+anchor_5 = "Sections the same length and energy throughout; text gone before it can be read, or holds that drag"
+anchor_9 = "A build: a quiet open, a lift into the footage, a breath for the proof sections, a confident close; everything on screen long enough to read and not longer"
+role = "motion"
+
+[[criterion]]
+id = "polish"
+name = "Polish and consistency"
+measures = "One visual language throughout: colour, corners, strokes, shadows, chips, icons; no glitches"
+anchor_5 = "Inconsistent styling between sections, rough edges (clipped text, overlaps, misaligned elements), a template look"
+anchor_9 = "One accent used with intent, the same radii, strokes and type everywhere, nothing clipped or colliding, it feels designed by one hand"
+role = "design"
