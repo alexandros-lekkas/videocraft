@@ -47,7 +47,7 @@ def cmd_assemble(args):
 
 def cmd_find(args):
     from videocraft.clips import moments, runs
-    it = runs.resolve(args.run)
+    it = runs.resolve(args.target)
     data = moments.find(it, shortest=args.min, longest=args.max, ask=args.ask, model=args.model, say=say)
     for m in data['moments'][:args.show]:
         say(f'  #{m["n"]:<2} {m["start"]:7.2f}-{m["end"]:7.2f} s ({m["seconds"]:5.2f} s)  score {m["score"]:5.2f}  {m["title"][:48]}')
@@ -59,7 +59,7 @@ def cmd_find(args):
 
 def cmd_cut(args):
     from videocraft.clips import runs, shorts
-    it = runs.resolve(args.run)
+    it = runs.resolve(args.target)
     record = shorts.cut(it, moment=args.moment, start=args.start, end=args.end, method=args.method, aspect=args.aspect,
                         subject=args.subject, hook=args.hook, pull=args.pull, say=say, timeout=args.timeout)
     say(f'RESULT   {"PASS" if record["pass"] else "FAIL"} {record["width"]}x{record["height"]} {record["seconds"]:.2f} s by {record["method"]}; '
@@ -71,7 +71,7 @@ def cmd_cut(args):
 
 def cmd_pack(args):
     from videocraft.clips import pack, runs
-    it = runs.resolve(args.run)
+    it = runs.resolve(args.target)
     packed = pack.pack(it, ask=args.ask, model=args.model, say=say)
     for meta in packed:
         say(f'  {meta["clip"]:4} {meta["title"][:60]}')
@@ -96,7 +96,7 @@ def register(sub):
     c = sub.add_parser('clips', help='moments for shorts, vertical 9:16 shorts (re-shot or re-framed), their titles and thumbnails')
     s = c.add_subparsers(dest='clips_command', required=True)
     f = s.add_parser('find', help='rank candidate moments (setup to payoff, 15-60 s) into clips/moments.json')
-    f.add_argument('run')
+    f.add_argument('target', metavar='run', help='an iteration: <name>, <name>/<n> or a path (an assembly too)')
     f.add_argument('--min', type=float, default=15.0, help='shortest moment, seconds (default 15; a shorter master is one moment)')
     f.add_argument('--max', type=float, default=60.0)
     f.add_argument('--ask', action='store_true', help='also ask a reviewer model over the contact sheet and outline (agents.ask)')
@@ -104,7 +104,7 @@ def register(sub):
     f.add_argument('--show', type=int, default=8)
     f.set_defaults(run=cmd_find)
     k = s.add_parser('cut', help='a vertical short of a moment or a range: re-shoot (default when the script exists) or re-frame')
-    k.add_argument('run')
+    k.add_argument('target', metavar='run', help='an iteration: <name>, <name>/<n> or a path (an assembly too)')
     k.add_argument('--moment', type=int, help='a moment number from clips/moments.json')
     k.add_argument('--from', dest='start', type=float)
     k.add_argument('--to', dest='end', type=float)
@@ -116,7 +116,7 @@ def register(sub):
     k.add_argument('--timeout', type=int, default=900)
     k.set_defaults(run=cmd_cut)
     q = s.add_parser('pack', help='per short: title, description, hashtags and a thumbnail frame into clips/<n>/meta.json')
-    q.add_argument('run')
+    q.add_argument('target', metavar='run', help='an iteration: <name>, <name>/<n> or a path (an assembly too)')
     q.add_argument('--ask', action='store_true', help='have a model write the titles and descriptions (agents.ask)')
     q.add_argument('--model')
     q.set_defaults(run=cmd_pack)

@@ -1,0 +1,42 @@
+# A fixture for re-framing (docs/CLIPS.md): a goat on a sky platform drifts across a 16:9 frame, so a vertical crop
+# has to follow it; then a fixed wide where it stands in the left third, so the crop has to hold off centre.
+#   bin/videocraft run examples/clips/reframe.toml
+#   bin/videocraft clips cut clips-reframe --method reframe --from 0 --to 8
+name = "clips-reframe"
+seed = 1
+
+[world]
+seed = "videocraft"
+time = 6000
+
+[[world.stage]]
+do = "command"
+commands = ["fill 8 100 -2 32 100 22 minecraft:smooth_stone", "fill 8 101 -2 32 101 22 minecraft:air",
+            "setblock 26 101 16 minecraft:hay_block", "setblock 14 101 4 minecraft:hay_block",
+            "summon minecraft:goat 20.5 101 10.5 {NoAI:1b,Silent:1b,Rotation:[90f,0f],Tags:[\"subject\"]}"]
+
+# The camera circles the goat but looks at a point 5 blocks east of it: the goat swings from one side of the
+# frame towards the other.
+[[shot]]
+name = "drift"
+duration = 4.5
+camera = { rig = "orbit", center = [20.5, 101.6, 10.5], look = [25.5, 101.6, 10.5], radius = 8, height = 2, from = 200, sweep = 110, ease = "smooth", fov = 60 }
+
+[shot.vertical]
+subject = [20.5, 101.6, 10.5]
+
+# A still wide with the goat in the left third: the crop would hold on it, but the caption sits in the middle of the
+# frame, outside that crop, so this clip is laid out whole over a blurred fill (re-framing cannot move text).
+[[shot]]
+name = "wide"
+duration = 3.5
+camera = { rig = "fixed", eye = [20.5, 103.5, 21.5], at = [24.5, 101.6, 10.5], fov = 60 }
+
+[shot.vertical]
+subject = [20.5, 101.6, 10.5]
+
+[[shot.cue]]
+at = 0.5
+do = "caption"
+text = "*Goat."
+hold = 1.5
