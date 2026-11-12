@@ -174,6 +174,11 @@ They protect the owner's machine and game. They are not preferences.
 - **`ClientMannequin` takes its finished skin lookup only in its own tick**, so an unticked mannequin shows the default
   skin; puppets settle it when drawn. A profile `{texture = "videocraft:skins/x"}` is the texture
   `videocraft:textures/skins/x.png` (a `DynamicTexture` from the PNG), no network.
+- **A low wide lens sees 3-10 blocks of a set.** At one block up with a 105° lens, a lead track's frame is the road
+  and whatever stands within a few blocks of the walker; set dressing further off never shows (docs/SETS.md).
+- **Forceload is 256 chunks a command** and fails on chunks already forced ("No chunks were marked"); a set's box is
+  hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
+  only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
 ## Working with agents
 
