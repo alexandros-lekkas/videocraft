@@ -16,3 +16,4 @@ __pycache__/
 /cache/
 # Local (the owner decides whether these are published)
 /stories/honeypot/
+/logs/
