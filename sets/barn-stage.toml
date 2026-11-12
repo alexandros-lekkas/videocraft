@@ -1,0 +1,381 @@
+# The Barn Stage: last year's Talent Night. A wooden barn at night: a low spruce stage at the west end with a red
+# curtain, a row of seven note blocks across its front, hay bales, lanterns hanging from the tie beams, candles,
+# windows onto the night, a fence rail for four chickens facing the stage, a golden trophy on a post.
+# Cameras for the benchmark's static shots 10-18 are marks (cam-*); the stage faces east, toward the audience.
+name = "barn-stage"
+description = "A barn at night with a little stage, note blocks, hay, lanterns, a rail of chicken seats and a trophy"
+time = 18000
+weather = "clear"
+biome = "minecraft:plains"
+seed = 5
+
+# ---------------------------------------------------------------- outside: a yard and hills, dark at night
+
+[[build]]
+do = "ground"
+from = [-34, -28]
+to = [34, 28]
+mix = { grass_block = 12, coarse_dirt = 1 }
+
+[[build]]
+do = "scatter"
+from = [-34, -28]
+to = [34, 28]
+blocks = { short_grass = 6, tall_grass = 1, fern = 1, dandelion = 1 }
+density = 0.25
+
+[[build]]
+do = "tree"
+at = [[-24, -20], [20, 21], [26, -18], [-26, 19], [4, -22]]
+kind = "oak"
+
+[[build]]
+do = "backdrop"
+from = [-34, -28]
+to = [34, 28]
+width = 26
+height = [4, 18]
+roughness = 5
+trees = { kinds = ["oak", "spruce", "dark_oak"], density = 0.05 }
+
+# ---------------------------------------------------------------- the barn
+
+[[build]]
+do = "shell"
+from = [-12, -1, -9]
+to = [12, 7, 9]
+floor = { spruce_planks = 6, stripped_spruce_wood = 1, oak_planks = 1 }
+walls = { spruce_planks = 5, stripped_spruce_log = 1 }
+ceiling = false
+base = "cobblestone"
+posts = { every = 4, block = "stripped_dark_oak_log[axis=y]" }
+windows = { every = 4, width = 2, height = 2, sill = 4, offset = 2, sides = ["north", "south"] }
+grain = 0
+
+[[build]]
+do = "roof"
+from = [-12, -9]
+to = [12, 9]
+y = 8
+kind = "gable"
+block = "dark_oak"
+overhang = 1
+ridge = "x"
+gable = "spruce_planks"
+
+# Tie beams across the barn, and a ridge beam.
+[[build]]
+do = "box"
+from = [-8, 7, -8]
+to = [-8, 7, 8]
+block = "stripped_dark_oak_log[axis=z]"
+
+[[build]]
+do = "box"
+from = [-4, 7, -8]
+to = [-4, 7, 8]
+block = "stripped_dark_oak_log[axis=z]"
+
+[[build]]
+do = "box"
+from = [0, 7, -8]
+to = [0, 7, 8]
+block = "stripped_dark_oak_log[axis=z]"
+
+[[build]]
+do = "box"
+from = [4, 7, -8]
+to = [4, 7, 8]
+block = "stripped_dark_oak_log[axis=z]"
+
+[[build]]
+do = "box"
+from = [8, 7, -8]
+to = [8, 7, 8]
+block = "stripped_dark_oak_log[axis=z]"
+
+[[build]]
+do = "box"
+from = [-11, 14, 0]
+to = [11, 14, 0]
+block = "stripped_dark_oak_log[axis=x]"
+
+# Lanterns hanging from the beams on chains.
+[[build]]
+do = "blocks"
+list = [
+  [-8, 6, -4, "iron_chain[axis=y]"], [-8, 5, -4, "lantern[hanging=true]"],
+  [-8, 6, 4, "iron_chain[axis=y]"], [-8, 5, 4, "lantern[hanging=true]"],
+  [0, 6, -5, "iron_chain[axis=y]"], [0, 5, -5, "lantern[hanging=true]"],
+  [0, 6, 5, "iron_chain[axis=y]"], [0, 5, 5, "lantern[hanging=true]"],
+  [8, 6, 0, "iron_chain[axis=y]"], [8, 5, 0, "lantern[hanging=true]"],
+  [-4, 6, 0, "iron_chain[axis=y]"], [-4, 5, 0, "lantern[hanging=true]"],
+]
+
+# The big doors in the east wall (closed), a lantern either side.
+[[build]]
+do = "blocks"
+list = [
+  [12, 0, -1, "spruce_door[facing=west,half=lower,hinge=left,open=false]"], [12, 1, -1, "spruce_door[facing=west,half=upper,hinge=left,open=false]"],
+  [12, 0, 0, "spruce_door[facing=west,half=lower,hinge=right,open=false]"], [12, 1, 0, "spruce_door[facing=west,half=upper,hinge=right,open=false]"],
+  [12, 2, -1, "stripped_dark_oak_log[axis=z]"], [12, 2, 0, "stripped_dark_oak_log[axis=z]"],
+  [11, 2, -3, "wall_torch[facing=west]"], [11, 2, 2, "wall_torch[facing=west]"],
+]
+
+# ---------------------------------------------------------------- the stage (west end)
+
+[[build]]
+do = "box"
+from = [-11, 0, -7]
+to = [-6, 0, 7]
+block = { spruce_planks = 5, stripped_spruce_wood = 1 }
+
+[[build]]
+do = "box"
+from = [-6, 0, -7]
+to = [-6, 0, 7]
+block = "stripped_spruce_log[axis=z]"
+
+# The curtain on the back wall, and its pelmet.
+[[build]]
+do = "box"
+from = [-11, 1, -7]
+to = [-11, 6, 7]
+block = "red_wool"
+
+[[build]]
+do = "box"
+from = [-11, 1, -7]
+to = [-11, 6, -7]
+block = "stripped_dark_oak_log[axis=y]"
+
+[[build]]
+do = "box"
+from = [-11, 1, 7]
+to = [-11, 6, 7]
+block = "stripped_dark_oak_log[axis=y]"
+
+[[build]]
+do = "box"
+from = [-10, 6, -7]
+to = [-10, 6, 7]
+block = "dark_oak_slab[type=top]"
+
+[[build]]
+do = "box"
+from = [-10, 1, -6]
+to = [-10, 1, 6]
+block = "red_carpet"
+
+# Lights at the edges of the stage: lanterns on posts at the front corners.
+[[build]]
+do = "blocks"
+list = [
+  [-6, 1, -7, "spruce_fence"], [-6, 2, -7, "lantern[hanging=false]"],
+  [-6, 1, 7, "spruce_fence"], [-6, 2, 7, "lantern[hanging=false]"],
+  [-10, 1, -6, "candle[candles=3,lit=true]"], [-10, 1, 6, "candle[candles=2,lit=true]"],
+]
+
+# The note blocks: a row of seven across the front of the stage, at floor level.
+[[build]]
+do = "box"
+from = [-5, 0, -3]
+to = [-5, 0, 3]
+block = "note_block"
+
+[[build]]
+do = "blocks"
+list = [[-5, 0, -4, "spruce_slab[type=bottom]"], [-5, 0, 4, "spruce_slab[type=bottom]"]]
+
+# The trophy on its post, stage right (south side).
+[[build]]
+do = "blocks"
+list = [[-8, 1, 5, "stripped_spruce_log[axis=y]"]]
+
+[[build]]
+do = "display"
+block = "gold_block"
+from = [-7.78, 2.0, 5.22]
+size = [0.56, 0.08, 0.56]
+
+[[build]]
+do = "display"
+block = "gold_block"
+from = [-7.58, 2.08, 5.42]
+size = [0.16, 0.22, 0.16]
+
+[[build]]
+do = "display"
+block = "gold_block"
+from = [-7.74, 2.3, 5.26]
+size = [0.48, 0.38, 0.48]
+
+[[build]]
+do = "display"
+block = "gold_block"
+from = [-7.86, 2.42, 5.44]
+size = [0.1, 0.18, 0.12]
+
+[[build]]
+do = "display"
+block = "gold_block"
+from = [-7.24, 2.42, 5.44]
+size = [0.1, 0.18, 0.12]
+
+# A banner over the stage.
+[[build]]
+do = "text"
+text = "TALENT NIGHT"
+at = [-9.96, 4.2, 0.5]
+facing = "east"
+scale = 4.5
+color = "#ffd34d"
+bold = true
+
+# ---------------------------------------------------------------- the audience end
+
+# The rail: four chickens sit on it, facing the stage.
+[[build]]
+do = "fence"
+points = [[3, -4], [3, 4]]
+block = "spruce_fence"
+
+[[build]]
+do = "pile"
+at = [[8, -6], [8, 6], [-2, -7], [-3, 7], [10, -2]]
+count = 6
+stack = 3
+blocks = { hay_block = 6, "barrel[facing=up]" = 1 }
+
+[[build]]
+do = "blocks"
+list = [
+  [-2, 1, -7, "candle[candles=2,lit=true]"],
+  [11, 0, 7, "hay_block"], [11, 1, 7, "hay_block"], [10, 0, 7, "hay_block"], [11, 0, 6, "composter[level=7]"],
+  [11, 0, -7, "barrel[facing=up]"], [11, 1, -7, "candle[candles=4,lit=true]"],
+  [6, 0, -8, "crafting_table"], [6, 1, -8, "lantern[hanging=false]"],
+]
+
+# Soft fill so no corner goes black, low enough to keep the night.
+[[build]]
+do = "light"
+from = [-10, -7]
+to = [11, 7]
+y = 3
+step = 5
+level = 8
+
+[[build]]
+do = "light"
+at = [[-8, 2, 0], [-8, 2, -3], [-8, 2, 3], [-3, 1, 0], [1, 2, 0]]
+level = 13
+
+# ---------------------------------------------------------------- marks
+
+[[mark]]
+name = "stage-center"
+at = [-8, 1, 0]
+facing = "east"
+
+[[mark]]
+name = "trophy"
+at = [-8, 2, 5]
+
+[[mark]]
+name = "duke-walk"
+path = [[-9, 1, -5], [-8, 1, -3], [-7, 1, -2]]
+
+[[mark]]
+name = "note-1"
+at = [-5, 1, -3]
+[[mark]]
+name = "note-2"
+at = [-5, 1, -2]
+[[mark]]
+name = "note-3"
+at = [-5, 1, -1]
+[[mark]]
+name = "note-4"
+at = [-5, 1, 0]
+[[mark]]
+name = "note-5"
+at = [-5, 1, 1]
+[[mark]]
+name = "note-6"
+at = [-5, 1, 2]
+[[mark]]
+name = "note-7"
+at = [-5, 1, 3]
+
+[[mark]]
+name = "rail-1"
+at = [3, 1.5, -3]
+facing = "west"
+[[mark]]
+name = "rail-2"
+at = [3, 1.5, -1]
+facing = "west"
+[[mark]]
+name = "rail-3"
+at = [3, 1.5, 1]
+facing = "west"
+[[mark]]
+name = "rail-4"
+at = [3, 1.5, 3]
+facing = "west"
+
+# Shot 10: medium on Duke centre stage.
+[[mark]]
+name = "cam-duke"
+eye = [-4.9, 1.75, 0]
+look = [-8, 1.35, 0]
+fov = 40
+
+# Shots 11 and 16: high and wide from behind the rail; chickens big in front, the stage small.
+[[mark]]
+name = "cam-high-wide"
+eye = [7, 4.6, 1]
+look = [-7, 1.2, 0]
+fov = 62
+
+# Shot 12: close insert on the first note block.
+[[mark]]
+name = "cam-note-close"
+eye = [-2.6, 1.7, -4.6]
+look = [-5, 0.9, -2.6]
+fov = 34
+
+# Shot 13: the trophy big in the foreground, Duke beside it.
+[[mark]]
+name = "cam-trophy"
+eye = [-4.7, 2.5, 5.7]
+look = [-8.1, 1.9, 4.1]
+fov = 44
+
+# Shot 14: medium on the whole note block row.
+[[mark]]
+name = "cam-notes"
+eye = [0.5, 2.3, 0]
+look = [-5, 0.7, 0]
+fov = 52
+
+# Shot 15: one note block, close (push in on it in the edit).
+[[mark]]
+name = "cam-note-one"
+eye = [-3.2, 1.45, 0]
+look = [-5, 0.65, 0]
+fov = 32
+
+# Shot 17: a chicken on the rail, facing the lens.
+[[mark]]
+name = "cam-chicken"
+eye = [0.7, 2.2, -1]
+look = [3, 1.95, -1]
+fov = 40
+
+# Shot 18: wide on the room.
+[[mark]]
+name = "cam-wide"
+eye = [9, 3.4, -6]
+look = [-8, 1.6, 0]
+fov = 72
