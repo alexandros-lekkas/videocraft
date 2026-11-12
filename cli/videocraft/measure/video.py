@@ -8,9 +8,12 @@ One ffmpeg decode per video scales every frame to 64x36 RGB (area average) and p
 
 A cut is a frame whose `blur` difference stands out: above CUT_MIN, a local maximum, and CUT_RATIO times the median
 of the non-duplicate differences around it (a 60 fps upload of lower-rate footage repeats frames, and those zeros
-would drag the local level down). Shots are the stretches between cuts and black runs. Tuned on the benchmark's
-reference section (docs/benchmarks/pinksheep-style.md): it finds 28 shots (the doc counts 30 by eye) with a median
-of 2.6 s. Owned by workstream (d).
+would drag the local level down). In dark frames the minimum scales down with the frames' mean grey (to CUT_FLOOR),
+but then the jump must stand STILL_RATIO times over the local level: hard cuts between dark sepia barn statics differ
+by 13-16, under CUT_MIN, against a level of 0.5. Shots are the stretches between cuts and black runs. Tuned on the
+benchmark's reference section (docs/benchmarks/pinksheep-style.md): it finds 28 shots (the doc counts 30 by eye)
+with a median of 2.6 s, unchanged by the dark rule (its fades and dim motion stay under 8 times the level); on
+nibs-vs-duke 0012 it finds all 29 joins between pictures. Owned by workstream (d).
 """
 import operator
 import statistics
@@ -25,6 +28,9 @@ BLACK_MIN_FRAMES = 2       # shorter black is not a stretch
 CUT_MIN = 18.0             # minimum blurred difference for a cut
 CUT_RATIO = 2.5            # times the local median of moving differences
 CUT_WINDOW = 30            # frames each side for the local median
+STILL_RATIO = 10.0         # … or this many times it, however small, when the frames are dark (graded or night)
+CUT_FLOOR = 4.0            # the smallest blurred difference that can be a cut at all
+LUMA_REF = 64.0            # mean grey at which CUT_MIN applies in full; darker frames scale it down
 CUT_GAP = 10               # two cuts closer than this are one (the stronger)
 DUPLICATE = 0.6            # a blurred difference below this is a repeated frame, not motion
 FROZEN = 0.15              # a full difference below this: the picture did not change
@@ -109,8 +115,22 @@ def black_runs(peak):
     return runs((p < BLACK_PEAK for p in peak), BLACK_MIN_FRAMES)
 
 
-def cuts(blur, black=(), skip_head=3):
-    """Frames that start a new shot by a hard cut (frame i differs from i-1)."""
+def cut_min(luma, i):
+    """The smallest blurred difference that counts as a cut at frame i at the usual CUT_RATIO: CUT_MIN, scaled down
+    by the brighter of the two frames' mean grey under LUMA_REF (a cut between two dark sepia statics differs by a
+    third of what the same cut in daylight does), never under CUT_FLOOR."""
+    if not luma:
+        return CUT_MIN
+    bright = max(luma[i - 1], luma[i])
+    return max(CUT_FLOOR, CUT_MIN * min(1.0, bright / LUMA_REF))
+
+
+def cuts(blur, black=(), skip_head=3, luma=None):
+    """Frames that start a new shot by a hard cut (frame i differs from i-1). A difference counts when it is a local
+    maximum and either clears CUT_MIN at CUT_RATIO times the local median of moving differences, or, in dark frames
+    (`luma`, the mean grey per frame), clears the brightness-scaled minimum at STILL_RATIO times that median: a dark
+    hard cut is small in absolute terms but stands far out of the stillness around it, and the reference's fades and
+    dim motion never reach that ratio."""
     dark = set()
     for a, b in black:
         dark.update(range(a, b))
@@ -119,11 +139,13 @@ def cuts(blur, black=(), skip_head=3):
         if i in dark or i - 1 in dark:
             continue
         v = blur[i]
-        if v <= CUT_MIN or v < blur[i - 1] or v < blur[i + 1]:
+        if v <= CUT_FLOOR or v < blur[i - 1] or v < blur[i + 1]:
             continue
         around = [x for x in blur[max(1, i - CUT_WINDOW):i - 1] + blur[i + 2:i + 2 + CUT_WINDOW] if x > DUPLICATE]
-        level = statistics.median(around) if around else 0.0
-        if v <= CUT_RATIO * max(level, 0.5):
+        level = max(statistics.median(around) if around else 0.0, 0.5)
+        bright = v > CUT_MIN and v > CUT_RATIO * level
+        dim = v > cut_min(luma, i) and v > STILL_RATIO * level
+        if not (bright or dim):
             continue
         if out and i - out[-1] < CUT_GAP:
             if v > blur[out[-1]]:
@@ -184,15 +206,14 @@ def analyse(frames, fps, start=0.0):
     sig = signals(frames)
     n = len(sig['peak'])
     black = black_runs(sig['peak'])
-    found = cuts(sig['blur'], black)
+    found = cuts(sig['blur'], black, luma=sig['luma'])
     shots, dropped = segments(n, found, black, fps)
     frozen = frozen_runs(sig['full'], black)
     t = lambda f: round(f / fps, 3)
     shot_list = [{'index': k, 'start': t(a), 'end': t(b), 'seconds': t(b - a), 'frames': [a, b]} for k, (a, b) in enumerate(shots)]
     lengths = [s['seconds'] for s in shot_list]
     seconds = n / fps
-    dup_at_cuts = [c for c in found if c + 1 < n and (sig['full'][c + 1] < FROZEN or sig['full'][c - 1] < FROZEN)
-                   and _shot_moves(sig['full'], c)]
+    dup_at_cuts = [(c, side) for c in found for side in (_repeat_at_cut(sig['full'], c),) if side]
     return {
         'frames': n, 'fps': fps, 'seconds': round(seconds, 3), 'from': start,
         'cuts': [{'frame': c, 't': t(c)} for c in found],
@@ -202,15 +223,21 @@ def analyse(frames, fps, start=0.0):
         'black_seconds': t(sum(b - a for a, b in black)),
         'dropped': dropped,
         'frozen': [{'start': t(a), 'end': t(b), 'frames': [a, b]} for a, b in frozen],
-        'duplicate_at_cuts': [{'frame': c, 't': t(c)} for c in dup_at_cuts],
+        'duplicate_at_cuts': [{'frame': c, 't': t(c), 'side': side} for c, side in dup_at_cuts],
         'signals': sig,
     }
 
 
-def _shot_moves(full, c, span=8):
-    """Whether the picture around a cut is otherwise moving (a repeated frame there is then a fault, not a still shot)."""
-    near = [x for x in full[max(1, c - span):c - 1] + full[c + 2:c + 2 + span]]
-    return bool(near) and statistics.median(near) >= FROZEN * 4
+def _repeat_at_cut(full, c, span=8):
+    """'before' when the last frame before the cut repeats the one before it, 'after' when the first frame after the
+    cut is repeated, None otherwise; only while that side's own shot otherwise moves, so a locked-off still shot on
+    either side of the cut is not mistaken for a dropped or doubled frame."""
+    moves = lambda xs: bool(xs) and statistics.median(xs) >= FROZEN * 4
+    if c >= 2 and full[c - 1] < FROZEN and moves(full[max(1, c - 1 - span):c - 1]):
+        return 'before'
+    if c + 1 < len(full) and full[c + 1] < FROZEN and moves(full[c + 2:c + 2 + span]):
+        return 'after'
+    return None
 
 
 def compare_cuts(found, expected, tolerance=2):

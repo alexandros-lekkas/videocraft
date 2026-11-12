@@ -5,7 +5,8 @@ import json
 def _cut(args):
     from videocraft import store
     from videocraft.edit.cut import cut
-    print(cut(store.open_iteration(args.iteration), silent=True if args.silent else None, exports=not args.no_exports))
+    print(cut(store.open_iteration(args.iteration), silent=True if args.silent else None, exports=not args.no_exports,
+              original_audio=args.original_audio))
     return 0
 
 
@@ -35,6 +36,8 @@ def register(sub):
     c.add_argument('iteration')
     c.add_argument('--silent', action='store_true', help='no sound track (also VIDEOCRAFT_SILENT=1 or [edit] audio = "none")')
     c.add_argument('--no-exports', action='store_true', help='the master and poster only')
+    c.add_argument('--original-audio', action='store_true', help='also <export>-original-audio.mp4 (and master-original-audio.mp4) '
+                   'with a sound track that holds no game audio, cut/audio-original.wav')
     c.set_defaults(run=_cut)
     t = s.add_parser('timeline', help='print the resolved timeline (frames of every clip) without encoding')
     t.add_argument('iteration')

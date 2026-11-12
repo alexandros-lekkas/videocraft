@@ -92,6 +92,10 @@ def check(edit, shots, durations=None, fps=60):
         from videocraft.edit.export import PRESETS
         if export.get('preset') not in PRESETS:
             raise EditError(f'edit.export[{i}]: preset is one of {", ".join(PRESETS)}')
+        if str(export.get('audio', 'game')).lower() not in ('game', 'original'):
+            raise EditError(f'edit.export[{i}]: audio is "game" (the mix, the default) or "original" (also writes <name>-original-audio.mp4)')
+        if export.get('audio') == 'original' and export['preset'] not in ('x-1080p60', 'readme-720p30'):
+            raise EditError(f'edit.export[{i}]: audio = "original" is for the video presets x-1080p60 and readme-720p30')
 
 
 def _check_look(table, where):

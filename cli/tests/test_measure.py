@@ -106,6 +106,27 @@ class Shots(unittest.TestCase):
         blur[101] = 40.0
         self.assertEqual(video.cuts(blur), [101])
 
+    def test_a_dark_cut_between_still_shots(self):
+        # two dark statics (mean grey 8) joined by a hard cut of 13: under CUT_MIN, but 26 times the stillness around it
+        blur = [0.3] * 200
+        blur[120] = 13.0
+        self.assertEqual(video.cuts(blur), [])                        # without brightness: the fixed minimum misses it
+        self.assertEqual(video.cuts(blur, luma=[8.0] * 200), [120])
+        self.assertEqual(video.cuts(blur, luma=[120.0] * 200), [])     # in daylight 13 is motion, not a cut
+        moving = [4.0] * 200                                           # the same jump in a dark, moving shot: not a cut
+        moving[120] = 13.0
+        self.assertEqual(video.cuts(moving, luma=[8.0] * 200), [])
+
+    def test_repeated_frames_only_count_when_they_straddle_a_moving_shot(self):
+        still_then_moving = [0.01] * 50 + [30.0] + [2.0] * 50          # a locked-off shot cut to a moving one
+        self.assertIsNone(video._repeat_at_cut(still_then_moving, 50))
+        doubled = list(still_then_moving)
+        doubled[51] = 0.0                                               # the first frame of the moving shot is repeated
+        self.assertEqual(video._repeat_at_cut(doubled, 50), 'after')
+        held = [2.0] * 50 + [30.0] + [2.0] * 50
+        held[49] = 0.0                                                  # the moving shot's last frame repeats
+        self.assertEqual(video._repeat_at_cut(held, 50), 'before')
+
     def test_slivers_merge_and_flashes_drop(self):
         shots, dropped = video.segments(400, [3, 100, 103], [(200, 230), (240, 260)], 60)
         self.assertEqual(shots[:2], [(0, 103), (103, 200)])

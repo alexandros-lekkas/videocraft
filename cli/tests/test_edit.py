@@ -51,6 +51,18 @@ class FramesTest(unittest.TestCase):
         with self.assertRaisesRegex(EditError, 'preset is one of'):
             timeline.check({'clip': [], 'export': [{'preset': 'tiktok'}]}, ['a'])
 
+    def test_original_audio_exports(self):
+        from videocraft.edit import cut
+        timeline.check({'clip': [], 'export': [{'preset': 'x-1080p60', 'audio': 'original'}]}, ['a'])
+        with self.assertRaisesRegex(EditError, r'edit.export\[0\]: audio is "game"'):
+            timeline.check({'clip': [], 'export': [{'preset': 'x-1080p60', 'audio': 'mojang'}]}, ['a'])
+        with self.assertRaisesRegex(EditError, 'for the video presets'):
+            timeline.check({'clip': [], 'export': [{'preset': 'gif', 'audio': 'original'}]}, ['a'])
+        self.assertTrue(cut.wants_original({'export': [{'preset': 'x-1080p60', 'audio': 'original'}]}))
+        self.assertFalse(cut.wants_original({'export': [{'preset': 'x-1080p60', 'audio': 'original'}]}, exports=False))
+        self.assertFalse(cut.wants_original({'export': [{'preset': 'x-1080p60'}]}))
+        self.assertTrue(cut.wants_original({}, original_audio=True))
+
     def test_fades_must_fit(self):
         with self.assertRaisesRegex(EditError, 'longer than the clip'):
             resolve([{'shot': 'a', 'in': 0, 'frames': 20, 'fade_in': 12, 'fade_out': 12}])

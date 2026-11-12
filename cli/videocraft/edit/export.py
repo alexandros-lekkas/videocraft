@@ -33,8 +33,9 @@ def _ladder(make, out, limit, crfs):
     return crfs[-1]
 
 
-def export(spec, master, cut_dir, width, height, fps, seconds, has_audio):
-    """Writes one export; returns its path."""
+def export(spec, master, cut_dir, width, height, fps, seconds, has_audio, audio_file=None, suffix=''):
+    """Writes one export; returns its path. `audio_file` (a wav) replaces the master's sound in a video export, whose
+    file name then ends in `suffix` (the cut's `-original-audio` copies)."""
     ffmpeg = tools.ffmpeg()
     preset = spec['preset']
     run = lambda args: subprocess.run([ffmpeg, '-y', '-loglevel', 'error', *args], check=True)
@@ -42,14 +43,17 @@ def export(spec, master, cut_dir, width, height, fps, seconds, has_audio):
         short, rate, limit, abr, crfs = ((1080, min(fps, 60), 24.5 * MB, '192k', (20, 22, 24, 26, 28, 30)) if preset == 'x-1080p60'
                                          else (720, min(fps, 30), 9.5 * MB, '128k', (24, 26, 28, 30, 32, 34)))
         w, h = _scale_short(width, height, short)
-        out = Path(cut_dir) / f'{spec.get("name", preset)}.mp4'
+        out = Path(cut_dir) / f'{spec.get("name", preset)}{suffix}.mp4'
         vf = []
         if rate != fps:
             vf.append(f'fps={rate}')
         if (w, h) != (width, height):
             vf.append(f'scale={w}:{h}:flags=lanczos:in_color_matrix=bt709:out_color_matrix=bt709')
-        audio = ['-c:a', 'aac', '-b:a', abr] if has_audio else ['-an']
-        _ladder(lambda crf: run(['-i', str(master), *(['-vf', ','.join(vf)] if vf else []), '-c:v', 'libx264', '-preset', 'slow',
+        inputs = ['-i', str(master)]
+        if audio_file:
+            inputs += ['-i', str(audio_file), '-map', '0:v', '-map', '1:a', '-af', 'apad', '-t', f'{seconds:.6f}']
+        audio = ['-c:a', 'aac', '-b:a', abr] if has_audio or audio_file else ['-an']
+        _ladder(lambda crf: run([*inputs, *(['-vf', ','.join(vf)] if vf else []), '-c:v', 'libx264', '-preset', 'slow',
                                  '-crf', str(crf), '-profile:v', 'high', *VIDEO, *audio, str(out)]), out, limit, crfs)
         return out
     if preset == 'gif':

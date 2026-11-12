@@ -87,7 +87,8 @@ def _warnings(m):
     pic = m.get('picture') or {}
     moving = m.get('_moving')
     for d in pic.get('duplicate_at_cuts', []):
-        if moving is not None and not (d['frame'] < len(moving) and moving[d['frame']]):
+        f = d['frame'] - 1 if d.get('side') == 'before' else d['frame']    # the frame of the shot that repeats
+        if moving is not None and not (0 <= f < len(moving) and moving[f]):
             continue
         w.append(f'repeated frame at the cut at {d["t"]:.2f} s (frame {d["frame"]})')
     moving = m.get('_moving')   # master frames whose clip's camera moves (runs); None: unknown (any video)

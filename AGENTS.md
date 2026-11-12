@@ -146,6 +146,9 @@ They protect the owner's machine and game. They are not preferences.
   one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
   difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
   so finds 28 shots with a median of 2.59 s on 0:00–1:22.2 (the doc's hand count is 30 and 2.6 s).
+- **Dark cuts are small.** A hard cut between two dark sepia statics (mean grey 6-17) moves the blurred difference by
+  13-16, under the daylight minimum of 18, against a still level of 0.5; `measure` takes such a jump as a cut when it
+  is ten times the level, which nothing in the reference reaches (its fades and dim motion stay under 8).
 - **Frames by number from ffmpeg:** `-vf "select='eq(n,12)+eq(n,90)',scale=640:360,format=rgb24" -fps_mode
   passthrough -f rawvideo -` gives exactly those frames in order. Pass it as one argv item (no shell), so ffmpeg's own
   quotes protect the commas. Review packets and `compare` use this; there is no drawtext, so labels are a built-in
@@ -211,8 +214,10 @@ They protect the owner's machine and game. They are not preferences.
   master of the benchmark film; `loudness.py` now limits 1 dB under the ceiling (−1.6 dBTP after encode).
 - **A strut sways the body yaw.** Subject rigs took their axis from it, so lead tracks on a strut juddered (turn
   jerk 40-56 against about 1 on walks); `Follow` now follows the subject's travel while it moves.
-- **A walk carries over the cut.** A `walk` still going at the end of a shot keeps going in the next, over that
-  shot's `place`; put a `stop` (`arrive = 0`) before a `place` that must hold.
+- **A walk carries over the cut** until the next shot moves the actor: `place` and `walk` replace it, `turn`, `state`
+  and `pose` stop it in 0.25 s. Actors tick before the frame's cues, so a `place` on a shot's first frame used to
+  leave that frame's `actors.csv` row (and so its framing) at the old walk's spot, state `strut`; the row is now
+  rewritten after the place.
 - **Staging and preparation take different frame counts per take.** The stage pseudo-shot runs until the server has
   done its commands, and shot preparation until the sections are drawn (65 vs 99 frames seen for one shot); puppets
   that ticked through staging, and a sound seed counted from preparation, made two takes differ. Puppets now start
