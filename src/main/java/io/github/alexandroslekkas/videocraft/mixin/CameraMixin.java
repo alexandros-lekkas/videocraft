@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * After the game has put the camera on its entity, the current shot's rig moves it. In third-person shots the player
@@ -25,5 +26,12 @@ abstract class CameraMixin {
 		if (pose == null) return;
 		setRotation(pose.yaw(), pose.pitch());
 		setPosition(pose.x(), pose.y(), pose.z());
+	}
+
+	/** The rig's lens for this frame, exactly: no sprint, speed-effect or water FOV on a filmed view. */
+	@Inject(method = "calculateFov(F)F", at = @At("RETURN"), cancellable = true)
+	private void videocraft$lens(float partialTick, CallbackInfoReturnable<Float> info) {
+		double fov = Director.lens();
+		if (!Double.isNaN(fov)) info.setReturnValue((float) fov);
 	}
 }

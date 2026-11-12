@@ -7,15 +7,25 @@ final class CoreActions {
 	private CoreActions() {}
 
 	static void register(Registry r) {
-		// {do = "command", command = "time set 6000"} or {do = "command", commands = [..]}: instant, on the server.
-		r.action("command", (p, shot) -> {
-			var commands = p.has("commands") ? p.strings("commands") : java.util.List.of(p.string("command"));
-			return s -> { commands.forEach(s::command); return true; };
-		});
+		// {do = "command", command = "time set 6000"} or {do = "command", commands = [..], forceload = [x1, z1, x2, z2]}.
+		// Checked and batched across frames; the take fails with the first command that errors (Commands).
+		r.action("command", Commands::action);
 		// {do = "mark", label = "impact"}: notes this frame in marks.json.
 		r.action("mark", (p, shot) -> {
 			String label = p.string("label");
 			return s -> { s.mark(label); return true; };
+		});
+		// {do = "stand_in", id = "dummy", at = [..]}: a subject for checking camera rigs (StandIn), in world.stage.
+		r.action("stand_in", (p, shot) -> {
+			StandIn s = StandIn.stage(p, shot);
+			Director.current().addActor(s);
+			return x -> true;
+		});
+		// {do = "glide", actor = "dummy", path = [..], speed = 1.4}: moves a stand-in exactly along a curve.
+		r.action("glide", (p, shot) -> {
+			String who = p.string("actor");
+			if (!(shot.actor(who) instanceof StandIn s)) throw new IllegalArgumentException(p.where() + ": glide moves a stand_in, and '" + who + "' is not one");
+			return StandIn.glide(p, shot, s);
 		});
 		// {do = "wait", seconds = 1.5}: holds the timeline of a staging block (shots end on their duration anyway).
 		r.action("wait", (p, shot) -> {

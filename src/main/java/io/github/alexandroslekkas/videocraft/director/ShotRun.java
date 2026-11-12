@@ -37,7 +37,7 @@ final class ShotRun implements ShotContext {
 	 * camera that has just moved is drawn, and fog and sky colours (which ease over game time) settle. At least the first
 	 * number, then until every section in view is drawn, at most the second.
 	 */
-	static final int PREPARE_FRAMES = 60, PREPARE_MAX_FRAMES = 60 * 15;
+	static final int PREPARE_FRAMES = 60, PREPARE_MAX_FRAMES = 60 * 15, DRAWN_FRAMES = 30;
 
 	private record Running(Plan.Cue cue, Action action) {}
 
@@ -51,13 +51,24 @@ final class ShotRun implements ShotContext {
 	private final JsonArray marks = new JsonArray();
 	private final FrameLog log = new FrameLog();
 	private CameraRig rig;
-	private int prepared, frame;
-	private boolean recording, finished;
+	/** Set up and waiting for the world to be drawn; running unrecorded from -preroll; recording from frame 0. */
+	private enum Phase { PREPARE, ROLL, RECORD }
+
+	private final int prerollFrames;
+	private Phase phase = Phase.PREPARE;
+	private int prepared, frame, drawnFor, lastVisible = -1;
+	private boolean rebuilt;
+	private boolean finished;
 	private int poseFrame = -1;
 	private Pose pose;
+	private double lens = 70;
 
-	ShotRun(Director director, String name, double duration, List<Plan.Cue> timeline, boolean records, long seed) {
+	private final long seed;
+
+	ShotRun(Director director, String name, double duration, double preroll, List<Plan.Cue> timeline, boolean records, long seed) {
+		this.seed = seed;
 		this.director = director;
+		this.prerollFrames = (int) Math.round(Math.max(0, preroll) * director.plan().output().fps());
 		this.name = name;
 		this.duration = duration;
 		this.due = new ArrayList<>(timeline);
@@ -70,24 +81,47 @@ final class ShotRun implements ShotContext {
 
 	CameraRig rig() { return rig; }
 
+	long seed() { return seed; }
+
 	boolean finished() { return finished; }
 
 	/** Once per game frame, after the capture of the last one. */
 	void advance() {
 		if (finished) return;
 		io.github.alexandroslekkas.videocraft.sound.SoundLog.frame(this);
-		if (!recording) {
+		if (phase == Phase.PREPARE) {
 			if (records) {
 				prepared++;
-				boolean drawn = minecraft().levelRenderer.hasRenderedAllSections();
+				// Drawn means: every chunk in reach has arrived and nothing has been left to compile for half a second
+				// (a section that has just arrived is only queued on a later frame, so one quiet frame is not enough).
+				int visible = minecraft().levelRenderer.visibleSections().size();
+				boolean quiet = minecraft().levelRenderer.hasRenderedAllSections() && chunksAround() && weatherSettled() && visible == lastVisible;
+				lastVisible = visible;
+				drawnFor = quiet ? drawnFor + 1 : 0;
+				boolean drawn = drawnFor >= DRAWN_FRAMES;
+				if (drawn && !rebuilt) {
+					// Sections whose chunk was not ready when the section graph was last built wait in a side list that
+					// is not always looked at again: rebuild the graph once from what is loaded now, then settle again.
+					rebuilt = true;
+					drawnFor = 0;
+					drawn = false;
+					minecraft().levelRenderer.sectionOcclusionGraph().invalidate();
+				}
 				if (prepared < PREPARE_FRAMES || (!drawn && prepared < PREPARE_MAX_FRAMES)) return;
 				if (!drawn) VideocraftLog.LOGGER.warn("VIDEOCRAFT {} records before every section in view is drawn", name);
 			}
-			recording = true;
-			frame = 0;
-			if (records) director.beginSegment(this);
+			// Pre-roll: the timeline and the rig run from -preroll, unrecorded, so frame 0 starts mid-action.
+			phase = Phase.ROLL;
+			frame = -prerollFrames;
+			if (records) director.rebase(this);
 		} else {
 			frame++;
+		}
+		if (phase == Phase.ROLL && frame >= 0) {
+			phase = Phase.RECORD;
+			if (records) director.beginSegment(this);
+			if (records) VideocraftLog.LOGGER.info("VIDEOCRAFT film {} frame 0 after {} frames, {} sections; {}", name, prepared, lastVisible, Film.state(minecraft()));
+		} else if (phase == Phase.RECORD) {
 			boolean over = records ? frame >= Math.round(duration * fps()) : due.isEmpty() && running.isEmpty();
 			if (over) { finish(); return; }
 		}
@@ -101,6 +135,35 @@ final class ShotRun implements ShotContext {
 		running.removeIf(r -> r.action().frame(this));
 	}
 
+	/** Whether the client's rain and thunder have reached the shot's weather (the sky and fog follow them). */
+	private boolean weatherSettled() {
+		var level = minecraft().level;
+		if (level == null) return false;
+		String w = director.shotWeather();
+		float rain = w.equals("clear") ? 0 : 1, thunder = w.equals("thunder") ? 1 : 0;
+		return Math.abs(level.getRainLevel(1) - rain) < 1e-4 && Math.abs(level.getThunderLevel(1) - thunder) < 1e-4;
+	}
+
+	/**
+	 * Whether every chunk within render distance of the camera has reached the client. The server sends chunks a few
+	 * at a time, and "all sections drawn" only covers those that have arrived: without this, two takes of one plan
+	 * differed in which far hills were there.
+	 */
+	private boolean chunksAround() {
+		var mc = minecraft();
+		if (mc.level == null) return false;
+		var at = mc.gameRenderer.mainCamera().position();
+		int cx = (int) Math.floor(at.x) >> 4, cz = (int) Math.floor(at.z) >> 4, r = mc.options.getEffectiveRenderDistance();
+		// Exactly the chunks the server sends a player there (ChunkTrackingView.isWithinDistance with neighbours), so
+		// the outermost ring is there in every take, not only in the ones where it happened to arrive in time.
+		for (int dx = -r - 2; dx <= r + 2; dx++)
+			for (int dz = -r - 2; dz <= r + 2; dz++) {
+				long x = Math.max(0, Math.abs(dx) - 2), z = Math.max(0, Math.abs(dz) - 2);
+				if (x * x + z * z < (long) r * r && !mc.level.hasChunk(cx + dx, cz + dz)) return false;
+			}
+		return true;
+	}
+
 	/** The camera for the frame being rendered; computed once per frame and logged while recording. */
 	Pose pose(float partialTick) {
 		if (rig == null) return null;
@@ -108,7 +171,8 @@ final class ShotRun implements ShotContext {
 		if (at != poseFrame) {
 			poseFrame = at;
 			pose = rig.view() == View.FIRST ? null : rig.pose(this, partialTick);
-			if (recording && records) logFrame();
+			lens = rig.fov(this);
+			if (recording()) logFrame();
 		}
 		return pose;
 	}
@@ -118,13 +182,28 @@ final class ShotRun implements ShotContext {
 		double[] player = p == null ? new double[5] : new double[] {p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()};
 		double[] cam = pose == null ? new double[] {player[0], p == null ? 0 : p.getEyeY(), player[2], player[3], player[4]}
 			: new double[] {pose.x(), pose.y(), pose.z(), pose.yaw(), pose.pitch()};
-		log.row(frame, seconds(), cam, rig.fov(), player, p != null && p.onGround());
+		String subjectId = rig.subject();
+		double[] subject = null;
+		if (subjectId != null) {
+			try {
+				Actor a = director.actor(subjectId);
+				Vec3 g = a.ground();
+				subject = new double[] {g.x, g.y, g.z, a.heading(), a.head().y};
+			} catch (RuntimeException e) {
+				subject = null;
+			}
+		}
+		log.row(frame, seconds(), cam, lens, player, p != null && p.onGround(), subjectId, subject);
 	}
+
+	/** The field of view of the frame being rendered (see {@link CameraRig#fov(ShotContext)}). */
+	double lens() { return lens; }
 
 	/** Stops whatever is still running and writes frames.csv and marks.json. */
 	void finish() {
 		if (finished) return;
 		finished = true;
+		if (records) Film.cut();
 		for (Running r : running) r.action().stop(this);
 		running.clear();
 		for (Actor actor : director.actors()) actor.cut(this);
@@ -143,16 +222,22 @@ final class ShotRun implements ShotContext {
 
 	@Override public Minecraft minecraft() { return Minecraft.getInstance(); }
 	@Override public String shot() { return name; }
-	@Override public int frame() { return recording ? frame : 0; }
+	/** Negative during pre-roll, {@code -preroll * fps} while the shot is prepared. */
+	@Override public int frame() { return phase == Phase.PREPARE ? -prerollFrames : frame; }
 	@Override public double seconds() { return frame() / (double) fps(); }
 	@Override public double duration() { return duration; }
-	@Override public boolean recording() { return recording && records; }
+	@Override public boolean recording() { return phase == Phase.RECORD && records; }
 	@Override public int fps() { return director.plan().output().fps(); }
 	@Override public Vec3 anchor(String name) { return director.anchor(name); }
 	@Override public void anchor(String name, Vec3 at) { director.anchor(name, at); }
 	@Override public Actor actor(String id) { return director.actor(id); }
 	@Override public void command(String command) { director.command(command); }
 	@Override public Random random() { return random; }
+	@Override public Pose camera() {
+		if (pose != null) return pose;
+		var c = minecraft().gameRenderer.mainCamera();
+		return new Pose(c.position().x, c.position().y, c.position().z, c.yRot(), c.xRot());
+	}
 	@Override public void fail(String reason) { director.fail(name + ": " + reason); }
 
 	@Override
@@ -160,8 +245,23 @@ final class ShotRun implements ShotContext {
 		JsonElement e = params.raw(key);
 		if (e == null || e.isJsonNull()) throw new IllegalArgumentException(params.where() + ": missing position '" + key + "'");
 		if (e.isJsonArray()) return vec(e.getAsJsonArray(), params.where() + "." + key);
+		if (!e.isJsonObject()) throw new IllegalArgumentException(params.where() + "." + key + ": a position is [x, y, z], {anchor = \"name\"} or {actor = \"id\"}");
 		JsonObject o = e.getAsJsonObject();
-		Vec3 base = anchor(o.get("anchor").getAsString());
+		Vec3 base;
+		if (o.has("actor")) {
+			// On an actor, where it stands now: offset in world axes, or front/right/up along the way it faces.
+			Actor a = actor(o.get("actor").getAsString());
+			base = a.ground();
+			double yaw = Math.toRadians(a.heading());
+			Vec3 front = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+			if (o.has("front")) base = base.add(front.scale(o.get("front").getAsDouble()));
+			if (o.has("right")) base = base.add(right.scale(o.get("right").getAsDouble()));
+			if (o.has("up")) base = base.add(0, o.get("up").getAsDouble(), 0);
+		} else if (o.has("anchor")) {
+			base = anchor(o.get("anchor").getAsString());
+		} else {
+			throw new IllegalArgumentException(params.where() + "." + key + ": a position table names an anchor or an actor");
+		}
 		return o.has("offset") ? base.add(vec(o.getAsJsonArray("offset"), params.where() + "." + key + ".offset")) : base;
 	}
 
