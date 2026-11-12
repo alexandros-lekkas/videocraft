@@ -28,6 +28,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 6 | 0012 | 8.0 | 7.0 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
 | 7 | 0003 (second climb) | 8.0 | 7.0 | 6.5 | 5.5 | 6.0 | 6.0 | **7.0** | 6.5 | 6.0 | **6.50** | 5.5 | pass |
 | 8 | 0010 | 7.0 | 7.0 | 6.5 | 4.5 | 6.5 | 5.5 | 7.0 | 6.5 | 6.0 | **6.28** | 4.5 | pass |
+| 9 | 0012 | 8.0 | 7.0 | 6.5 | 5.0 | 7.0 | 5.5 | **8.0** | 6.0 | 6.5 | **6.61** | 5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -108,7 +109,7 @@ shots were first checked in short test takes of only those shots (about a minute
 | 0009 | **The side-by-side pass** (shot-by-shot against the reference): lead tracks pitched 20° down from 1.5 blocks at 108°; s02 a true face cut-in; s12 and s15 inserts with the block filling the frame; s16 and s18 from just behind the hens' heads, Duke small on the stage; s07, s19 wide; the montage three-quarter from near the ground; Duke large on the cards; s10 0.8 s, s26 0.25 s, s30 1.9 s; s06, s07, s14, s15, s19 longer. Sound: a mood-picked Minecraft track (`mood = "playful"`), a record-scratch on the poster, a rimshot after "standing ovation", a dramatic sting on the scream, the game's dings, boings, whooshes and bass drums | | |
 | 0010 | The scream's sting moved from `[[edit.sfx]]` into the shot (an edit sound is not silenced over black, so it rang through the second dip); s18's caption back to the bottom | PASS 78.58 s; **33 shots** (the adaptive detector sees nearly every join), median 2.50 s; six under 0.6 s; both dips silent; −14.2 LUFS; 65% voiced, median 3.06 words/s, no dead air; bed `music/game/swamp/firebugs` (playful) | Reviewed: round 8 |
 | 0011 | Round 8's framing faults: s02 head-on at eye level; s06 a side-on `track`; s11 fixed (the locked pan stepped); s12 from the side; s14 wider; s15's lens off Duke's path; s18 far enough back for all four hens; s19 keeps walking and makes a real 1.3-block jump on "fly" with a dazed landing; the montage looks up so the horn stays in | PASS 77.78 s; 32 shots; 66% voiced; true peak −0.4 dBTP (over −1) | The jump, the four hens, the profile step read |
-| 0012 | Every spoken caption whole for its line (complete while spoken); s12 and s18 captions at the top; s16 on 30°; s07's hold with drift and a head move; s30 one eased sit-to-sleep; crickets only from the bow on; Nibs deadpans over the egg ("Meanwhile, the crowd went... mild.") | | |
+| 0012 | Every spoken caption whole for its line (complete while spoken); s12 and s18 captions at the top; s16 on 30°; s07's hold with drift and a head move; s30 one eased sit-to-sleep; crickets only from the bow on; Nibs deadpans over the egg ("Meanwhile, the crowd went... mild.") | PASS 76.87 s; **30 shots**, median 2.51 s, longest 6.02 s; six under 0.6 s (1:01.20-1:02.77); both dips −70 LUFS; −14.2 LUFS, mix −1.7 dBTP (AAC master −0.9); 28 voiced lines, 67% of the runtime, median 3.06 words/s, no dead air | Reviewed: round 9, **best of the second climb** |
 
 Words a second per line on 0008 (from voice.json: words over first onset to last end):
 
@@ -158,27 +159,44 @@ lead tracks still read as one repeated walk-in, "watch me fly" had no flight, an
 pull in opposite directions on s16/s18 (high and wide with Duke small, against Duke at a quarter of the frame);
 0011-0012 keep the reference's composition and tighten the lens.
 
+Round 9 (0012, the final round of the second climb): 6.61, minimum 5.0, the best average of the climb and level with
+rounds 2-6, with sound 8 (the reviewer checked every effect against its frame on the sound sheet) and pacing 8 /
+comedic timing 8 from the pacing reviewer ("the montage cut on each word's onset", the poster cut on the frame
+"Duke" is spoken). Still under 7: acting 5 (Nibs' own jokes, the horn, the snacks and the fly, are told more than
+shown; Duke and the hens carry the visual laughs), text 5.5 (subtitles at speech pace break the 2.5 words/s and
+reading-time rules by construction, the trade the owner asked for: voices over captions), technical 6. The
+independent read with the stronger model (claude-fable-5-2) was not possible: the account answered HTTP 429 "You've
+reached your Fable limit", so it was skipped. One Opus reviewer hung for 76 minutes after the network outage and
+was stopped; the round was finished with the other five roles and the story review it had already written.
+
 ## Where it stands
 
-Measured on 0012 against the benchmark's checks:
+**Best iteration of the second climb: 0012** (round 9, 6.61, minimum 5.0). Measured on 0012 against the benchmark's
+checks:
 
 | Check | Benchmark | 0012 |
 |:--|:--|:--|
-| Shots found by scene detection (1-30) | 30 ±2 | 30 (31 clips in the edit: s16 split in two; one join on black not seen) |
-| Median shot length | 2.3-3.0 s | 2.25 s |
-| Opening | 5-7 s | 6.2 s |
-| Shots over 7.5 s | none | none (longest 7.15 s) |
-| Montage shots under 0.6 s | six, 0:58-1:01 | five, 0:56.4-0:58.2, then "HIM" held 1.0 s (a reviewer's beat) |
-| Black stretches ≥ 0.5 s | two, about 0:27 and 1:07 | 0:26.17-0:27.05 and 1:05.43-1:06.10 |
-| Lead tracks: Nibs centred, size steady | middle third, < 15% change | x 0.47-0.51 on every lead; size change 0-11% except s19 (16%, its jump) and s28 (61%, the optical push) |
-| Captions | ≤ 2.5 words/s, ≥ 1 s | max 1.52 words/s; every multi-word caption up for its reading time; the six montage words 0.27-0.47 s (one word a shot) |
-| Loudness | −14 ±1 LUFS, no clipping | −14.2 LUFS, −1.2 dBTP master; −14.1/−1.6 for the original-audio export |
-| Silence at the dips | < −50 LUFS | only at the two dips (0:25.9-0:27.0, 1:05.4-1:06.0) |
-| Egg plop and scream on their frames | ±2 frames | 0 frames (audio events --onsets) |
-| Running time | 70-74 s + 2 s card | 70.95 s + 2.3 s card |
+| Shots found by scene detection (1-30) | 30 ±2 | 30 (32 clips in the edit) |
+| Median shot length | 2.3-3.0 s | 2.51 s |
+| Opening | 5-7 s | 6.02 s |
+| Shots over 7.5 s | none | none (longest 6.02 s) |
+| Montage shots under 0.6 s | six, 0:58-1:01 | six, 1:01.20-1:02.77, each cut on its word's onset in the voice (16/21/15/15/12/15 frames) |
+| Black stretches ≥ 0.5 s | two, about 0:27 and 1:07 | 0:28.13-0:29.02 and 1:09.25-1:10.12 |
+| Lead tracks: Nibs centred, size steady | middle third, < 15% change | x 0.46-0.55 on every lead and track; size change 0-10% except s01 (39%) and s19 (35%), their jumps, s06 (17%, the side track) and s28 (51%, the optical push) |
+| Captions | ≤ 2.5 words/s, ≥ 1 s | spoken subtitles at speech pace: 10 lines over 2.5 words/s, 8 under reading time, the montage's one-word cards 0.20-0.35 s; every spoken caption shown whole for its line |
+| Loudness | −14 ±1 LUFS, no clipping | −14.2 LUFS; mix −1.7 dBTP, AAC master −0.9 dBTP; original-audio x export −14.1 LUFS / −1.7 dBTP |
+| Silence at the dips | < −50 LUFS | −70 LUFS integrated over both black gaps |
+| Egg plop and scream on their frames | ±2 frames | egg 7 ms from its frame; the scream is placed on its frame (68.267 s) but the onset check cannot separate it from the dramatic sting that starts on the same frame |
+| Running time | 70-74 s + 2 s card | 74.57 s + 2.3 s card (the side-by-side pass lengthened shots toward the reference's 82.2 s) |
+| Voice | (owner: near-continuous, ~3 words/s) | 28 lines, a voice for 67% of the runtime, median 3.06 words/s, no dead air inside dialogue |
 
-What holds the score under 7, by the reviewers' own repeated notes: acting (5-5.5: puppets with no faces; Nibs'
-beats are walks, glances and hops; the rubric wants every beat to read with the captions covered), sound (6 in
-every round: the reviewer cannot hear and scores the loudness curve and the script's cues only), comedic timing
-(6-6.5: words pop in as spoken, so key words land a second or more into shots; a cut-on-word edit needs the
-`cut_on` pass over every line), and the one-word montage cards, which fail the 1 s reading floor by design.
+Side-by-side against the reference (`videocraft compare --side-by-side`, the sheet and table outside the repo): 30
+paired shots, the same camera family on every one; 9 within ±15% of the reference's length; ours 76.87 s against
+82.20 s. Lead tracks now match its look (road in the lower two thirds, almost no sky, a 108° bend); the face cut-in
+fills the frame; the montage is three-quarter from the ground at about half the frame height; Duke is 0.48-0.55 of
+the frame on both cards.
+
+What still holds the score under 7, by the reviewers' repeated notes: acting (5: puppets with no faces, and Nibs'
+brags are spoken rather than shown), text (5.5: subtitles at speech pace), the reference's small-Duke compositions
+for the bow and the ovation (Duke 9% and 6% of the frame; one reviewer asks for 25%), and technical 6 (two frozen
+holds, the s30 pose changes).

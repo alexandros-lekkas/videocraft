@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The benchmark film's second climb (`examples/nibs-vs-duke.toml`, log in `docs/benchmarks/nibs-vs-duke-log.md`):
+  near-continuous voice (67% of the runtime at 3 words a second), the reference's camera language from the
+  side-by-side, Minecraft sounds and a mood-picked track, bigger acting beats; rounds 7-9, best 0012 at 6.61.
 - Sounds by meaning, Minecraft first: a committed catalog of all 1991 sound events and 92 music tracks of 26.3 (names,
   tags, measured lengths, tempo, entries and loops; no audio), a comedy palette (`palette = "drumroll"`), `tag = "pop"`
   on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
