@@ -13,8 +13,8 @@ Frames: src_* are frames of the shot's own video (src_out exclusive); out_start 
 import math
 
 CLIP_KEYS = {'shot', 'trim', 'in', 'out', 'length', 'frames', 'push', 'speed', 'fade_in', 'fade_out', 'black', 'label',
-             'frame', 'grade', 'note'}
-LOOK_KEYS = {'from', 'to', 'frame', 'grade', 'note'}
+             'frame', 'grade', 'lens', 'note'}
+LOOK_KEYS = {'from', 'to', 'frame', 'grade', 'lens', 'note'}
 GRADES = {'sepia', 'cool', 'warm', 'crush', 'mono', 'none'}
 EASES = {'linear', 'smooth', 'in', 'out'}
 
@@ -106,6 +106,14 @@ def _check_look(table, where):
         extra = sorted(set(grade) - {'saturation', 'contrast', 'brightness', 'gamma', 'tint', 'amount'})
         if extra:
             raise EditError(f'{where}.grade: unknown key(s) {", ".join(extra)}; allowed: saturation, contrast, brightness, gamma, tint, amount')
+    lens = table.get('lens')
+    if lens is not None:
+        if not isinstance(lens, dict) or set(lens) - {'barrel', 'k2'} or 'barrel' not in lens:
+            raise EditError(f'{where}.lens = {{ barrel = 0.3 }} (k1, 0 to 1: straight lines bow out as with a fisheye; k2 optional)')
+        for k in ('barrel', 'k2'):
+            v = lens.get(k, 0)
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or not 0 <= v <= 1:
+                raise EditError(f'{where}.lens.{k} is a number from 0 to 1, not {v!r}')
     frame = table.get('frame')
     if frame is not None:
         if not isinstance(frame, dict):
@@ -186,7 +194,7 @@ def resolve(plan, edit, shots, marks=None):
 
 def _apply_looks(timeline, looks, clips):
     for clip, raw in zip(timeline, clips):
-        look = {k: raw[k] for k in ('frame', 'grade') if k in raw}
+        look = {k: raw[k] for k in ('frame', 'grade', 'lens') if k in raw}
         if look:
             clip['look'] = look
     for i, look in enumerate(looks):
@@ -204,7 +212,7 @@ def _apply_looks(timeline, looks, clips):
             raise EditError(f'edit.look[{i}]: to comes before from in the cut')
         for clip in timeline[a:b + 1]:
             if clip['kind'] == 'shot':
-                clip['look'] = {**{k: look[k] for k in ('frame', 'grade') if k in look}, **clip.get('look', {})}
+                clip['look'] = {**{k: look[k] for k in ('frame', 'grade', 'lens') if k in look}, **clip.get('look', {})}
 
 
 # ---- Speed ----

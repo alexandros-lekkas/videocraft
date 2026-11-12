@@ -1,5 +1,5 @@
 """The timeline as an ffmpeg filter graph: per clip its pieces (plain, an exact nearest-neighbour hold, a smooth zoom),
-then speed, the look (grade, frame) and fades; black gaps from a colour source; all joined in order.
+then speed, the look (lens, grade, frame) and fades; black gaps from a colour source; all joined in order.
 
 `build(timeline, video_of, frame_png_of)` returns (inputs, graph) where inputs is the list of ffmpeg input arguments.
 """
@@ -70,6 +70,9 @@ def build(timeline, video_of, frame_png_of):
             # Each source frame gets its output slot; fps repeats or drops to fill the slots; the count is made exact.
             post += [f"setpts='floor({expr}+0.5)/({fps}*TB)'", f'fps={fps}', 'tpad=stop_mode=clone:stop=8', f'trim=end_frame={n}']
         look = clip.get('look') or {}
+        lens = looks.lens_filter(look.get('lens'), width, height)
+        if lens:
+            post.append(lens)
         grade = looks.grade_filter(look.get('grade'))
         if grade:
             post.append(grade)
