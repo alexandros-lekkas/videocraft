@@ -49,6 +49,15 @@ class TranscriptTests(unittest.TestCase):
         self.assertTrue(any(l.get('cut_on') for l in lines))
         self.assertIn('Duke', {l['speaker'] for l in lines})
 
+    def test_packed_lines_follow_the_line_before_them(self):
+        raw = {'name': 'pack', 'shot': [{'name': 'a', 'duration': 3, 'camera': {'rig': 'fixed'}, 'cue': [
+            {'at': 0.25, 'do': 'say', 'actor': 'x', 'text': 'Breaking tonight: press reports say'},
+            {'do': 'say', 'actor': 'x', 'text': 'he was a target.'},
+            {'at': 0.1, 'do': 'sound', 'id': 'minecraft:block.note_block.bell'},
+            {'do': 'say', 'actor': 'x', 'text': 'Back to you.'}]}]}
+        entry = read.transcript(raw, None)[0]
+        self.assertEqual([x['text'] for x in entry['lines']], ['Breaking tonight: press reports say', 'he was a target.', 'Back to you.'])
+
     def test_the_text_has_the_picture_and_the_lines_but_not_the_premise(self):
         raw = script.load(FIXTURE)
         out = read.text(read.transcript(raw, str(FIXTURE)), read.cast_lines(raw, str(FIXTURE)))

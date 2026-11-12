@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `story read` keeps packed `say` lines (no `at`) after the line before them; it sorted them to 0 s, so a cold
+  reader heard every split sentence backwards and scored a script 4/10 for it.
 - `clips cut --max S` lets a vertical short run past 60 s (the platforms now take longer shorts); the default
   stays 60 s.
 - The mix balances by measurement, by default: dialogue is king. Each bus is measured in LUFS; the voice at −16
