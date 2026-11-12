@@ -27,6 +27,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 5 | 0011 | 8.0 | 7.5 | 7.0 | 5.0 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | **6.56** | 5 | pass |
 | 6 | 0012 | 8.0 | 7.0 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
 | 7 | 0003 (second climb) | 8.0 | 7.0 | 6.5 | 5.5 | 6.0 | 6.0 | **7.0** | 6.5 | 6.0 | **6.50** | 5.5 | pass |
+| 8 | 0010 | 7.0 | 7.0 | 6.5 | 4.5 | 6.5 | 5.5 | 7.0 | 6.5 | 6.0 | **6.28** | 4.5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -105,6 +106,9 @@ shots were first checked in short test takes of only those shots (about a minute
 | 0005-0006 | s14 2.5 s at 3 blocks/s, s15 three hops filmed from the stage toward the audience (a new background), s17 the hen glances at her egg, quieter crickets; then a 0.7 s second dip and the card's sting 0.15 s in | PASS; 0005 measured 69.98 s without the end card (under 70) and its second dip not silent; 0006 72.6 s, both dips silent | |
 | 0007-0008 | **The voice pass** (the owner: "prefer voices over captions", "you go super slow with the voice lines"): narration over every walking shot and the flashback, the narrator on Duke's card and the end card, commas where the TTS paused a second, cut_on into the horn and onto "Duke", every action retimed to the new onsets; then main's pace pass (lines trimmed, packed 0.12 s apart, 3.2 words/s target) and joke pauses marked `beat = true` | 0008: PASS 72.88 s, 29 shots, median 2.32 s; **26 voiced lines, a voice for 62% of the runtime, median 3.06 words a second, no dead air inside dialogue** (0006: 17 lines, about a third voiced, Nibs 1.9-4.4 and Duke 1.5-1.7 words a second) | |
 | 0009 | **The side-by-side pass** (shot-by-shot against the reference): lead tracks pitched 20° down from 1.5 blocks at 108°; s02 a true face cut-in; s12 and s15 inserts with the block filling the frame; s16 and s18 from just behind the hens' heads, Duke small on the stage; s07, s19 wide; the montage three-quarter from near the ground; Duke large on the cards; s10 0.8 s, s26 0.25 s, s30 1.9 s; s06, s07, s14, s15, s19 longer. Sound: a mood-picked Minecraft track (`mood = "playful"`), a record-scratch on the poster, a rimshot after "standing ovation", a dramatic sting on the scream, the game's dings, boings, whooshes and bass drums | | |
+| 0010 | The scream's sting moved from `[[edit.sfx]]` into the shot (an edit sound is not silenced over black, so it rang through the second dip); s18's caption back to the bottom | PASS 78.58 s; **33 shots** (the adaptive detector sees nearly every join), median 2.50 s; six under 0.6 s; both dips silent; −14.2 LUFS; 65% voiced, median 3.06 words/s, no dead air; bed `music/game/swamp/firebugs` (playful) | Reviewed: round 8 |
+| 0011 | Round 8's framing faults: s02 head-on at eye level; s06 a side-on `track`; s11 fixed (the locked pan stepped); s12 from the side; s14 wider; s15's lens off Duke's path; s18 far enough back for all four hens; s19 keeps walking and makes a real 1.3-block jump on "fly" with a dazed landing; the montage looks up so the horn stays in | PASS 77.78 s; 32 shots; 66% voiced; true peak −0.4 dBTP (over −1) | The jump, the four hens, the profile step read |
+| 0012 | Every spoken caption whole for its line (complete while spoken); s12 and s18 captions at the top; s16 on 30°; s07's hold with drift and a head move; s30 one eased sit-to-sleep; crickets only from the bow on; Nibs deadpans over the egg ("Meanwhile, the crowd went... mild.") | | |
 
 Words a second per line on 0008 (from voice.json: words over first onset to last end):
 
@@ -143,6 +147,16 @@ pacing 8, camera 7; staging, timing and energy 6-6.5, so the average is flat (6.
 montage words cut 7-15 frames off their spoken words and covered Nibs' head; the bow read from behind as a cropped
 back; Nibs' first act is still one walk to the lens; the trophy climb, the egg, the jump and the sleep read without
 text. Applied in 0004 and 0005 (table above).
+
+Round 8 (0010: the voice pass and the side-by-side pass together) fell to 6.28 with acting 4.5, under the pass
+line. The camera reviewer counted half the screen time in lead tracks "held dead centre" and the shot mix "nearly
+the reference's"; pacing found 32 shots, a 2.5 s median and the montage "cut on each word's onset". What cost
+points: the reference's framing made several beats too small or too close to read (Duke at 9% of the frame for the
+bow and 6% for the ovation, the s15 insert under Duke's belly, the horn as a grey slab in the face cut-in), the
+lead tracks still read as one repeated walk-in, "watch me fly" had no flight, and the subtitles, now at speech pace
+(about 3 words a second), build word by word too fast to read (text 5.5). The side-by-side brief and the reviewers
+pull in opposite directions on s16/s18 (high and wide with Duke small, against Duke at a quarter of the frame);
+0011-0012 keep the reference's composition and tighten the lens.
 
 ## Where it stands
 
