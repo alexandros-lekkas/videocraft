@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "dev.blockreel.devmixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "dev.blockreel.HiddenWindow",
+  "client": [
+    "HiddenWindowMixin",
+    "HiddenAppMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

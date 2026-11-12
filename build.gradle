@@ -1,0 +1,88 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+base {
+	archivesName = 'blockreel'
+}
+
+sourceSets {
+	// Plain-JVM checks (src/smoke/java/**/*Checks.java): no Minecraft window, run by `./gradlew check`.
+	smoke {
+		java.srcDir 'src/smoke/java'
+		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+	}
+}
+
+// A take (-Ptake=<dir>) always runs hidden unless -Pshow=true; -Phidden=true hides a plain runClient too.
+def hiddenRun() {
+	project.findProperty('show') != 'true' && (project.findProperty('hidden') == 'true' || project.hasProperty('take'))
+}
+
+loom {
+	runs {
+		client {
+			// The offline name picks the default skin; "Playtest" gives Steve.
+			programArgs "--username", (project.findProperty('username') ?: 'Playtest')
+			// The game directory: never a real Minecraft folder. bin/blockreel passes run-game/.
+			runDir (project.findProperty('gameDir') ?: 'run-game')
+			// -Ptake=<dir>: play <dir>/plan.json, write the take into <dir>, quit (see docs/DESIGN.md).
+			if (project.hasProperty('take')) vmArg "-Dblockreel.take=${project.property('take')}"
+			if (project.hasProperty('ffmpeg')) vmArg "-Dblockreel.ffmpeg=${project.property('ffmpeg')}"
+			// Loopback control port; never 25590 (the Minecraft MCP port of a real game).
+			vmArg "-Dblockreel.port=${project.findProperty('controlPort') ?: '25750'}"
+			if (hiddenRun()) vmArg "-Dblockreel.hidden=true"
+			if (project.hasProperty('width') && project.hasProperty('height')) programArgs "--width", project.property('width'), "--height", project.property('height')
+		}
+	}
+
+	mods {
+		"blockreel" {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(25)
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+// Every *Checks class in src/smoke runs as part of `check` (and so `build`). Add yours to this list.
+def checks = ['PlanChecks', 'RigChecks']
+checks.each { name ->
+	tasks.register(name.uncapitalize(), JavaExec) {
+		description = "Plain-JVM check ${name} (no game window)."
+		group = 'verification'
+		classpath = sourceSets.smoke.runtimeClasspath
+		mainClass = "dev.blockreel.${name}"
+		workingDir = projectDir
+	}
+}
+tasks.named('check') { dependsOn checks.collect { it.uncapitalize() } }
+
+dependencyLocking {
+	lockAllConfigurations()
+	// macOS-only Minecraft library; resolving it on Linux CI would violate the lock state.
+	ignoredDependencies.add("ca.weblite:java-objc-bridge")
+}

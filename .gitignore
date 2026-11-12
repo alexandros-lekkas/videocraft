@@ -1,8 +1,14 @@
+# Analyst scratch (never committed)
 reference/
+# Gradle and build output
 build/
 .gradle/
-run*/
 out/
+# The hidden game's own directory and every take (anchored: a source folder called run* is not ignored)
+/run-game/
+/runs/
+/run/
 *.mp4.part
 __pycache__/
+*.egg-info/
 .DS_Store
