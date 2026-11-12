@@ -29,7 +29,7 @@ faster) for quick takes; `VIDEOCRAFT_VOICE=voice` makes a missing voice an error
 | Timings | [wav2vec2-base-960h](https://huggingface.co/facebook/wav2vec2-base-960h) CTC forced alignment of the known text | Apache-2.0 (transformers) / Apache-2.0 | Every engine. |
 
 The cast of the benchmark is [cast/nibs-vs-duke.toml](../cast/nibs-vs-duke.toml): Nibs is `ryan` + "cocky, brash and
-bright", Duke `aiden` + "slow, smug and low", both seed 7 (measured in the voice lab: median f0 225 Hz against
+bright", Duke `aiden` + "smug, low and brisk" (it was "slow, smug and low" until pacing: see below), both seed 7 (measured in the voice lab: median f0 225 Hz against
 131 Hz, 9.4 semitones apart; 0 ASR errors in 52 words). The research behind these choices (19 engines surveyed by
 licence, 3 run here, the timing measurements) was done in a separate voice lab on 2026-11-11; its findings are
 summarised here and in the code comments.
@@ -93,6 +93,39 @@ The CLI core stays standard-library only: `cli/videocraft/voice/` never imports 
 8. **Cache** under `cache/voice/lines/<key>.{wav,words.json,json}`, the key a hash of engine, model, voice,
    instruction, seed, speed, pitch, loudness, words and the worker's version. A re-compile reads the cache (0.1 s for
    the talk example against 30-60 s to synthesize it).
+9. **Pace** (in the CLI core, `cli/videocraft/voice/pace.py`, standard library): the line is tightened and cached
+   beside the raw one as `<key>.p<hash>.{wav,json}`, so changing the pacing never re-synthesizes. Below.
+
+## Pacing: voiced and fast by default
+
+The owner's verdict on the first two films: voiced lines are "significantly better" than captions, and the lines
+were "super slow" (measured 1.2-3.5 words a second, with dead air between them). So every line is brisk unless a
+script asks otherwise, and this is the tool's default, not a per-film fix:
+
+- **Delivery.** Every qwen3 line's instruction gets the project's default delivery sentence (`cast.DELIVERY`:
+  "Brisk and snappy: a quick conversational pace, words tumbling out, no long pauses."), except with a slow style
+  (`deadpan`, `sleepy`, `sad`) or `pace = 0`. Cast instructions never ask for slow or drawling delivery.
+- **Trim.** Silence before the first word is cut to 60 ms and after the last to 120 ms. Only quiet audio is cut
+  (10 ms blocks 30 dB under the line's loud level, the 95th percentile): an aligned word end can be 80-160 ms early,
+  so the tail keeps the last word's decay (up to 0.4 s after its aligned end).
+- **Pauses.** A pause inside a line (the quiet run that ends at the next word's onset) is capped at 0.25 s after a
+  comma or inside a phrase, 0.4 s after `.`, `!`, `?` or an ellipsis; the cut is taken from the middle of the pause
+  with 5 ms fades. Not for `style = "deadpan"` or a line marked `beat = true`.
+- **Stretch.** A line of 3 words or more still slower than `pace x 0.85` words a second is time-stretched towards
+  its `pace` (ffmpeg `atempo`, pitch kept), by at most 1.2x. Not for the slow styles.
+- **Pace.** `pace = 3.2` words a second is every character's default (cast `pace`; a say cue's `pace` overrides it;
+  `0` or `false` leaves the line as synthesized). Words a second is `words / (last end - first start)`, the same
+  measure lint and measure use.
+
+Word timings stay exact: a cut moves every later time back by its length (a time inside a cut lands on its start),
+a stretch divides every time by the factor. Re-aligning the paced talk lines with wav2vec2 found the trimmed lines'
+onsets within 0-3 ms of the moved times and the 1.2x line within 16 ms (atempo smears an onset by about 15 ms; under
+a frame). voice.json records per line `wps` (after) and `pace` = `{wps_raw, wps, stretch, trimmed, cuts, target}`.
+
+On `examples/talk.toml` (Qwen3, words a second before → after): nibs 2.24 → 3.24 (the brisk delivery), challenge
+(`excited`) 2.63 → 2.76, duke 1.62 → 2.96 (the new instruction 2.38, then stretched 1.2x), reply (`deadpan`, exempt)
+2.34 → 2.34; the film went from 15.7 s to 12.0 s, a voice for 84 % of it, the longest silence between lines 0.68 s.
+With no voice installed the estimate is paced the same way (the estimate's 2.4-3.0 words a second become 2.9-3.0).
 
 ### Word timings: what to trust
 
@@ -141,11 +174,18 @@ Word ends are 80-160 ms off at p90: never cut on an end without looking.
   dialogue shot may leave `duration` out), `cut-on` (the shot ends on the onset frame of `cut_on`; the words from it
   on carry into the next shot in script order as a caption at 0, while the voice plays on), `none`.
 
-A `say` without `at` follows the previous line of its shot (or the words carried into it) after `pause_after`
-(0.2 s). Every line goes into `edit.dialogue`, which the run store writes to `voice.json`:
-`{id, character, shot, at, start_frame, text, style, fit, file, seconds, engine, timing, cached, key, voice, words:
-[{word, start, end}], cut_on?: {word, index, onset, frame}, carried_to?}` (times in seconds of the line; `at` and
-`onset` in seconds of the shot). A short table goes to stderr.
+**Packing.** The first line of a shot starts at its `at`; every later line (fit `extend` or `cut-on`) starts its
+first word `gap` after the previous line's last word: 0.12 s by default, the previous line's `pause_after` or the
+line's own `gap` to change it. A later line's written `at` is replaced by the packed time (stderr notes it) unless
+the line is `beat = true` (the pause before it is the joke) or `fit = "none"`. The shot's first line after a cut-on
+carry follows the carried words the same way. Every line goes into `edit.dialogue`, which the run store writes to
+`voice.json`: `{id, character, shot, at, start_frame, text, style, fit, file, seconds, engine, timing, cached, key,
+voice, wps, pace, beat, words: [{word, start, end}], cut_on?: {word, index, onset, frame}, carried_to?}` (times in
+seconds of the line; `at` and `onset` in seconds of the shot). A short table goes to stderr.
+
+lint (`unvoiced_text`, `slow_line`, `dead_air`) and measure (`dialogue` in metrics.json, "Dialogue pace" in
+report.md: words a second per line, the share of the runtime with a voice, the longest silences) hold scripts and
+cuts to the same rules ([SCRIPT.md](SCRIPT.md#checking-a-script-videocraft-lint)).
 
 ## `voice check`
 

@@ -21,6 +21,7 @@ public final class ActorChecks {
 	public static void main(String[] args) {
 		path();
 		stride();
+		carriedStop();
 		footing();
 		heading();
 		life();
@@ -70,6 +71,26 @@ public final class ActorChecks {
 		Stride d = new Stride(p, 1.8, 0.35, 0.5, 0, new Random(4));
 		for (int i = 0; i < 40; i++) d.step(DT);
 		PlanChecks.check(c.distance() != d.distance(), "seeds vary the pace");
+	}
+
+	/** A walk carried over a cut, ended by the next shot's turn: it brakes to rest in a few ticks, without a lurch. */
+	static void carriedStop() {
+		Path p = Path.through(List.of(new double[] {0, 0}, new double[] {0, 30}));
+		Stride a = new Stride(p, 1.4, 0.35, 0.5, 0, new Random(9));
+		for (int i = 0; i < 60; i++) a.step(DT);
+		double at = a.distance(), v0 = a.speed(), prev = v0, jerk = 0;
+		a.stop(Stride.CUT_STOP);
+		int ticks = 0;
+		while (!a.done() && ticks < 100) {
+			a.step(DT);
+			jerk = Math.max(jerk, prev - a.speed());
+			prev = a.speed();
+			ticks++;
+		}
+		PlanChecks.check(a.done(), "a carried walk comes to rest");
+		PlanChecks.check(ticks * DT <= 0.6, "it stops within about a quarter second: " + ticks * DT + " s");
+		PlanChecks.check(a.distance() - at < v0 * 0.5, "it stops near where it was told, not at the old mark: " + (a.distance() - at) + " blocks");
+		PlanChecks.check(jerk <= v0 * 0.6, "no lurch: " + jerk + " blocks/s lost in a tick from " + v0);
 	}
 
 	static void footing() {

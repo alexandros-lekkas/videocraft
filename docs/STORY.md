@@ -16,7 +16,7 @@ person can read and edit and git can diff, and each one is drafted from the stag
 | Stage | File | What it holds | Checked for |
 |:--|:--|:--|:--|
 | premise | `premise.md` | Title, logline, tone, audience, format (`short` 30-90 s, `episode` 3-8 min, `long` 10-20 min; 16:9 or 9:16), reference form, characters, five beats, rules | a title and the `Logline` and `Format` sections |
-| bible | `bible.toml` | `[[character]]` (id, kind `mob` with `entity`/`mannequin` with a `skin` spec/`narrator`, look, personality, voice description, sounds, gestures), `[[set]]` (an existing set or a description), `[[gag]]`, `[rules]` | valid TOML, ids usable as actor ids, mobs have an entity, mannequins a skin |
+| bible | `bible.toml` | `[[character]]` (id, kind `mob` with `entity`/`mannequin` with a `skin` spec/`narrator`, look, personality, `voice = { engine, preset, instruct, pace }`, sounds, gestures), `[[set]]` (an existing set or a description), `[[gag]]`, `[rules]` | valid TOML, ids usable as actor ids, mobs have an entity, mannequins a skin; soft: every character has a brisk voice (a qwen3 or kokoro preset, an instruction without "slow", pace 3.0-3.8) or `voice = "none"` |
 | outline | `outline.md` | Beats (`## n. name (purpose, ~length)`) and a comedy pass naming every joke and how it lands (visual, line, sound or cut) | at least three beats and the comedy pass |
 | script | `script.md` | Scenes, action lines, `NAME: line with *key word` (`(VO)` for narration), `[SOUND: …]`, `[CARD: …]`, `[CAPTION: …]`, `[DIP TO BLACK]` | scene headings, at most one `*key` word per line |
 | shots | `shots.toml` | A videocraft shot script ([SCRIPT.md](SCRIPT.md)) named after the story | `videocraft compile`, `videocraft lint` (once it exists), only known actions and rigs, every cue's actor exists, no shot over 7.5 s in a short, the format's length, 1080x1920 when vertical |
@@ -74,6 +74,16 @@ reveals, one message at a time, captions at most 2.5 words a second, a median sh
 exist), plus the actions and rigs this night's workstreams have promised but SCRIPT.md does not document yet; a
 draft that uses anything else goes back to the model with the list. A failed check becomes a repair prompt
 (`repair.md`) quoting each problem; after three rounds the stage stops and reports.
+
+**Voiced and fast.** The owner's verdict on the first films: voiced lines are far better than captions, and the
+lines were too slow. So the prompts ask for every word of dialogue and narration as a `say` cue (its caption is the
+subtitle), on-screen text only for signs, posts and cards (and a voice reads the ones the joke needs), lines at
+3.0-3.8 words a second and near-continuous talk (later lines of a shot leave out `at` and pack 0.12 s apart; a
+deliberate pause is `beat = true`). The shots prompt carries a `[cast]` block made from the bible's voices
+(`stages.cast_block`; actor `narrator` is the cast library's narrator unless the bible defines one). lint's voice
+warnings (`unvoiced_text`, `slow_line`, `dead_air`) and the bible's voice checks are **soft** problems: they go to
+the model in one repair round (prefixed `voice:`), but a draft with only soft problems left still locks, and a
+hand-written file is never held back by them.
 
 ## Series
 

@@ -12,7 +12,15 @@ one platform, and not affiliated with Mojang ([below](#credits-and-trademarks)).
 
 ## Demo
 
-<!-- DEMO: orchestrator inserts the benchmark film here -->
+[![Nibs vs Duke: a 73-second comedy short made with videocraft](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-1/nibs-vs-duke-poster.jpg)](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-1/nibs-vs-duke-720p30.mp4)
+
+**Nibs vs Duke** ([720p, 8 MB](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-1/nibs-vs-duke-720p30.mp4) · [1080p60, 23 MB](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-1/nibs-vs-duke-1080p60.mp4)):
+a one-horned goat challenges a three-time Talent Night champion fox. 30 shots in 73 s, every frame staged and
+filmed in a hidden Minecraft client from one script ([examples/nibs-vs-duke.toml](examples/nibs-vs-duke.toml)):
+built sets, scripted mob actors, lead-track cameras, a framed flashback, a sub-second montage, word-timed captions,
+local open-source voices, and an original synthesized music bed (this export contains no Mojang audio). It is the
+benchmark of [docs/benchmarks/pinksheep-style.md](docs/benchmarks/pinksheep-style.md); reviewers score it **6.6/10**
+against that rubric (pass is 7), and [the production log](docs/benchmarks/nibs-vs-duke-log.md) says why.
 
 Example outputs, as they are published, are listed in [docs/GALLERY.md](docs/GALLERY.md).
 

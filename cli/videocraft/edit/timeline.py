@@ -92,11 +92,15 @@ def check(edit, shots, durations=None, fps=60):
         from videocraft.edit.export import PRESETS
         if export.get('preset') not in PRESETS:
             raise EditError(f'edit.export[{i}]: preset is one of {", ".join(PRESETS)}')
+        if str(export.get('audio', 'game')).lower() not in ('game', 'original'):
+            raise EditError(f'edit.export[{i}]: audio is "game" (the mix, the default) or "original" (also writes <name>-original-audio.mp4)')
+        if export.get('audio') == 'original' and export['preset'] not in ('x-1080p60', 'readme-720p30'):
+            raise EditError(f'edit.export[{i}]: audio = "original" is for the video presets x-1080p60 and readme-720p30')
 
 
 def _check_look(table, where):
     grade = table.get('grade')
-    if grade is not None and not (grade in GRADES or isinstance(grade, dict)):
+    if grade is not None and not (isinstance(grade, dict) or grade in GRADES):
         raise EditError(f'{where}.grade is one of {sorted(GRADES)} or {{ saturation, contrast, brightness, tint, amount }}')
     if isinstance(grade, dict):
         extra = sorted(set(grade) - {'saturation', 'contrast', 'brightness', 'gamma', 'tint', 'amount'})

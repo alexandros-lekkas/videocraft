@@ -8,6 +8,33 @@
   relative to the run's copy of the script (the vertical take failed with "no skin PNG").
 - Text never shrinks under 44 px: the smallest font scale for titles, cards, captions and lower thirds rounds up (7, 49 px), not
   to the nearest (6, 42 px), so a long card line wraps instead of shrinking under the minimum.
+- Voiced and fast by default. Every say line is paced (`cli/videocraft/voice/pace.py`): silence trimmed to 60 ms
+  before and 120 ms after, pauses capped at 0.25 s (0.4 s after a sentence), and a line slower than 0.85 x its pace
+  stretched towards it (atempo, at most 1.2x); characters get `pace = 3.2` and qwen3 lines a brisk default delivery.
+  Later lines of a shot pack 0.12 s after the previous one (`gap`; `beat = true` keeps a written `at`). lint warns on
+  `unvoiced_text`, `slow_line` and `dead_air`; measure reports words a second per line, the voice share and the
+  longest silences; the story prompts write every line as `say` with voices in the bible; the pacing and sound
+  reviewers judge dialogue pace. talk.toml: Duke 1.62 → 2.96 words a second, Nibs 2.24 → 3.24, the film 15.7 → 12.0 s.
+- The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
+  tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
+- `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and
+  `master-original-audio.mp4` beside the game-audio files, from a second mix in `cut/audio-original.wav`; the game
+  mix in `cut/audio.wav` is never overwritten.
+- A walk carried over a cut ends cleanly on the next shot's first movement cue (`turn`, `state`, `pose` brake it in
+  0.25 s, a turn follows once it stands; `place` and `walk` replace it), and a `place` rewrites that frame's
+  `actors.csv` row, which was logged at the old walk's spot.
+- `measure` finds hard cuts in dark, graded footage (a brightness-scaled minimum when the jump stands ten times
+  over the stillness around it), and warns of a repeated frame at a cut only when it straddles the cut inside a
+  moving shot, not when one side is a locked-off still.
+- `review packet` writes a sound sheet for the sound reviewer: `sound.md` (every placed effect, voice word and music
+  cue on its master frame, the dips' loudness, per shot the visible actions beside what is heard) and loudness charts
+  `sound/loudness-<k>.png`; the sound prompt now judges sync, ducking and silence at the dips from them.
+- The benchmark film `examples/nibs-vs-duke.toml` (docs/benchmarks/pinksheep-style.md): thirty shots and an end
+  card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
+  flashback, dips to black and the six-shot montage cut on the spoken words; production log in
+  `docs/benchmarks/nibs-vs-duke-log.md`.
+- Shots end on a beat: `until = "<mark>"` stops recording on the frame an action notes that mark, with `duration`
+  as the cap; a mark that never comes fails the take with the shot and the label.
 - Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),
   `swarm` (bees on concentric tilting orbits that never touch each other or the body they circle), `land` (on a block,
   or on an actor's shoulder and ride along); `[[actor]]` keys `flying`, `angry`, `buzz_volume`; wings beat by vanilla's

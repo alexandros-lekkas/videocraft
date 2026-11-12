@@ -176,6 +176,7 @@ public final class Puppet implements Actor {
 
 	@Override
 	public void cut(ShotContext shot) {
+		carried = walking();
 		ActorLog.write(shot);
 	}
 
@@ -264,6 +265,8 @@ public final class Puppet implements Actor {
 			if (stride.done()) {
 				stride = null;
 				walking = false;
+				if (afterStop != null && afterStop.length == 2) heading.turn(afterStop[0], afterStop[1]);
+				afterStop = null;
 			}
 		}
 		boolean recording = shot.recording();
@@ -518,11 +521,32 @@ public final class Puppet implements Actor {
 		all.add(new double[] {x, z});
 		all.addAll(points);
 		double from = stride != null ? stride.speed() : 0;
+		carried = false;
+		afterStop = null;
 		this.gait = gait;
 		stride = new Stride(Path.through(all), speed, accel, arrive, from, new Random(random.nextLong()));
 	}
 
 	boolean walking() { return stride != null && !stride.done(); }
+
+	/**
+	 * Set when a walk is still going as its shot cuts. It keeps going into the next shot (a walk cut between two
+	 * angles), until that shot gives the actor a movement cue of its own: a place or a new walk replace it at once, a
+	 * turn, state or pose ends it with a quarter-second stop, so the actor never walks on under a new shot's staging.
+	 */
+	private boolean carried;
+
+	/** A turn asked for while a carried walk brakes: {yaw, pace}, made once it has stopped (the walk steers till then). */
+	private double[] afterStop;
+
+	/** A movement cue other than place or walk: ends a walk carried over from the previous shot. */
+	void endCarriedWalk() {
+		if (carried && walking()) {
+			stride.stop(Stride.CUT_STOP);
+			afterStop = new double[0];
+		}
+		carried = false;
+	}
 
 	void halt(double seconds) { if (stride != null) stride.stop(seconds); }
 
@@ -531,6 +555,8 @@ public final class Puppet implements Actor {
 		x = at.x;
 		z = at.z;
 		stride = null;
+		carried = false;
+		afterStop = null;
 		if (flight != null && (flight.airborne() || flight.perchedOn() != null)) {
 			flight.place(new double[] {at.x, at.y, at.z}, new Random(random.nextLong()));
 			foot.place(at.y);
@@ -541,11 +567,17 @@ public final class Puppet implements Actor {
 		apply(true);
 	}
 
-	void turn(double yaw, double pace) { heading.turn(yaw, pace); }
+	void turn(double yaw, double pace) {
+		if (afterStop != null && walking()) afterStop = new double[] {yaw, pace};
+		else heading.turn(yaw, pace);
+	}
 
-	void retarget(double yaw) { heading.retarget(yaw); }
+	void retarget(double yaw) {
+		if (afterStop != null && afterStop.length == 2 && walking()) afterStop[0] = yaw;
+		else heading.retarget(yaw);
+	}
 
-	boolean turning() { return heading.turning(); }
+	boolean turning() { return heading.turning() || (afterStop != null && walking()); }
 
 	void look(double yaw, double pitch) { heading.look(yaw, pitch); }
 

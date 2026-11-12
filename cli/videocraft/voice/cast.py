@@ -11,11 +11,15 @@
     speed = 1.0                        # kokoro: its own rate; qwen3: a time stretch (keep 0.9-1.1)
     pitch = 0                          # semitones, post-process (moves formants; keep within +-2)
     lufs = -20                         # each line's loudness before the mix
+    pace = 3.2                         # words a second the lines aim at (default 3.2; 0 = no pacing); pace.py
     bark = "minecraft:entity.goat.ambient"  # optional: the game sound played on the line's first word
     draft = { engine = "kokoro", voice = "am_fenrir", speed = 1.1 }   # VIDEOCRAFT_VOICE=draft: fast takes
 
     [styles]                           # optional: delivery words -> instruction (adds to / replaces STYLES)
     shout = "Shouting, loud and urgent."
+
+Every line is paced (pace.py): silence trimmed, pauses capped, a slow line stretched towards `pace`; a qwen3 line
+also gets the project's default delivery (DELIVERY: brisk) unless its style is a slow one (pace.SLOW_STYLES).
 
 A character the cast does not name is looked up in every committed cast file, then given a generic voice (with a
 warning), so a generated script always compiles.
@@ -26,11 +30,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from videocraft.paths import ROOT
+from videocraft.voice import pace as pace_mod
 
 CAST_DIR = ROOT / 'cast'
 ENGINES = ('qwen3', 'kokoro')
 CHARACTER_KEYS = {'id', 'name', 'color', 'engine', 'voice', 'instruct', 'seed', 'speed', 'pitch', 'lufs', 'bark',
-                  'bark_volume', 'draft', 'model', 'description'}
+                  'bark_volume', 'draft', 'model', 'description', 'pace'}
+# The project-wide delivery: every qwen3 line is asked to be brisk (the first films' lines ran 1.2-3.5 words a
+# second with dead air, and the owner found them "super slow"). Not added for the slow styles.
+DELIVERY = 'Brisk and snappy: a quick conversational pace, words tumbling out, no long pauses.'
 # Delivery (a say cue's `style`): for qwen3, a sentence added to the character's instruction; for kokoro (no style
 # control), a speed factor. A style that is not listed is used as the instruction sentence itself.
 STYLES = {
@@ -39,7 +47,7 @@ STYLES = {
     'deadpan': ('Flat and deadpan, completely unimpressed, no emotion at all.', 0.95),
     'excited': ('Thrilled and fast, the voice rising with excitement.', 1.1),
     'proud': ('Proud and grand, announcing it to the world.', 0.97),
-    'smug': ('Smug and pleased with itself, savouring every word.', 0.92),
+    'smug': ('Smug and pleased with itself, a sly grin in the voice.', 1.0),
     'sad': ('Sad and deflated, quiet and slow.', 0.88),
     'angry': ('Angry, clipped and hard.', 1.04),
     'scared': ('Scared, shaky and breathless.', 1.08),
@@ -67,19 +75,26 @@ class Character:
     speed: float = 1.0
     pitch: float = 0.0
     lufs: float = -20.0
+    pace: float = pace_mod.PACE
     bark: str | None = None
     bark_volume: float = 1.0
     model: str | None = None
     draft: dict = field(default_factory=dict)
     generic: bool = False
 
-    def spec(self, tokens, style=None, speed=1.0, styles=None, draft=False):
-        """The worker job for a line (without `out`): everything that shapes its audio, so also its cache key."""
+    def spec(self, tokens, style=None, speed=1.0, styles=None, draft=False, pace=None, beat=False):
+        """The worker job for a line (without `out`): everything that shapes its audio, so also its cache key; plus
+        `pace` (not part of the key): how front.paced tightens it. `pace` is the cue's words a second (None: the
+        character's; 0 or False: no pacing and no brisk delivery); `beat` keeps the line's own pauses."""
         base = {'engine': self.engine, 'voice': self.voice, 'instruct': self.instruct, 'speed': self.speed,
                 'pitch': self.pitch, 'model': self.model}
         if draft and self.draft:
             base = {**base, 'instruct': '', 'model': None, **self.draft}
         instruct, factor = base['instruct'] or '', 1.0
+        wps = self.pace if pace is None else (0.0 if pace is False else float(pace))
+        slow = style in pace_mod.SLOW_STYLES
+        if wps > 0 and not slow and base['engine'] == 'qwen3':
+            instruct = f'{instruct} {DELIVERY}'.strip()
         if style:
             sentence, factor = (styles or STYLES).get(style, STYLES.get(style, (style, 1.0)))
             instruct = f'{instruct} {sentence}'.strip()
@@ -89,7 +104,8 @@ class Character:
             instruct = ''
         return {'engine': base['engine'], 'voice': base['voice'], 'instruct': instruct or None, 'seed': int(self.seed),
                 'speed': round(s, 4), 'pitch': float(base.get('pitch') or 0.0), 'lufs': float(self.lufs),
-                'model': base.get('model'), 'tokens': list(tokens), 'retries': 2}
+                'model': base.get('model'), 'tokens': list(tokens), 'retries': 2,
+                'pace': {'wps': wps, 'caps': style != 'deadpan' and not beat, 'stretch': not slow} if wps > 0 else None}
 
 
 def _character(table, where):
@@ -107,6 +123,7 @@ def _character(table, where):
                      voice=table.get('voice') or ('am_michael' if engine == 'kokoro' else 'ryan'),
                      instruct=table.get('instruct', ''), seed=int(table.get('seed', 7)), speed=float(table.get('speed', 1.0)),
                      pitch=float(table.get('pitch', 0.0)), lufs=float(table.get('lufs', -20.0)), bark=table.get('bark'),
+                     pace=float(table.get('pace', pace_mod.PACE) or 0.0),
                      bark_volume=float(table.get('bark_volume', 1.0)), model=table.get('model'), draft=dict(table.get('draft') or {}))
 
 

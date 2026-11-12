@@ -24,6 +24,7 @@ bin/videocraft climb x.toml --budget 3            # propose → run --parent →
 | `strips/<nn>-<shot>.jpg` | One image per clip: its first, last and every n-th frame, 640x360 each, three across, with the shot name, the shot's own frame, the master frame and the timecode in the cut burnt into the margin. |
 | `contact/sheet-<k>.jpg` | The whole cut at 4 frames a second, 320x180 tiles, six across, timecode and shot under each. |
 | `cuts/cut-<nn>.jpg` | Every join: the three frames before (top row) and the three after (bottom row). |
+| `sound.md`, `sound/loudness-<k>.png` | The sound sheet: every placed effect (master frame `M`, shot frame `S`, event, file, gain), voice lines with word onsets, music cues, the black gaps' loudness, and per shot the script's visible actions beside what is heard. The charts draw the master's momentary loudness and peak level over the clips and joins, with lanes for voice words, game and synth effects and music cues, 15 s a row. Every role that scores `sound` gets them. |
 | `captions.md` | Every line of text per shot: from `text.json` (frames, words, cap height) and from the script's cues. |
 | `report.md`, `metrics.json` | From measure: shot statistics, black, frozen, loudness, camera, framing, text rules. |
 | `script.toml`, `rubric.toml` | The script as authored; the rubric used. |
@@ -36,8 +37,8 @@ cite "shot `s05-snacks`, 0:13.40" exactly.
 ## What reviewers are told
 
 - They judge **stills and measurements**. They cannot watch motion or hear sound: movement is inferred from frame
-  sequences and `frames.csv`-derived numbers (camera speed, jerk, subject framing); sound only from loudness numbers
-  and the sound events the script and logs list. Where a criterion depends on what they cannot perceive, they say so
+  sequences and `frames.csv`-derived numbers (camera speed, jerk, subject framing); sound from the sound sheet (every
+  effect and voice word on its frame) and the loudness charts. Where a criterion depends on what they cannot perceive, they say so
   and score from the evidence, not from hope.
 - They cite **shot names and timecodes** for every claim.
 - They give a **1-10 score per criterion** they are assigned, using the rubric's 5 and 9 anchors; pass/fail on each
@@ -78,8 +79,8 @@ The general roles below score one criterion each. A benchmark rubric gives the s
 | story | contact sheets, captions, script | Is there a beginning, a turn and an end; does every shot move it on? |
 | camera | strips, camera and framing numbers | Purposeful moves, framing that holds the subject, no wandering or clipping. |
 | legibility | strips, captions, text rules | Can every word be read at phone size, in time, without covering faces? |
-| pacing | contact sheets, cut pairs, shot statistics | Shot lengths, rhythm, where the cutting speeds up and slows down. |
-| sound | loudness numbers, the sound events | Bed, effects on the frame, dips, master level (by measurement only). |
+| pacing | contact sheets, cut pairs, shot statistics, dialogue pace | Shot lengths, rhythm, where the cutting speeds up and slows down; words a second and dead air in dialogue. |
+| sound | loudness numbers, the sound events, dialogue pace | Bed, effects on the frame, dips, master level, how much of the film is voiced (by measurement only). |
 | technical | strips, cut pairs, format checks | HUD or debug leaks, a wrong frame at a cut, pop-in, frozen or black by mistake. |
 
 ## The general rubric
@@ -120,17 +121,17 @@ numbers = ["text"]
 id = "pacing"
 name = "Pacing"
 measures = "Shot lengths and rhythm: variety, acceleration into the climax, holds where a beat needs one"
-anchor_5 = "Even, mechanical shot lengths, or one long sag; cuts arrive late"
-anchor_9 = "Lengths vary with the story; the cutting speeds up into the climax and holds after the punchline"
-numbers = ["picture.shot_stats", "picture.black", "cut_check"]
+anchor_5 = "Even, mechanical shot lengths, or one long sag; cuts arrive late; dialogue that drags (lines under 2.6 words a second, dead air between them)"
+anchor_9 = "Lengths vary with the story; the cutting speeds up into the climax and holds after the punchline; dialogue brisk (about 3.2 words a second) with no dead air over 0.8 s except deliberate beats"
+numbers = ["picture.shot_stats", "picture.black", "cut_check", "dialogue"]
 
 [[criterion]]
 id = "sound"
 name = "Sound (by measurement)"
 measures = "A bed under the picture, effects on the frame of their action, deliberate silence, a sane master level"
-anchor_5 = "A music bed only, or uneven loudness, or silence where an action is shown"
-anchor_9 = "Integrated about -14 LUFS, no clipping, silence exactly at the dips, effects listed on the frames of their actions"
-numbers = ["loudness"]
+anchor_5 = "A music bed only, or uneven loudness, or silence where an action is shown; a story told in silent captions, or slow, gappy voice lines"
+anchor_9 = "Integrated about -14 LUFS, no clipping, silence exactly at the dips, effects listed on the frames of their actions; dialogue and narration voiced and brisk, a voice for most of a talking film's runtime"
+numbers = ["loudness", "dialogue"]
 
 [[criterion]]
 id = "technical"
@@ -166,14 +167,14 @@ id = "pacing"
 name = "Pacing reviewer"
 criteria = ["pacing"]
 images = ["contact", "cuts"]
-focus = "Use the shot table, the length histogram and the contact sheets at 4 frames a second; where does it sag or rush?"
+focus = "Use the shot table, the length histogram and the contact sheets at 4 frames a second; where does it sag or rush? With dialogue, use the dialogue numbers too: words a second per line, the voice share and the dead-air stretches."
 
 [[role]]
 id = "sound"
 name = "Sound reviewer"
 criteria = ["sound"]
-images = []
-focus = "You cannot hear. Judge only the loudness numbers and the sound events the script and the logs list."
+images = ["sound", "strips"]
+focus = "You cannot hear. Judge from the sound sheet (sound.md: every effect, voice word and music cue on its master frame, and what is heard per shot), the loudness charts and the strips: effects on the frames of their visible actions, the bed ducked under voice, silence at the dips, the master level. With dialogue: the voice share of the runtime, words a second per line and dead air (the dialogue numbers), and whether text that matters is spoken or only shown."
 
 [[role]]
 id = "technical"
