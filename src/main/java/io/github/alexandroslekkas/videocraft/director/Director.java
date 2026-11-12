@@ -132,7 +132,14 @@ public final class Director {
 	void command(String command) {
 		var server = Minecraft.getInstance().getSingleplayerServer();
 		if (server == null) throw new IllegalStateException("no integrated server for the command: " + command);
-		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command));
+		// LOCAL DEBUG (sets builder, never committed): log command failures.
+		var src = new net.minecraft.commands.CommandSource() {
+			@Override public void sendSystemMessage(net.minecraft.network.chat.Component c) { VideocraftLog.LOGGER.warn("VIDEOCRAFT cmdfail {} :: {}", command.length() > 160 ? command.substring(0, 160) : command, c.getString()); }
+			@Override public boolean acceptsSuccess() { return false; }
+			@Override public boolean acceptsFailure() { return true; }
+			@Override public boolean shouldInformAdmins() { return false; }
+		};
+		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(src), command));
 	}
 
 	void fail(String reason) {
