@@ -123,6 +123,10 @@ about = "two knocks on a wooden door"
 tags = ["explosion", "boom", "blast", "impact", "big"]
 about = "a long falling noise burst over a sub rumble, with crackle"
 
+[sound.shatter]
+tags = ["shatter", "glass", "crash", "break", "smash"]
+about = "a crack and a shower of high shards"
+
 [sound.rumble]
 tags = ["rumble", "thunder", "earthquake", "low", "spooky"]
 about = "a swelling low rumble"

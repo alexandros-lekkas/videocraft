@@ -308,6 +308,20 @@ def explosion(rnd):
     return mul(add(gain(body, 2.0), gain(rumble, 0.6), gain(crackle, 3.0)), env)
 
 
+@recipe('shatter')
+def shatter(rnd):
+    # Glass: a bright noise crack, then a shower of small high inharmonic shards.
+    out = mul(svf(noise(n_of(0.12), rnd), 5000, 0.8, 'hp'), env_ad(n_of(0.12), 0.0005, 0.025))
+    out = out + [0.0] * n_of(0.8)
+    t = 0.01
+    while t < 0.6:
+        f = rnd.uniform(2500, 7000)
+        shard = partials(n_of(0.12), f, [1.0, 1.73, 2.61], [0.03, 0.02, 0.012], [1.0, 0.5, 0.3])
+        mix_into(out, shard, t, rnd.uniform(0.2, 0.6) * (1 - t / 0.7))
+        t += rnd.uniform(0.008, 0.05)
+    return out
+
+
 @recipe('rumble')
 def rumble(rnd):
     n = n_of(2.4)
