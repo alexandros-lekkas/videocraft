@@ -49,7 +49,9 @@ def measure(path, raw=False, start=None, duration=None):
 
 
 def _render(raw, out_wav, gain_db, ceiling):
-    limit = dsp.from_db(ceiling - 0.35)  # a little margin: the 16-bit write and the down-sampler add a hair
+    # Margin: the 16-bit write and the down-sampler add a hair, and the AAC encode of a dense, limited mix overshoots
+    # by up to about 1.3 dB (a master at -1.2 dBTP in the wav measured +0.1 dBTP in the mp4).
+    limit = dsp.from_db(ceiling - 1.0)
     chain = (f'volume={gain_db:.3f}dB,aresample={dsp.SR * 4},'
              f'alimiter=limit={limit:.5f}:attack=2:release=60:level=disabled:latency=1,aresample={dsp.SR}')
     p = subprocess.run([tools.ffmpeg(), '-y', '-hide_banner', '-loglevel', 'error', *_raw_input(raw), '-af', chain,
