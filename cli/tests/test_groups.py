@@ -15,7 +15,7 @@ from videocraft import cli  # noqa: E402
 GROUPS = {
     'testhello': "def register(sub):\n    sub.add_parser('hello').set_defaults(run=lambda args: 7)\n",
     # Implements a placeholder's command: replaces the not-yet placeholder instead of clashing with it.
-    'testlint': "def register(sub):\n    sub.add_parser('lint').set_defaults(run=lambda args: 8)\n",
+    'testlint': "def register(sub):\n    sub.add_parser('placeholder').set_defaults(run=lambda args: 8)\n",
     'testbroken': "import videocraft_no_such_dependency\n",
 }
 
@@ -30,14 +30,15 @@ class GroupTests(unittest.TestCase):
             stderr = io.StringIO()
             # The temporary folder is a second home for videocraft's subpackages, as cli/videocraft/<name>/ would be.
             with mock.patch.object(videocraft, '__path__', [*videocraft.__path__, extra]), \
-                    mock.patch.object(cli, 'GROUPS', (*GROUPS, 'testmissing')), redirect_stderr(stderr):
+                    mock.patch.object(cli, 'GROUPS', (*GROUPS, 'testmissing')), \
+                    mock.patch.object(cli, 'NOT_YET', {'placeholder': 'x'}), redirect_stderr(stderr):
                 parser = cli.build_parser()
             for name in GROUPS:
                 sys.modules.pop(f'videocraft.{name}.commands', None)
                 sys.modules.pop(f'videocraft.{name}', None)
         args = parser.parse_args(['hello'])
         self.assertEqual(args.run(args), 7)
-        args = parser.parse_args(['lint'])
+        args = parser.parse_args(['placeholder'])
         self.assertEqual(args.run(args), 8)
         self.assertNotIn('testmissing', stderr.getvalue(), 'a missing group is silent')
         self.assertIn('command group testbroken failed to load', stderr.getvalue())

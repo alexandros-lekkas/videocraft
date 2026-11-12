@@ -126,6 +126,16 @@ def cmd_score(args):
     return 0 if s['pass'] else 1
 
 
+def _guard(fn):
+    def run(args):
+        try:
+            return fn(args)
+        except (rubrics.RubricError, reviews.ReviewError) as e:
+            say(f'REVIEW ERROR {e}')
+            return 2
+    return run
+
+
 def register(sub):
     p = sub.add_parser('review', help='review packets, reviews and scores (docs/REVIEW.md)')
     rs = p.add_subparsers(dest='review_command', required=True)
@@ -134,20 +144,20 @@ def register(sub):
     q.add_argument('--rubric', help='a rubric file or name (default docs/REVIEW.md, the general rubric)')
     q.add_argument('--reviewers', help='comma-separated roles (default: every role in the rubric)')
     q.add_argument('--every', type=int, help='strip every n-th frame (default: about 12 frames a strip)')
-    q.set_defaults(run=cmd_packet)
+    q.set_defaults(run=_guard(cmd_packet))
     q = rs.add_parser('add', help='validate and store a review (a JSON file, or a reply ending in a ```json block; - for stdin)')
     q.add_argument('iteration')
     q.add_argument('file')
     q.add_argument('--reviewer', help='the role, if the JSON does not say')
     q.add_argument('--rubric')
-    q.set_defaults(run=cmd_add)
+    q.set_defaults(run=_guard(cmd_add))
     q = rs.add_parser('run', help='run every reviewer role through `claude -p` or the Anthropic API, then score')
     q.add_argument('iteration')
     q.add_argument('--rubric')
     q.add_argument('--reviewers')
     q.add_argument('--model', help=f'default {agents.DEFAULT_MODEL} (or VIDEOCRAFT_MODEL)')
-    q.set_defaults(run=cmd_run)
+    q.set_defaults(run=_guard(cmd_run))
     p = sub.add_parser('score', help='aggregate review/*.json into score.json (pass rule from the rubric)')
     p.add_argument('iteration')
     p.add_argument('--rubric')
-    p.set_defaults(run=cmd_score)
+    p.set_defaults(run=_guard(cmd_score))

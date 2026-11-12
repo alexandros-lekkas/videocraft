@@ -27,7 +27,7 @@ class RubricError(ValueError):
 
 def resolve(ref=None):
     """A rubric path from a path or a short name (`pinksheep-style` finds docs/benchmarks/pinksheep-style.rubric.toml)."""
-    if not ref:
+    if not ref or ref == 'general':
         return DEFAULT
     p = Path(ref)
     if p.exists():
