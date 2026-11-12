@@ -6,6 +6,10 @@ the game: sets built from vanilla blocks, characters that are vanilla mobs or pl
 by the game. A synthetic voice reads the dialogue; sound effects are the game's own sounds; music is a bed under it.
 
 ## Lessons from the benchmark (a reference comedy short, measured shot by shot)
+- **Voiced beats captioned.** A line spoken by a voice is far better than the same words as a caption (the owner's
+  verdict on the first films), and slow lines kill it: dialogue and narration are spoken, briskly (about 3.2 words
+  a second), with almost no dead air between lines. On-screen text is for signs, posts and cards, and a voice reads
+  the ones that matter.
 - **Cuts land on words.** A cut falls on the first syllable of a key word or of a new sentence, and the picture
   illustrates that word the instant it is said. Mark the key word of a line with a leading `*` (at most one): `NIBS: This *horn.`, never `*horn*` (not Markdown emphasis).
 - **Setup wide, punchline close.** Set a joke up in a wide, still shot; cut to a close-up facing the lens for the
@@ -15,7 +19,7 @@ by the game. A synthetic voice reads the dialogue; sound effects are the game's 
 - **The brag montage.** When a character praises itself, exaggerate it in picture: a face cut-in on the brag word,
   or a run of five or six sub-second shots of it strutting in different places, one word per shot.
 - **Dips to black before reveals.** A scene change or a reveal gets a dip to black and about a second of silence.
-- **One message at a time.** Captions never share the screen with a card or another caption. Text is short: at
+- **One message at a time.** Captions never share the screen with a card or another caption. Silent text (a sign, a card) is short: at
   most two lines, at most 2.5 words a second, never on screen under 1.2 s, never over a face or the gag.
 - **Rhythm.** Comedy shorts cut fast: median shot about 2.6 s, a longer opening (5-7 s), the cutting speeds up on
   brags and slows into a flashback or a setup. **Never a shot over 7.5 s.** About 20 shots a minute.
