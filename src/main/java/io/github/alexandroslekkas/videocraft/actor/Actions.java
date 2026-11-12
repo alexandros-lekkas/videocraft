@@ -62,10 +62,39 @@ public final class Actions {
 			if (puppet.living() == null) puppet.frame(shot);
 			return puppet;
 		}
-		throw new IllegalArgumentException(p.where() + ": '" + p.string("do") + "' needs a staged actor (kind = \"mob\" or \"mannequin\"); '" + id + "' is the played player, whose actions are not built yet");
+		throw new IllegalArgumentException(p.where() + ": '" + p.string("do") + "' needs a staged actor (kind = \"mob\" or \"mannequin\"); '" + id + "' is the played player, who can walk, run, stop, turn, look, jump, crouch and swing");
 	}
 
 	private static Action done() { return s -> true; }
+
+	/** The played player, when the cue is for it (actor = "player", the default). */
+	static PlayerActor player(Params p, ShotContext shot) {
+		return shot.actor(p.string("actor", "player")) instanceof PlayerActor player ? player : null;
+	}
+
+	private static List<Vec3> positions(Params params, ShotContext shot) {
+		List<Vec3> out = new ArrayList<>();
+		JsonArray list = params.has("path") ? params.raw("path").getAsJsonArray() : new JsonArray();
+		if (!params.has("path") && params.has("to")) list.add(params.raw("to"));
+		if (list.isEmpty()) throw new IllegalArgumentException(params.where() + ": walk needs path = [positions] or to = position");
+		for (int i = 0; i < list.size(); i++) {
+			JsonObject holder = new JsonObject();
+			holder.add("p", list.get(i));
+			out.add(shot.position(new Params(holder, params.where() + ".path[" + i + "]"), "p"));
+		}
+		return out;
+	}
+
+	/** A heading as a point to look at: a target, or a number of degrees turned into a point ahead at eye level. */
+	private static Vec3 lookPoint(PlayerActor pl, ShotContext shot, Params params, String key) {
+		JsonElement e = params.raw(key);
+		if (e != null && e.isJsonPrimitive() && e.getAsJsonPrimitive().isNumber()) {
+			double yaw = Math.toRadians(e.getAsDouble());
+			Vec3 eye = pl.entity().getEyePosition();
+			return eye.add(-Math.sin(yaw) * 10, 0, Math.cos(yaw) * 10);
+		}
+		return point(shot, params, key);
+	}
 
 	// ---- Where things are ----
 
@@ -125,6 +154,18 @@ public final class Actions {
 	}
 
 	private static Action walk(Params params, ShotContext shot, String forced) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) {
+			String gait = forced != null ? forced : params.string("gait", "walk");
+			boolean sprint = params.bool("sprint", gait.equals("run"));
+			pl.walk(positions(params, shot), sprint, params.has("face") ? point(shot, params, "face") : null);
+			String mark = params.string("mark", null);
+			return s -> {
+				if (pl.walking()) return false;
+				if (mark != null) s.mark(mark);
+				return true;
+			};
+		}
 		Puppet p = puppet(params, shot);
 		String gait = forced != null ? forced : params.string("gait", "walk").toLowerCase(Locale.ROOT);
 		double speed = params.has("speed") ? params.number("speed") : p.breed().pace(gait, params.where());
@@ -153,12 +194,29 @@ public final class Actions {
 	}
 
 	private static Action stop(Params params, ShotContext shot) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) { pl.stop(); return done(); }
 		Puppet p = puppet(params, shot);
 		p.halt(params.number("arrive", 0.35));
 		return s -> !p.walking();
 	}
 
 	private static Action turn(Params params, ShotContext shot) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) {
+			pl.turnTo(lookPoint(pl, shot, params, "to"), params.number("tolerance", 0.6));
+			String mark = params.string("mark", null);
+			return new Action() {
+				int frames;
+
+				@Override
+				public boolean frame(ShotContext s) {
+					if (++frames < 4 || pl.turning()) return false;
+					if (mark != null) s.mark(mark);
+					return true;
+				}
+			};
+		}
 		Puppet p = puppet(params, shot);
 		double pace = params.number("pace", 1);
 		if (pace <= 0 || pace > 4) throw new IllegalArgumentException(params.where() + ": pace is 0 to 4 (1 a calm turn)");
@@ -180,6 +238,22 @@ public final class Actions {
 	}
 
 	private static Action look(Params params, ShotContext shot) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) {
+			double hold = params.number("hold", Double.POSITIVE_INFINITY);
+			pl.turnTo(point(shot, params, "target"), 1.5);
+			return new Action() {
+				int frames;
+
+				@Override
+				public boolean frame(ShotContext s) {
+					frames++;
+					if (frames / (double) s.fps() >= hold) return true;
+					if (!pl.turning()) pl.follow(point(s, params, "target"));
+					return false;
+				}
+			};
+		}
 		Puppet p = puppet(params, shot);
 		double hold = params.number("hold", Double.POSITIVE_INFINITY);
 		boolean back = params.bool("back", !Double.isInfinite(hold));
@@ -204,6 +278,8 @@ public final class Actions {
 	}
 
 	private static Action hop(Params params, ShotContext shot) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) { pl.jump(); return done(); }
 		Puppet p = puppet(params, shot);
 		double height = params.number("height", 0.55), seconds = params.number("seconds", 0.2 + 0.3 * Math.sqrt(height));
 		if (height <= 0 || height > 3) throw new IllegalArgumentException(params.where() + ": height is 0 to 3 blocks");
@@ -216,6 +292,20 @@ public final class Actions {
 	}
 
 	private static Action namedState(Params params, ShotContext shot, String name) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) {
+			if (!name.equals("crouch") && !name.equals("sneak")) throw new IllegalArgumentException(params.where() + ": the player's states are crouch (sneak); '" + name + "' is a puppet's");
+			boolean on = params.bool("on", true);
+			pl.sneak(on);
+			double seconds = params.number("seconds", Double.NaN);
+			if (Double.isNaN(seconds)) return done();
+			int[] frames = {0};
+			return s -> {
+				if (++frames[0] / (double) s.fps() < seconds) return false;
+				pl.sneak(!on);
+				return true;
+			};
+		}
 		Puppet p = puppet(params, shot);
 		boolean on = params.bool("on", true);
 		double seconds = params.number("seconds", Double.NaN);
@@ -283,6 +373,8 @@ public final class Actions {
 	}
 
 	private static Action swing(Params params, ShotContext shot) {
+		PlayerActor pl = player(params, shot);
+		if (pl != null) { pl.swing(); return done(); }
 		Puppet p = puppet(params, shot);
 		String hand = params.string("hand", "main");
 		p.living().swing(hand.equals("off") ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);

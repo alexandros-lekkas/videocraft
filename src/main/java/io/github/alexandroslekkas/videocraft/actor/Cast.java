@@ -22,8 +22,10 @@ public final class Cast {
 	public static Map<String, Actor> stage(List<Plan.ActorSpec> specs, Minecraft mc) {
 		Puppets.clear();
 		Map<String, Actor> cast = new LinkedHashMap<>();
-		cast.put("player", new PlayerActor(mc));
 		long seed = seed();
+		PlayerActor player = new PlayerActor(mc);
+		player.seed(seed);
+		cast.put("player", player);
 		for (Plan.ActorSpec spec : specs) {
 			if (spec.id().equals("player")) continue;
 			var p = spec.params();

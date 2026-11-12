@@ -1,0 +1,64 @@
+# The played player: held keys and a human hand on the view, through the player's own eyes.
+#   bin/videocraft run examples/walk.toml
+# The player walks a bent path, jumps a block that is in the way, stops, and turns about 130 degrees to face a
+# mannequin, who turns to the player and waves.
+name = "walk"
+seed = 2
+description = "The player walks (the game's own acceleration and walk cycle), jumps, and turns with a human hand."
+
+[world]
+seed = "videocraft"
+time = 9000
+settle = 3.0
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill -12 99 -12 12 99 12 grass_block",
+  "fill -1 99 -9 1 99 10 dirt_path",
+  "fill -5 99 -9 -1 99 -7 dirt_path",
+  "fill -6 100 -4 0 100 -4 stone_bricks",
+  "setblock 4 100 -9 lantern",
+  "setblock -8 100 2 barrel",
+  "tp @a 0.5 100 8.5 180 2",
+]
+
+[[actor]]
+id = "ana"
+kind = "mannequin"
+skin = "skins/ana.png"
+model = "slim"
+at = [1.8, 100, -4.6]
+facing = 135
+
+[[shot]]
+name = "walk"
+duration = 9.0
+hud = false
+camera = { rig = "first", fov = 70 }
+
+[[shot.cue]]
+at = 0.6
+do = "walk"
+path = [[0.5, 100, 2.5], [-0.6, 100, -1.5], [-2.6, 100, -6.0], [-3.0, 100, -7.2]]
+mark = "arrived"
+
+[[shot.cue]]
+at = 5.3
+do = "turn"
+to = "ana"
+mark = "faced"
+
+[[shot.cue]]
+at = 5.6
+do = "turn"
+actor = "ana"
+to = "player"
+follow = true
+
+[[shot.cue]]
+at = 6.6
+do = "pose"
+actor = "ana"
+pose = "wave"
+seconds = 1.8
