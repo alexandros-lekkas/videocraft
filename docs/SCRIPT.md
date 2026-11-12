@@ -126,6 +126,19 @@ bearing from the camera's yaw. A sound that started before a clip's first frame 
 (≥ 1 s) or looping; every sound stops at the end of its clip. The master is −14 LUFS integrated with true peak at
 most −1 dBTP; `cut/audio.json` lists every placed and skipped event and the measured loudness.
 
+Recipes (the benchmark's sound column):
+
+- A character's "voice" on each caption: a `sound` cue (or the actor's `voice` action) at the caption's `at`, e.g.
+  `id = "minecraft:entity.goat.ambient"` at the actor.
+- One beat of dropout as someone looks at the lens: `[[edit.music.cue]] do = "drop"` at that moment (`length` in s).
+- The bed thins to drums, then returns harder: `do = "thin"`, later `do = "full", gain = 3`.
+- Silence before a reveal: a `black = 0.8` clip (the bed and effects are silent there; a `fade_out` on the clip
+  before it fades the bed with the picture).
+- A montage cut on drum hits: a `videocraft:kick` `sound` cue at `at = 0` of each montage shot, or a music `hit`.
+- In-world music: `tune` on real note blocks (positional: panned and quieter with distance from the camera);
+  `do = "out"` on the bed while it plays.
+- A button at the end: `do = "hit"` then `do = "out"`.
+
 Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
 logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
 `videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
