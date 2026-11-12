@@ -177,7 +177,12 @@ public final class Director {
 			if (mc.player != null) mc.gui.hud.getChat().clearMessages(false);
 			if (marker != null && shot != null && shot.rig() != null && shot.rig().view() == View.CAMERA) {
 				Pose p = shot.pose(0);
-				if (p != null) marker.setPos(p.x(), p.y(), p.z());
+				if (p != null) {
+					marker.setPos(p.x(), p.y(), p.z());
+					// The parked spectator travels with the camera, so the chunks around wherever it goes stay loaded.
+					mc.player.setPos(p.x(), p.y(), p.z());
+					mc.player.setDeltaMovement(Vec3.ZERO);
+				}
 			}
 		} catch (RuntimeException e) {
 			VideocraftLog.LOGGER.error("VIDEOCRAFT error", e);
@@ -223,6 +228,12 @@ public final class Director {
 		command("gamerule advance_time false");
 		command("gamerule advance_weather false");
 		command("difficulty peaceful");
+		// Nothing changes the picture unless the script does: no mobs spawning, no fire spreading, leaves decaying or
+		// crops growing (random ticks), no vines creeping, no raids or traders walking in, no advancement toasts.
+		for (String rule : List.of("spawn_mobs false", "spawn_monsters false", "spawn_patrols false", "spawn_phantoms false", "spawn_wandering_traders false",
+			"spawn_wardens false", "random_tick_speed 0", "fire_spread_radius_around_player 0", "spread_vines false", "mob_griefing false", "raids false",
+			"show_advancement_messages false", "send_command_feedback false", "respawn_radius 0"))
+			command("gamerule " + rule);
 		command("gamemode " + w.gamemode() + " " + p.getName().getString());
 		cast = new java.util.LinkedHashMap<>(Cast.stage(plan.actors(), mc));
 		go(Step.SETTLE);
@@ -274,7 +285,15 @@ public final class Director {
 		shot = new ShotRun(this, spec.name(), spec.duration(), spec.params().number("preroll", 0), spec.timeline(), true, plan.seed());
 		CameraRig rig = registries.rig(spec.camera().string("rig")).create(spec.camera(), shot);
 		shot.rig(rig);
+		// The world as this shot wants it (a lane in late afternoon, a barn at night), from the start of preparation.
+		if (spec.params().has("time")) command("time set " + (long) spec.params().number("time"));
+		if (spec.params().has("weather")) command("weather " + weather(spec.params().string("weather"), spec.params().where()));
 		view(mc, rig, spec);
+	}
+
+	static String weather(String weather, String where) {
+		if (!List.of("clear", "rain", "thunder").contains(weather)) throw new IllegalArgumentException(where + ": weather is clear, rain or thunder, not " + weather);
+		return weather;
 	}
 
 	/** Who holds the camera for this shot (see {@link View}). */

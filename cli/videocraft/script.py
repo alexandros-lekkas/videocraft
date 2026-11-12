@@ -12,8 +12,8 @@ from pathlib import Path
 PLAN_VERSION = 1
 NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description'}
-WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage'}
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll'}
+WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage', 'preset'}
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -113,6 +113,9 @@ def compile_script(raw, source='script'):
         for key in ('hud', 'bob'):
             if key in shot:
                 out[key] = bool(shot[key])
+        for key in ('time', 'weather'):
+            if key in shot:
+                out[key] = shot[key]
         shots.append(out)
     if not shots:
         raise ScriptError(f'{source}: at least one [[shot]] is required')
