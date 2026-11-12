@@ -251,6 +251,12 @@ They protect the owner's machine and game. They are not preferences.
   `lens = { barrel }` bows the edit's picture; the lead rig's `pitch` is a fixed tilt, not an aim, so the horizon's
   place in frame comes from pitch, fov and the lens zoom together (pitch 38 at fov 110 with barrel 0.9 puts it near
   the top fifth).
+- **The master cannot show the balance.** Nibs vs Duke measured −14.1 LUFS and looked fine while its music hits
+  reached +1 LUFS momentary (scaled by a quiet track's normalization) and a second film's bed sat 9-13 LU under half its
+  lines; only per-bus readings (`audio/balance.py`, `audio mix --stems`) showed it. C418 piano tracks decay from
+  about −32 to silence every eight seconds, so a duck sized by the bed's loudest moment under each line, not a fixed
+  depth, is what keeps 18 LU without burying the rest. With the master at −14 integrated the voice lands near −15
+  short-term: it is most of the program.
 
 ## Working with agents
 

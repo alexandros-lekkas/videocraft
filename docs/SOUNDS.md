@@ -141,6 +141,44 @@ its 7.1 s entry) and measured −14.6 LUFS, −1.8 dBTP; the original mix swappe
 dropped 43 later palette steps, played the comedy-chase bed and measured −14.1 LUFS, −1.9 dBTP (AAC exports: −14.9 and
 −14.2 LUFS). Those are measurements; nobody listened.
 
+## The balance: dialogue is king
+
+The owner, on the first finished films: "the audio balance is bad, music is too loud". The master's integrated
+loudness says nothing about what is heard over what, so the mix now measures its own buses (EBU R128 momentary
+readings of the voice, music and effects buses at the master's gain; `cli/videocraft/audio/balance.py`) and sets
+the balance by those numbers, by default, for every film:
+
+| | Default | `[edit.mix]` key |
+|:--|:--|:--|
+| Voice bus | −16 LUFS before the master (the master's −14 integrated then puts it near −15 short-term: it is most of the program) | `voice_level`, `voice` (dB trim) |
+| Music between lines | −24 LUFS at the master (`[edit.music] gain` trims it), measured on the undocked bed | `music_level` |
+| A game track | a further −2 dB (they are dense and bright where speech lives) | `game_trim` |
+| Music under a line | its loudest momentary reading at least 18 LU under the line's voice (+1 LU spare) | `music_under_voice` |
+| The duck | as deep as each line needs for that, at least `[edit.music] duck` (−6 dB), at most −40; fully down 50 ms before the first word (60 ms linear attack), held 0.25 s through gaps and packed lines, 0.4 s release | `[edit.music] duck` |
+| Effects | held 3 LU under the voice level everywhere and 6 LU under a line's voice while it speaks (a fast limiter on the effects bus) | `sfx_ceiling`, `sfx_under_line` |
+| Master | −14 LUFS integrated, true peak ≤ −2 dBTP | |
+
+A music `hit` (crash and kick) is levelled against the bed's own reference: it used to be scaled by the track's
+normalization, which for a quiet C418 track put hits at +1 LUFS momentary, and the limiter then pulled the whole mix
+down around them. `cut/audio.json` gets a `balance` block (per line: voice, music, effects and `ratio` = LU the music
+sits under the voice; the music between lines, mean and 95th percentile; the effects' loudest; the targets); measure
+copies it into `metrics.json` and a "Mix balance" table in `report.md`, the review's sound sheet prints it, and measure
+warns on a line whose music is less than 12 LU under the voice, or music between lines louder than `music_level` + 3.
+lint warns (`mix_balance`) on settings that would allow either. `audio mix <run> --stems` also writes
+`cut/audio-stems/{voice,music,sfx}.wav` at the master's gain.
+
+Measured on the two finished films, the same takes re-mixed (stem loudness at the master's gain; nobody listened):
+
+| Mix | Voice short-term median | Music under lines | Music between lines (mean / p95) | Voice over music (median / least) | Lines under 12 LU | Effects max | Integrated | True peak |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| Nibs vs Duke, before | −15.3 | −25.3 | −8.8 / −0.4 (the hits) | 23.5 / 0.4 LU | 6 of 28 | −10.4 | −14.2 | −2.7 |
+| Nibs vs Duke, now | −14.4 | −41.8 | −37.1 / −31.0 | 36.5 / 19.8 LU | 0 | −16.2 | −14.2 | −3.0 |
+| A second film (a local story), before | −14.9 | −25.4 | −20.6 / −16.5 | 13.0 / 9.2 LU | 14 of 29 | −12.8 | −14.0 | −3.0 |
+| The second film, now | −15.0 | −34.7 | −29.3 / −24.6 | 21.2 / 19.0 LU | 0 | −17.8 | −14.2 | −3.0 |
+
+Nibs vs Duke's bed (C418's `firebugs`) is piano that decays from about −32 to silence every eight seconds, so the
+music under most of its lines is far below the 18 LU line; its script also asks for `gain = -3`, `duck = -9`.
+
 ## Tools
 
 ```sh

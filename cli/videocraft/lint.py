@@ -19,6 +19,9 @@ Rules (each problem: severity error | warn | info, rule, where, message):
   slow_line         a voiced line of 3 or more words under 2.6 words a second (warn; info for a slow style)
   dead_air          more than 0.8 s without a voice between two lines inside a run of dialogue shots (warn; not over
                     black, not across a shot without lines, not before a `beat = true` line)
+  mix_balance       [edit.mix] settings that put the music under a line less than 12 LU below the voice
+                    (music_under_voice), or the bed between lines within 6 LU of the voice (music_level) (warn); the
+                    measured balance of a cut is measure's (metrics.json `balance`)
 Owned by workstream (d).
 """
 import json
@@ -179,7 +182,33 @@ def lint(raw, rubric=None):
                 add('warn', 'mark', f'edit.clip[{i}].{key}', f'mark "{label}" is not made by a mark cue in shot {clip.get("shot")}')
     if raw.get('cast') and 'dialogue' not in (raw.get('edit') or {}):
         problems += voice_rules(raw)   # a cast but no say line yet (with say lines, the resolved branch adds them)
+    problems += mix_rules(raw)
     return problems
+
+
+def mix_rules(raw):
+    """Dialogue is king: the mix's own targets must keep the music well under the voice (audio/mix.py, balance.py)."""
+    from videocraft.audio import balance, mix
+    out = []
+    edit = raw.get('edit') or {}
+    cfg = edit.get('mix') or {}
+    if not isinstance(cfg, dict):
+        return out
+    try:
+        under = cfg.get('music_under_voice')
+        if under is not None and abs(float(under)) < balance.RATIO_WARN:
+            out.append({'severity': 'warn', 'rule': 'mix_balance', 'where': 'edit.mix.music_under_voice',
+                        'message': f'music_under_voice = {under}: the music under a line would be less than {balance.RATIO_WARN:g} LU '
+                                   f'below the voice (default {mix.MUSIC_UNDER_VOICE:g}); dialogue must stay on top'})
+        voice = float(cfg.get('voice_level', mix.VOICE_LUFS)) + float(cfg.get('voice', 0) or 0)
+        level = float(cfg.get('music_level', mix.MUSIC_LEVEL)) + float((edit.get('music') or {}).get('gain', 0) or 0)
+    except (TypeError, ValueError):
+        return out
+    if edit.get('music') and level > voice - 6:
+        out.append({'severity': 'warn', 'rule': 'mix_balance', 'where': 'edit.mix.music_level',
+                    'message': f'the bed between lines at {level:g} LUFS is within 6 LU of the voice ({voice:g}): the music will '
+                               f'fight the dialogue (default {mix.MUSIC_LEVEL:g} with the voice at {mix.VOICE_LUFS:g})'})
+    return out
 
 
 UNVOICED_MIN = 3

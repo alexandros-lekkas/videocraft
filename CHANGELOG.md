@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- The mix balances by measurement, by default: dialogue is king. Each bus is measured in LUFS; the voice at −16
+  before the master, the bed at −24 LUFS between lines and ducked under each line as deep as it needs to sit 18 LU
+  under the voice (down 50 ms before the first word), game tracks 2 dB lower, effects held under the voice, music
+  hits no longer scaled by the track's normalization. `[edit.mix] voice_level`, `music_level`, `music_under_voice`,
+  `game_trim`, `sfx_ceiling`, `sfx_under_line`; `audio mix --stems`. measure, report.md and the review sound sheet
+  give voice over music per line and the music between lines, and warn under 12 LU; lint warns on settings that
+  would allow it. The finished films went from 6 and 14 lines under 12 LU to none.
 - `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
   painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
   filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,
