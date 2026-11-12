@@ -28,7 +28,7 @@ LIMIT_MB = 50.0
 SHORT_CAPTION = 77          # caption capital height in a vertical re-shoot (the default is 63)
 HOOK_SECONDS = 1.4
 OUT_W, OUT_H = 1080, 1920
-SIZE_KEYS = ('radius', 'distance')
+SIZE_KEYS = ('radius', 'distance', 'min_distance')
 TEXT_ACTIONS = ('caption', 'title', 'card', 'lower_third', 'keycap')
 
 
@@ -202,6 +202,9 @@ def subject_xs(seg, plan, raw_shot, subject, width, height):
     main = cam.subject_of(shot) if not who else None   # the rig's subject (follow rigs: the player)
     if main:
         who.append(main)
+    subjects = (shot.get('camera') or {}).get('subjects')
+    if not hint and isinstance(subjects, list):          # a two-shot: both, so the layout can tell they are apart
+        who += [str(x) for x in subjects if str(x) not in who]
     who += [str(a['actor']) for a in actors if str(a['actor']) not in who]
     if not who:
         return {}, None
