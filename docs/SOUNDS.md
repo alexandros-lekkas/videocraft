@@ -135,10 +135,11 @@ playful → comedy-chase.
    synth bed in the style of the mood (of the script, or of the named track).
 
 So one script makes both exports: `cut/<export>.mp4` with your game's sounds and `cut/<export>-original-audio.mp4`
-with none, both mastered to −14 LUFS. On `examples/sound.toml` (three shots, 13.3 s): the game mix placed 71 logged
-sounds and `records/blocks` (playful, steady pulse, started at its 7.1 s entry) and measured −14.7 LUFS, −1.8 dBTP;
-the original mix swapped 7 tagged cues and 2 chicken voices, dropped 43 later palette steps, played the comedy-chase
-bed and measured −14.1 LUFS, −1.9 dBTP (AAC exports: −14.9 and −14.3 LUFS). Those are measurements; nobody listened.
+with none, both mastered to −14 LUFS. On `examples/sound.toml` (three shots, 13.3 s, run 2): the game mix placed 71
+logged sounds (65 of 65 onsets within ±1 frame of their frames) and `records/blocks` (playful, steady pulse, started at
+its 7.1 s entry) and measured −14.6 LUFS, −1.8 dBTP; the original mix swapped 7 tagged cues and 2 chicken voices,
+dropped 43 later palette steps, played the comedy-chase bed and measured −14.1 LUFS, −1.9 dBTP (AAC exports: −14.9 and
+−14.2 LUFS). Those are measurements; nobody listened.
 
 ## Tools
 
