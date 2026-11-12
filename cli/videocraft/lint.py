@@ -4,6 +4,7 @@ Rules (each problem: severity error | warn | info, rule, where, message):
   unknown_key       top-level, [world], [[actor]], [[shot]] keys the compiler does not allow (its allow-lists)
   cue_outside       a cue's `at` past the shot's end or before -preroll
   unknown_action    a `do` that is not built in and not namespaced (`<modid>:<name>`)
+  unknown_rig       a camera `rig` that is not built in and not namespaced
   unknown_actor     a cue's `actor` or a camera's `subject` that is not `player` or an [[actor]] id
   reading           text that cannot be complete on screen for max(1.2 s, 0.5 s + 0.3 s a word) before the next
                     text or the end of the shot (one-word montage text: info)
@@ -20,11 +21,18 @@ import json
 from videocraft import script
 
 TEXT_ACTIONS = {'caption', 'title', 'lower_third', 'keycap', 'card', 'say'}
-BUILT_IN = {'command', 'mark', 'wait',
-            'walk', 'run', 'look', 'turn', 'jump', 'crouch', 'swing', 'use', 'break', 'place', 'select', 'type', 'open',
-            'close', 'point', 'click', 'pose', 'stop', 'hop', 'state', 'hold', 'emit', 'voice', 'nod', 'shake', 'talk', 'blink',
-            'caption', 'title', 'keycap', 'lower_third', 'card', 'clear', 'say', 'sound', 'tune', 'particles', 'ambience',
-            'fly', 'hover', 'swarm', 'land', 'stand_in', 'glide'}
+# Exactly what the mod registers (r.action / r.rig in src/main/java; test_lint checks they have not drifted), plus
+# `say`, which the compiler resolves into captions before the take.
+COMPILED = {'say'}
+BUILT_IN = COMPILED | {
+    'command', 'mark', 'stand_in', 'glide', 'wait',                                         # director/CoreActions
+    'place', 'walk', 'run', 'stop', 'turn', 'look', 'hop', 'jump', 'state', 'crouch', 'hold', 'emit', 'voice',
+    'swing', 'nod', 'shake', 'talk', 'point', 'pose', 'blink',                                # actor/Actions
+    'fly', 'hover', 'swarm', 'land',                                                          # actor/FlightActions
+    'caption', 'title', 'card', 'lower_third', 'keycap', 'clear',                             # text/TextActions
+    'sound', 'tune', 'ambience', 'particles',                                                 # sound/SoundActions
+}
+BUILT_IN_RIGS = {'orbit', 'fixed', 'lead', 'chase', 'track', 'dolly', 'crane', 'locked', 'two_shot', 'face', 'first'}
 BUILT_IN_ANCHORS = {'spawn'}
 STAGGER = 0.12          # seconds between popped words when the cue gives no explicit word times
 WPS_MAX = 2.5
@@ -116,6 +124,10 @@ def lint(raw, rubric=None):
         if max_shot and duration > max_shot:
             add('warn', 'long_shot', where, f'{duration:g} s is longer than {max_shot:g} s ({(rubric or {}).get("name")} rubric)')
         camera = shot.get('camera') or {}
+        rig = camera.get('rig') if isinstance(camera, dict) else None
+        if isinstance(rig, str) and rig not in BUILT_IN_RIGS and ':' not in rig:
+            add('warn', 'unknown_rig', f'{where}.camera', f'`rig = "{rig}"` is not a built-in rig ({", ".join(sorted(BUILT_IN_RIGS))}); '
+                'a plugin rig is "<modid>:<name>"')
         subject = camera.get('subject')
         if isinstance(subject, str) and subject not in actors:
             add('error', 'unknown_actor', f'{where}.camera', f'subject "{subject}" is not an actor; actors: {sorted(actors)}')

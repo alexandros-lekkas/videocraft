@@ -82,7 +82,8 @@ camera pans, as an operator shooting vertical would (`clip.json` notes say which
 range: each clip's `in`/`out` frames, its speed, look and frame; push-in points are mapped into the vertical frame;
 a fade is kept only where the range keeps that clip's edge. The vertical take is an ordinary iteration of
 `runs/<name>-vertical/` (its script is `clips/<n>/vertical.json`). Its text is checked against the vertical safe
-area (x 54-1026, y 96-1632): `captions_in_safe_area` in `clip.json`. A re-shoot that fails falls back to re-framing
+area (x 54-950, y 96-1440: clear of the right 12 %, where TikTok, Shorts and Reels put their buttons, and the bottom
+25 %, where they put the caption, username and progress bar): `captions_in_safe_area` in `clip.json`. A re-shoot that fails falls back to re-framing
 when `--method auto`, and says so.
 
 **Re-frame** (assemblies, runs without a script, or `--method reframe`): a 608x1080 crop of the 16:9 master scaled to

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from videocraft import game, tools
-from videocraft.paths import GAME_DIR, PORT_OVERRIDE, ROOT, RUNS, SLOT_DIR, SLOT_PORTS, is_real_minecraft
+from videocraft.paths import GAME_DIR, PORT_OVERRIDE, ROOT, RUNS, SLOT_DIR, SLOT_PORTS, is_real_minecraft, loom_assets
 
 
 def _line(ok, what, detail, required=True):
@@ -18,7 +18,7 @@ def _extras():
     import json
     import os
     import shutil
-    assets = Path.home() / '.gradle/caches/fabric-loom/assets'
+    assets = loom_assets()
     indexes = sorted((assets / 'indexes').glob('*.json')) if assets.exists() else []
     sounds = 0
     if indexes:
@@ -82,7 +82,7 @@ def doctor(args=None):
     good &= _line(not is_real_minecraft(GAME_DIR), 'game dir', f'{GAME_DIR} (never a real Minecraft folder)')
     jars = sorted((ROOT / 'build/libs').glob('videocraft-*.jar'))
     _line(bool(jars), 'mod jar', str(jars[-1]) if jars else 'not built yet: ./gradlew build (bin/videocraft run builds it anyway)', required=False)
-    assets = Path.home() / '.gradle/caches/fabric-loom/assets'
+    assets = loom_assets()
     _line(assets.exists(), 'game assets', f'{assets} (music for the edit is read from here, never committed)' if assets.exists()
           else 'not downloaded yet: the first run downloads them', required=False)
     client = game.running()

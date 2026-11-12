@@ -38,9 +38,18 @@ final class Keycap extends Message {
 		half = Math.max(8, (Ink.width(key) - 1) / 2f + 5);
 	}
 
-	private float cx() { return (float) (Double.isNaN(x) ? layout.width() / 2 : x); }
+	// The key's box is kept inside the safe area, so a position written for a wide frame still shows on a vertical one.
+	private float cx() {
+		double[] s = layout.safe();
+		return (float) clamp(Double.isNaN(x) ? layout.centreX() : x, Math.ceil(s[0]) + half * k, Math.floor(s[2]) - half * k);
+	}
 
-	private float cy() { return (float) (Double.isNaN(y) ? layout.height() * 0.62 : y); }
+	private float cy() {
+		double[] s = layout.safe();
+		return (float) clamp(Double.isNaN(y) ? layout.height() * 0.62 : y, Math.ceil(s[1]) + 8 * k, Math.floor(s[3]) - 9 * k);
+	}
+
+	private static double clamp(double v, double lo, double hi) { return lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v)); }
 
 	@Override
 	int shownFrame() { return startFrame; }

@@ -8,6 +8,9 @@
   own animation and fold through the pose blend; buzz through the sound log; `FlightChecks`, `examples/bees.toml`.
   Puppets no longer tick during staging and the sound log seeds by the shot's frame, so two takes with different
   preparation lengths give identical `actors.csv` and `sounds.csv`.
+- Docs for people: a README with install, a quickstart timed from a fresh clone (5.5 min first-time setup, then
+  about a minute a take), how it works, a docs map and an honest status; `docs/GALLERY.md`; DESIGN.md's status and
+  milestones, AGENTS.md's project map and commands, and SCRIPT.md brought up to the code.
 - Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
   CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
   snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that
@@ -78,3 +81,15 @@
 - The foundation: a Fabric mod for Minecraft 26.3 that plays a compiled shot script in a hidden client on a fixed
   frame clock and captures every frame to ffmpeg; the `videocraft` CLI (`doctor`, `compile`, `run`, `cut`, `measure`,
   `runs`, `status`, `stop`); the run store; `examples/hello.toml` (an orbit around spawn, 1080p60).
+- First run is no longer silent: while Gradle and Loom set up (about 1 GB of downloads on a fresh machine), `run`
+  passes Gradle's download lines through and says a progress line every 30 s after 15 s of silence.
+- Game assets (sounds, music) are found under `GRADLE_USER_HOME` when it is set, not only `~/.gradle`
+  (`paths.loom_assets`, used by `doctor` and the audio mix).
+- Vertical frames keep text clear of TikTok, Shorts and Reels overlays: the safe area of a frame taller than wide is
+  x 5-88 %, y 5-75 % (54-950, 96-1440 at 1080x1920), centred text centres on it, a lower third steps its size down to
+  fit, a keycap is kept inside it; `measure` checks the same area.
+- `examples/sets.toml` films Nibs, the one-horned goat, walking two of market-lane's path marks from the preroll on
+  lead tracks (3 blocks, 105°), instead of a stand-in.
+- `lint` knows exactly the actions and rigs the mod registers (it had `stand_in` and `glide` missing and seven
+  unbuilt player actions listed), warns on an unknown camera `rig`, and a test fails when its lists drift from the
+  Java registries.

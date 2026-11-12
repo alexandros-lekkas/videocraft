@@ -1,7 +1,9 @@
 """The user's own game sounds, read from the local asset cache that Loom downloaded for the dev client.
 
-    ~/.gradle/caches/fabric-loom/assets/indexes/<version>.json   {"objects": {"minecraft/sounds/mob/goat/step3.ogg": {"hash": …}}}
-    ~/.gradle/caches/fabric-loom/assets/objects/<aa>/<hash>       the file itself
+    <gradle>/caches/fabric-loom/assets/indexes/<version>.json   {"objects": {"minecraft/sounds/mob/goat/step3.ogg": {"hash": …}}}
+    <gradle>/caches/fabric-loom/assets/objects/<aa>/<hash>       the file itself
+
+where <gradle> is $GRADLE_USER_HOME, else ~/.gradle (paths.loom_assets).
 
 Decoded sounds are kept as 48 kHz float32 in the git-ignored cache/audio/. Nothing from here is ever written into the
 repository or next to an export: game audio only ends up mixed into cut/audio.wav (and the cut's video files).
@@ -14,9 +16,9 @@ from pathlib import Path
 
 from videocraft import tools
 from videocraft.audio import dsp
-from videocraft.paths import ROOT
+from videocraft.paths import ROOT, loom_assets
 
-ASSETS = Path(os.environ.get('VIDEOCRAFT_ASSETS') or Path.home() / '.gradle/caches/fabric-loom/assets')
+ASSETS = Path(os.environ.get('VIDEOCRAFT_ASSETS') or loom_assets())
 CACHE = Path(os.environ.get('VIDEOCRAFT_AUDIO_CACHE') or ROOT / 'cache' / 'audio')
 
 
