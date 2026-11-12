@@ -62,6 +62,16 @@ class TimelineTests(unittest.TestCase):
         self.assertEqual(t.clips[0].fade_out, 12)
 
 
+    def test_the_picture_envelope_steps_at_hard_cuts_and_ramps_with_fades(self):
+        t = tl.trivial({'clip': [{'shot': 'a'}, {'black': 0.5}, {'shot': 'a', 'fade_in': 30}]}, {'shots': [{'name': 'a', 'frames': 60}]}, 60)
+        n = dsp.seconds_to_samples(t.seconds)
+        env = mix.picture_envelope(t, n)
+        s = dsp.SR
+        self.assertEqual((env[0], env[s - 1], env[s], env[s + s // 2 - 1]), (1.0, 1.0, 0.0, 0.0))
+        self.assertAlmostEqual(env[s + s // 2 + s // 4], 0.5, places=3)  # halfway through the 0.5 s fade-in
+        self.assertEqual(env[n - 1], 1.0)
+
+
 class SpatialTests(unittest.TestCase):
     def test_distance_attenuation_is_linear_to_the_range(self):
         cam = (0, 0, 0, 0.0)

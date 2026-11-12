@@ -25,7 +25,9 @@ import fnmatch
 import json
 import math
 import time
+from array import array
 from dataclasses import dataclass, asdict
+from itertools import repeat
 from pathlib import Path
 
 from videocraft.audio import assets, dsp, loudness, sfx, synth
@@ -239,27 +241,27 @@ def _add_panned(left, right, seg, at, gain, pan, fade_out=0, fade_in=0):
 
 
 def picture_envelope(timeline, n, through_black=False):
-    """1 while a shot is on screen, ramps with each clip's fades to/from black, 0 over black gaps."""
-    points = []
+    """1 while a shot is on screen, ramping with each clip's fades to/from black, 0 over black gaps (1 if
+    `through_black`). Built clip by clip as filled spans, so a hard cut is a hard step."""
+    env = dsp.zeros(n)
     fps = timeline.fps
     for c in timeline.clips:
-        a, b = dsp.seconds_to_samples(c.out_start / fps), dsp.seconds_to_samples(c.out_end / fps)
-        if c.kind == 'black':
-            g = 1.0 if through_black else 0.0
-            points += [(a, g), (b, g)]
+        a = max(0, min(n, dsp.seconds_to_samples(c.out_start / fps)))
+        b = max(0, min(n, dsp.seconds_to_samples(c.out_end / fps)))
+        if b <= a:
             continue
-        fi = dsp.seconds_to_samples(c.fade_in / fps) if c.fade_in else 0
-        fo = dsp.seconds_to_samples(c.fade_out / fps) if c.fade_out else 0
-        points += [(a, 0.0 if fi else 1.0), (a + fi, 1.0), (b - fo, 1.0), (b, 0.0 if fo else 1.0)]
-    # Keep only the ramps: a sample's gain is set by the clip that contains it.
-    pts, last = [], None
-    for s, g in sorted(points, key=lambda x: x[0]):
-        if last is not None and s == last[0]:
-            pts[-1] = (s, min(g, last[1]))
-        else:
-            pts.append((s, g))
-        last = pts[-1]
-    return dsp.ramp_envelope(pts, n)
+        if c.kind == 'black':
+            if through_black:
+                env[a:b] = array('f', repeat(1.0, b - a))
+            continue
+        env[a:b] = array('f', repeat(1.0, b - a))
+        fi = min(b - a, dsp.seconds_to_samples(c.fade_in / fps)) if c.fade_in else 0
+        fo = min(b - a, dsp.seconds_to_samples(c.fade_out / fps)) if c.fade_out else 0
+        for i in range(fi):
+            env[a + i] = i / fi
+        for i in range(fo):
+            env[b - 1 - i] = min(env[b - 1 - i], i / fo)
+    return env
 
 
 def place_voice(it, timeline, edit):
