@@ -99,6 +99,11 @@ def thumbnail(clip, folder):
     video = Path(clip['video'])
     samples = _gray_samples(video, clip['frames'], THUMB_STEP)
     texts_of, actors_of, frames_of = {}, {}, {}
+    fits, at = [], 0     # re-framed clips laid out whole over a blurred fill make weak thumbnails
+    for c in clip.get('clips') or []:
+        if c.get('layout') == 'fit':
+            fits.append((at, at + c['frames']))
+        at += c['frames']
     best = None
     for j, (luma, contrast) in enumerate(samples):
         k = j * THUMB_STEP
@@ -127,6 +132,8 @@ def thumbnail(clip, folder):
                         facing = isinstance(head, float) and abs(((head - (row['cam_yaw'] + 180)) + 180) % 360 - 180) < 50
                         subjects.append((v[2], facing))
         score, why = frame_score(texts, subjects, luma, contrast)
+        if any(a <= k < b for a, b in fits):
+            score, why = round(score - 2.0, 3), why + ' (letterboxed)'
         if best is None or score > best[0]:
             best = (score, k, why, max(texts)[2] if texts else '')
     score, k, why, text = best or (0, 0, 'first frame', '')
