@@ -58,6 +58,7 @@ public final class Registries implements Registry {
 		io.github.alexandroslekkas.videocraft.camera.Rigs.register(r);
 		io.github.alexandroslekkas.videocraft.actor.Actions.register(r);
 		io.github.alexandroslekkas.videocraft.text.TextActions.register(r);
+		io.github.alexandroslekkas.videocraft.sound.SoundActions.register(r);
 		for (EntrypointContainer<VideocraftPlugin> plugin : FabricLoader.getInstance().getEntrypointContainers("videocraft", VideocraftPlugin.class)) {
 			r.owner = plugin.getProvider().getMetadata().getId();
 			plugin.getEntrypoint().register(r);

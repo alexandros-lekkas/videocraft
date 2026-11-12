@@ -19,7 +19,9 @@
     "actor.MobAccess",
     "actor.FoxAccess",
     "actor.ItemEntityAccess",
-    "actor.ClientMannequinAccess"
+    "actor.ClientMannequinAccess",
+    "sound.SoundEngineMixin",
+    "sound.SoundInstanceAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

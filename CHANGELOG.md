@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
+  chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
+  their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and
+  pan from the camera, voice, an original chiptune bed with stems and cues (`out`, `in`, `drop`, `thin`, `full`,
+  `hit`), ducking, silence over black, mastered to −14 LUFS / −1 dBTP; `[edit] audio = "original"` uses no game
+  audio; commands `audio mix`, `audio events --onsets`, `audio synth`; `examples/sound.toml`.
 - Text in the game (`caption`, `title`, `card`, `lower_third`, `keycap`, `clear`): sizes in 1080-line pixels on any
   frame aspect, inside the safe area, one message at a time, words popping on exact frames (explicit `words` times
   for a voice timeline), `shots/<name>/text.json` for measure; `examples/text.toml`.
