@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A caption's speaker tag is drawn at a 49 px cap height (was 42, under the 44 px floor every other text keeps):
+  reviewers could not read name and "dramatization" tags at phone width.
 - A caption or title that does not fit now fails the take with its own message ("does not fit on two lines");
   the cut's clean-up hit a NullPointerException on the unlaid message and reported that instead.
 - `story read` keeps packed `say` lines (no `at`) after the line before them; it sorted them to 0 s, so a cold

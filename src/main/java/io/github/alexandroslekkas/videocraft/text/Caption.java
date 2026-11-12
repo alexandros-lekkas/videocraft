@@ -16,7 +16,7 @@ import java.util.List;
 final class Caption extends Message {
 	/** Default seconds between words popping in. */
 	static final double STAGGER = 0.12;
-	static final double DEFAULT_CAP = 63, TAG_CAP = 42;
+	static final double DEFAULT_CAP = 63, TAG_CAP = 49;   // the tag is read too: at least the 44 px floor
 
 	private record Word(String text, boolean key, boolean breakBefore, double at) {}
 
