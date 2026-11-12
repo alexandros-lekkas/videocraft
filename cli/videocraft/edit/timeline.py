@@ -96,7 +96,7 @@ def check(edit, shots, durations=None, fps=60):
 
 def _check_look(table, where):
     grade = table.get('grade')
-    if grade is not None and not (grade in GRADES or isinstance(grade, dict)):
+    if grade is not None and not (isinstance(grade, dict) or grade in GRADES):
         raise EditError(f'{where}.grade is one of {sorted(GRADES)} or {{ saturation, contrast, brightness, tint, amount }}')
     if isinstance(grade, dict):
         extra = sorted(set(grade) - {'saturation', 'contrast', 'brightness', 'gamma', 'tint', 'amount'})
