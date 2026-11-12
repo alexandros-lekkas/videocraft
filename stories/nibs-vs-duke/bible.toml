@@ -1,0 +1,107 @@
+# Nibs vs Duke: the bible (characters, sets, gags, rules). Stable across a series.
+title = "Nibs vs Duke"
+logline = "A one-horned goat who thinks it is the best jumper in the valley challenges the fox who keeps winning Talent Night; the fox goes to sleep."
+
+[[character]]
+id = "nibs"
+name = "Nibs"
+kind = "mob"
+entity = "minecraft:goat"
+look = { left_horn = false, right_horn = true, tint = "#7f8fa6" }   # slate-blue-grey; fallback: a vanilla goat without its left horn
+personality = "Cocky, loud, adores itself; talks to the audience like a vlogger; sure it is the best jumper in the valley; the lost horn is a point of pride."
+voice = "Young, bright and fast, a little nasal, big self-satisfied energy; punches the key word; ends brags with a grin in the voice."
+sounds = ["minecraft:entity.goat.ambient", "minecraft:entity.goat.screaming.ambient", "minecraft:entity.goat.step"]
+gestures = ["struts head high", "stops and turns its head to the lens, deadpan", "lowers its head as if to ram", "screams at the sky", "small hop"]
+
+[[character]]
+id = "duke"
+name = "Duke"
+kind = "mob"
+entity = "minecraft:fox"
+look = { variant = "snow" }
+personality = "Smug, unbothered, three-time Talent Night champion; never raises its voice; answers a challenge with a yawn."
+voice = "Dry, low and slow, faintly bored, a velvet showman's purr; leaves pauses."
+sounds = ["minecraft:entity.fox.ambient", "minecraft:entity.fox.screech", "minecraft:entity.fox.sleep"]
+gestures = ["sits chin up", "trots", "crouch-bow", "carries the trophy in its mouth", "yawns and lies down to sleep"]
+
+[[character]]
+id = "hen-1"
+name = "Hen"
+kind = "mob"
+entity = "minecraft:chicken"
+personality = "The audience. Blank. Its one contribution is an egg."
+voice = "none: a single cluck"
+sounds = ["minecraft:entity.chicken.ambient", "minecraft:entity.chicken.egg"]
+gestures = ["blinks", "lays an egg"]
+
+[[character]]
+id = "hen-2"
+name = "Hen"
+kind = "mob"
+entity = "minecraft:chicken"
+personality = "Audience."
+voice = "none"
+sounds = ["minecraft:entity.chicken.ambient"]
+gestures = ["sits on the rail"]
+
+[[character]]
+id = "hen-3"
+name = "Hen"
+kind = "mob"
+entity = "minecraft:chicken"
+personality = "Audience."
+voice = "none"
+sounds = ["minecraft:entity.chicken.ambient"]
+gestures = ["sits on the rail"]
+
+[[character]]
+id = "hen-4"
+name = "Hen"
+kind = "mob"
+entity = "minecraft:chicken"
+personality = "Audience."
+voice = "none"
+sounds = ["minecraft:entity.chicken.ambient"]
+gestures = ["sits on the rail"]
+
+[[set]]
+name = "market-lane"
+exists = true
+description = "Exterior, late afternoon, clear sky. A curving lane of path blocks and cobblestone with a pale smooth-stone centre line; market stalls with coloured wool awnings, lanterns on fence posts, barrels, flower pots, cottages behind, a well, a plank bridge over a stream, a cart, the notice board with the Talent Night poster, an open end with a valley view. At least eight stretches that look different."
+
+[[set]]
+name = "barn-stage"
+exists = true
+description = "Interior, night. A wooden barn: hay bales, a low spruce stage, a row of note blocks across its front, lanterns and candles, moonlit windows, a fence rail with the four chickens, a golden trophy on a post."
+
+[[set]]
+name = "black-stage"
+exists = true
+description = "A lit subject mark on pure black, for character cards and the final shot."
+
+[[gag]]
+name = "one horn"
+description = "Nibs lost a horn and treats it as a feature: the face cut-in on 'This horn.', then 'One's plenty.'"
+
+[[gag]]
+name = "Duke. Again."
+description = "Duke has won Talent Night three years running; the poster says so and Nibs reads it like a wound."
+
+[[gag]]
+name = "the egg"
+description = "The chickens' only applause for Duke's solo is one egg; Duke calls it a standing ovation."
+
+[[gag]]
+name = "six times more goat"
+description = "The brag montage: one word per shot, six spots, the cutting at its fastest."
+
+[[gag]]
+name = "the yawn"
+description = "Nibs screams its challenge at the sky; Duke, on black, yawns and goes to sleep."
+
+[rules]
+world = ["Animals talk only through the narrator voice and their own game sounds; no lip sync.",
+         "Talent Night is the valley's one event; Duke has won it three years running.",
+         "No villagers on the lane: it belongs to Nibs."]
+off_limits = ["anything from the reference channel: sheep, pink, moustaches, its rival, its audio, its jokes",
+              "real brands or creators", "violence beyond a pretend ram"]
