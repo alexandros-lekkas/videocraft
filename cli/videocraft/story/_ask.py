@@ -35,7 +35,7 @@ def _claude_cli(prompt, images, schema, model):
     if schema is not None:
         import json
         prompt += '\n\nReply with JSON only, matching this JSON schema:\n' + json.dumps(schema, indent=2)
-    timeout = float(os.environ.get('VIDEOCRAFT_ASK_TIMEOUT') or 900)
+    timeout = float(os.environ.get('VIDEOCRAFT_ASK_TIMEOUT') or 1800)
     try:
         done = subprocess.run([exe, '-p', '--model', model, '--output-format', 'text'], input=prompt,
                               capture_output=True, text=True, timeout=timeout)
