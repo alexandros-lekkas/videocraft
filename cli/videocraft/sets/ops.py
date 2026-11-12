@@ -171,6 +171,11 @@ class Builder:
         side = float(v.get('side', 0))
         return x - tz * side, z + tx * side
 
+    def spine(self, lane, where):
+        if lane not in self.spines:
+            raise SetError(f'{where}: along = "{lane}" is not a lane with a mark (yet); lanes: {", ".join(sorted(self.spines)) or "none"}')
+        return self.spines[lane]
+
     def toward_lane(self, x, z, where):
         if not self.spines:
             raise SetError(f'{where}: facing = "lane" needs a lane with a mark before this entry')
@@ -228,12 +233,19 @@ def op_ground(b, spec):
 
 def op_paint(b, spec):
     """Repaints the top layer (`y`, default -1) in an area with a mix; `only` limits it to some blocks."""
-    op = Op(spec, b.where, {'from', 'to', 'center', 'radius', 'y', 'mix', 'grain', 'only', 'chance'})
+    op = Op(spec, b.where, {'from', 'to', 'center', 'radius', 'y', 'mix', 'grain', 'only', 'chance', 'along', 'd', 'width'})
     y = int(op.get('y', -1))
     mix = b.mix(op.req('mix'), op.get('grain', 2), 'paint')
     only = {BlockState.parse(o).name for o in op.get('only', [])}
     chance = float(op.get('chance', 1.0))
-    for x, z in b.area(op):
+    if op.has('along'):
+        # A stretch of a lane: `d = [from, to]` blocks along it, `width` across (default 9).
+        d1, d2 = op.req('d')
+        cells = [c for c, (_dist, a, _s) in ribbon(b.spine(op.get('along'), b.where), float(op.get('width', 9)) / 2).items()
+                 if d1 <= a <= d2]
+    else:
+        cells = b.area(op)
+    for x, z in cells:
         s = b.grid.get(x, y, z)
         if s is None or (only and s.name not in only):
             continue
@@ -393,14 +405,17 @@ def op_stream(b, spec):
 def op_bridge(b, spec):
     """A plank bridge from `from` to `to` (straight, [x, z]): deck at the ground layer so the walk stays level, fence
     rails along both sides with gaps at the ends, log posts with lanterns at the four corners."""
-    op = Op(spec, b.where, {'from', 'to', 'width', 'deck', 'rail', 'post', 'lanterns', 'y', 'beam'})
-    (x1, z1), (x2, z2) = op.xz('from'), op.xz('to')
+    op = Op(spec, b.where, {'from', 'to', 'width', 'deck', 'rail', 'post', 'lanterns', 'y', 'beam', 'along', 'd'})
     width = int(op.get('width', 5))
     y = int(op.get('y', -1))
     deck = b.mix(op.get('deck', {'spruce_planks': 5, 'oak_planks': 1}), 0, 'deck')
     rail = op.get('rail', 'spruce_fence')
     post = op.get('post', 'stripped_spruce_log')
     beam = op.get('beam', 'stripped_spruce_log')
+    if op.has('along'):
+        _bridge_along(b, op, width, y, deck, rail, post, beam)
+        return
+    (x1, z1), (x2, z2) = op.xz('from'), op.xz('to')
     along_x = abs(x2 - x1) >= abs(z2 - z1)
     length = int(abs(x2 - x1) if along_x else abs(z2 - z1)) + 1
     sx = 1 if (x2 >= x1) else -1
@@ -422,6 +437,29 @@ def op_bridge(b, spec):
                 b.put(x, y + 1, z, post)
                 if op.get('lanterns', True):
                     b.put(x, y + 2, z, 'lantern')
+
+
+def _bridge_along(b, op, width, y, deck, rail, post, beam):
+    """A bridge that follows a curving lane: `along` (the lane), `d = [from, to]`; the deck is the lane's ribbon
+    `width` wide, the outermost cells of it are the rails (on beams), with posts and lanterns at the four ends."""
+    lane = op.get('along')
+    spine = b.spine(lane, b.where)
+    d1, d2 = op.req('d')
+    half = width / 2
+    cells = {c: v for c, v in ribbon(spine, half).items() if d1 <= v[1] <= d2}
+    for (x, z), (dist, a, _sg) in cells.items():
+        b.grid.remove(x, y + 1, z)
+        b.put(x, y, z, deck.pick(x, z))
+        if dist > half - 1:
+            b.put(x, y - 1, z, f'{beam}[axis=y]')
+            b.put(x, y + 1, z, rail)
+    for d in (d1, d2):
+        for sg in (-1, 1):
+            x, z = b.along({'along': lane, 'd': d, 'side': (half - 0.5) * sg}, b.where)
+            x, z = math.floor(x), math.floor(z)
+            b.put(x, y + 1, z, f'{post}[axis=y]' if post.endswith('_log') else post)
+            if op.get('lanterns', True):
+                b.put(x, y + 2, z, 'lantern')
 
 
 # ---------------------------------------------------------------- volumes
@@ -990,13 +1028,17 @@ def op_scatter(b, spec):
 def op_crops(b, spec):
     """A field: farmland rows in `from`/`to` ([x, z]) with `crop` (wheat, carrots, potatoes, beetroots) at `age`,
     a water channel every `water` rows (default 4), along `rows` ("x" or "z")."""
-    op = Op(spec, b.where, {'from', 'to', 'crop', 'age', 'water', 'rows', 'y'})
+    op = Op(spec, b.where, {'from', 'to', 'crop', 'age', 'water', 'rows', 'y', 'avoid', 'margin'})
     crop = op.get('crop', 'wheat')
     age = int(op.get('age', 7 if crop != 'beetroots' else 3))
     water = int(op.get('water', 4))
     rows = op.get('rows', 'x')
     y = int(op.get('y', -1))
+    # `avoid = "lane"`: keep `margin` (5) blocks clear of that lane's centre line (a field beside a bend).
+    keep = set(ribbon(b.spine(op.get('avoid'), b.where), float(op.get('margin', 5)))) if op.has('avoid') else set()
     for x, z in b.area(op):
+        if (x, z) in keep:
+            continue
         k = z if rows == 'x' else x
         if water and k % (water + 1) == water:
             b.put(x, y, z, 'water')
@@ -1529,6 +1571,210 @@ def op_part(b, spec):
         b.entities.append(transform_entity(e, q, bool(op.get('mirror', False)), (int(x), int(y), int(z))))
 
 
+# ---------------------------------------------------------------- dressing along a lane
+
+KERB = {'lamp', 'barrels', 'crates', 'planter', 'pots', 'hay', 'pumpkins', 'fence', 'banner', 'bench', 'bush',
+        'woodpile', 'sacks', 'lantern', 'tallflowers'}
+FLOWERS = {'poppy': 2, 'dandelion': 2, 'cornflower': 1, 'allium': 1, 'red_tulip': 1, 'orange_tulip': 1,
+           'pink_tulip': 1, 'oxeye_daisy': 1, 'azure_bluet': 1, 'blue_orchid': 1}
+POTTED = {'potted_poppy': 2, 'potted_dandelion': 2, 'potted_red_tulip': 1, 'potted_blue_orchid': 1,
+          'potted_allium': 1, 'potted_azure_bluet': 1, 'potted_cornflower': 1, 'potted_fern': 1}
+BANNERS = ['red', 'yellow', 'blue', 'lime', 'orange', 'white', 'light_blue', 'magenta']
+
+
+def _kerb_prop(b, kind, f, r, o):
+    """One kerb prop as [(u, y, v, block)]: u along the lane, v away from it (0 is the kerb line), facing `f` (the
+    lane). `r` is a seeded number per prop; `o` the op's options."""
+    t = turn_dir(f, 1)
+    away = turn_dir(f, 2)
+    ax = 'x' if t in ('east', 'west') else 'z'
+    wood = o['wood']
+    pick = lambda mix, k: mix.pick(int(r * 9973) + k, k * 7)  # noqa: E731
+    out = []
+    if kind == 'lamp':
+        h = o['lamp_height']
+        out.append((0, 0, 0, 'cobblestone_wall'))
+        out += [(0, y, 0, f'{wood}_fence') for y in range(1, h + 1)]
+        out += [(0, h, -1, f'{wood}_fence'), (0, h - 1, -1, 'lantern[hanging=true]')]
+    elif kind == 'barrels':
+        out.append((0, 0, 0, 'barrel[facing=up]'))
+        if r < 0.5:
+            out.append((1, 0, 0, f'barrel[facing={f}]'))
+        if r > 0.35:
+            out.append((0, 1, 0, 'barrel[facing=up]' if r > 0.7 else 'lantern[hanging=false]'))
+    elif kind == 'crates':
+        out += [(0, 0, 0, f'barrel[facing={t}]'), (1, 0, 0, f'stripped_{wood}_wood'), (0, 1, 0, f'barrel[facing={t}]')]
+        out.append((1, 1, 0, pick(o['potted'], 1)))
+    elif kind == 'planter':
+        n = 2 if r < 0.5 else 3
+        for u in range(n):
+            out += [(u, 0, 0, 'rooted_dirt'), (u, 1, 0, pick(o['flowers'], u)),
+                    (u, 0, -1, f'{wood}_trapdoor[facing={f},half=bottom,open=true]')]
+        out += [(-1, 0, 0, f'{wood}_trapdoor[facing={turn_dir(t, 2)},half=bottom,open=true]'),
+                (n, 0, 0, f'{wood}_trapdoor[facing={t},half=bottom,open=true]')]
+    elif kind == 'pots':
+        out += [(0, 0, 0, pick(o['potted'], 0))]
+        if r < 0.6:
+            out.append((1, 0, 0, pick(o['potted'], 1)))
+    elif kind == 'hay':
+        out += [(0, 0, 0, f'hay_block[axis={ax}]'), (1, 0, 0, 'hay_block[axis=y]')]
+        out.append((0, 1, 0, 'hay_block[axis=y]' if r < 0.5 else f'carved_pumpkin[facing={f}]'))
+    elif kind == 'pumpkins':
+        out += [(0, 0, 0, 'pumpkin'), (1, 0, 0, 'melon' if r < 0.4 else f'carved_pumpkin[facing={f}]')]
+        if r > 0.5:
+            out.append((-1, 0, 0, 'pumpkin'))
+    elif kind == 'fence':
+        out += [(u, 0, 0, f'{wood}_fence') for u in range(-1, 2)]
+        if r < 0.4:
+            out.append((1, 1, 0, 'lantern[hanging=false]'))
+    elif kind == 'banner':
+        out += [(0, y, 0, f'stripped_{wood}_log[axis=y]') for y in range(3)]
+        colours = o['colors']
+        c1, c2 = colours[int(r * len(colours)) % len(colours)], colours[int(r * 7 * len(colours)) % len(colours)]
+        out += [(1, 2, 0, f'{c1}_wall_banner[facing={t}]'), (-1, 2, 0, f'{c2}_wall_banner[facing={turn_dir(t, 2)}]'),
+                (0, 3, 0, 'lantern[hanging=false]')]
+    elif kind == 'bench':
+        out += [(0, 0, 0, f'{wood}_stairs[facing={away},half=bottom]'), (1, 0, 0, f'{wood}_stairs[facing={away},half=bottom]'),
+                (-1, 0, 0, f'{wood}_trapdoor[facing={turn_dir(t, 2)},half=bottom,open=true]'),
+                (2, 0, 0, f'{wood}_trapdoor[facing={t},half=bottom,open=true]')]
+    elif kind == 'bush':
+        leaves = 'flowering_azalea_leaves' if r < 0.5 else 'azalea_leaves'
+        out += [(0, 0, 0, leaves), (1, 0, 0, leaves), (0, 0, 1, leaves)]
+        if r > 0.3:
+            out.append((0, 1, 0, leaves))
+    elif kind == 'woodpile':
+        log = f'{wood}_log[axis={ax}]'
+        out += [(0, 0, 0, log), (1, 0, 0, log), (0, 1, 0, log)]
+    elif kind == 'sacks':
+        out += [(0, 0, 0, 'brown_wool'), (0, 1, 0, 'white_wool' if r < 0.5 else 'light_gray_wool'), (1, 0, 0, 'brown_wool')]
+    elif kind == 'tallflowers':
+        tall = ['sunflower', 'sunflower', 'rose_bush', 'lilac', 'peony']
+        out += [(u, 0, 0, tall[int(r * 31 + u * 7) % len(tall)]) for u in range(-1, 2)]
+    elif kind == 'lantern':
+        out += [(0, 0, 0, f'stripped_{wood}_wood'), (0, 1, 0, 'lantern[hanging=false]')]
+    return out
+
+
+def op_kerb(b, spec):
+    """Dressing right at the lane's edges, so a low lens walking the lane always has things beside it.
+
+    `along` (the lane mark, default "lane"), `from`/`to` (blocks along it), `side` (blocks from the centre line to the
+    kerb line, default 4), `sides` ("both", "left", "right"), a prop every `every` blocks (3) with seeded jitter,
+    drawn from `props` (a mix of kinds: lamp, barrels, crates, planter, pots, hay, pumpkins, fence, banner, bench,
+    bush, woodpile, sacks, lantern, tallflowers), and a lantern post every `lamps` blocks (0: none) alternating sides. Props are
+    turned to face the lane and skipped where anything already stands (place stalls and houses first).
+    `wood` (spruce), `colors` (banner colours), `flowers` and `potted` (mixes), `lamp_height` (4)."""
+    op = Op(spec, b.where, {'along', 'from', 'to', 'side', 'sides', 'every', 'props', 'lamps', 'lamp_height', 'wood',
+                            'colors', 'flowers', 'potted', 'chance'})
+    lane = op.get('along', 'lane')
+    spine = b.spine(lane, b.where)
+    d1, d2 = float(op.get('from', 0)), float(op.get('to', spine[-1][2]))
+    side = float(op.get('side', 4))
+    sides = {'both': (-1, 1), 'left': (-1,), 'right': (1,)}.get(op.get('sides', 'both'))
+    if sides is None:
+        raise SetError(f'{b.where}: sides is both, left or right')
+    every = float(op.get('every', 3))
+    props = b.mix(op.get('props', {'barrels': 2, 'planter': 2, 'crates': 1, 'pots': 1, 'banner': 1, 'bench': 1}), 0, 'kerb')
+    for name, _ in props.entries:
+        if name not in KERB:
+            raise SetError(f'{b.where}: unknown kerb prop "{name}"; known: {", ".join(sorted(KERB))}')
+    o = {'wood': op.get('wood', 'spruce'), 'lamp_height': int(op.get('lamp_height', 4)),
+         'colors': op.get('colors', BANNERS), 'flowers': b.mix(op.get('flowers', FLOWERS), 0, 'kflowers'),
+         'potted': b.mix(op.get('potted', POTTED), 0, 'kpots')}
+    chance = float(op.get('chance', 1.0))
+    spots = []
+    lamps = float(op.get('lamps', 0))
+    if lamps:
+        k, d = 0, d1 + lamps / 2
+        while d <= d2:
+            sg = sides[k % len(sides)]
+            spots.append((d, sg, 'lamp'))
+            k, d = k + 1, d + lamps
+    for sg in sides:
+        d = d1 + (every / 2 if sg > 0 else 0)
+        i = 0
+        while d <= d2:
+            r = b.rand(int(d * 10), sg, 5)
+            if r < chance:
+                spots.append((d + (b.rand(int(d * 10), sg, 6) - 0.5) * every * 0.5, sg, None))
+            d += every
+            i += 1
+    for d, sg, kind in spots:
+        x, z = b.along({'along': lane, 'd': d, 'side': side * sg}, b.where)
+        x, z = math.floor(x), math.floor(z)
+        f = b.toward_lane(x + 0.5, z + 0.5, b.where)
+        r = b.rand(x, z, 41)
+        kind = kind or props.pick(x, z, int(d))
+        t, away = STEP[turn_dir(f, 1)], STEP[turn_dir(f, 2)]
+        cells = [(x + t[0] * u + away[0] * v, y, z + t[1] * u + away[1] * v, blk) for u, y, v, blk in _kerb_prop(b, kind, f, r, o)]
+        ok = True
+        for cx, cy, cz, _ in cells:
+            if b.grid.has(cx, cy, cz) and b.grid.get(cx, cy, cz).id not in PLANTS:
+                ok = False
+                break
+            if cy == 0:
+                g = b.grid.get(cx, -1, cz)
+                if g is None or g.id in ('water', 'air') or g.id.endswith(('_planks', '_slab')):
+                    ok = False
+                    break
+        if not ok:
+            continue
+        for cx, cy, cz, blk in cells:
+            b.put(cx, cy, cz, blk)
+
+
+def op_bunting(b, spec):
+    """Strings of little flags across a lane, from post to post: at `d` (a list of distances along `along`), between
+    poles `side` blocks either side of the centre line (4.5), `height` (5) at the poles, sagging `sag` (0.8) in the
+    middle, flags of `colors` (wool) every `spacing` (0.6). Flags are block displays facing along the lane, so a lens
+    looking down the lane sees them face on. Poles are `pole` (spruce_fence) on a `base` (cobblestone_wall), and are
+    skipped where something already stands (a lamp post or a stall post can hold the string)."""
+    op = Op(spec, b.where, {'along', 'd', 'side', 'height', 'sag', 'colors', 'spacing', 'pole', 'base', 'string'})
+    lane = op.get('along', 'lane')
+    spine = b.spine(lane, b.where)
+    side = float(op.get('side', 4.5))
+    h = int(op.get('height', 5))
+    sag = float(op.get('sag', 0.8))
+    colours = op.get('colors', ['red_wool', 'yellow_wool', 'blue_wool', 'white_wool', 'lime_wool', 'orange_wool'])
+    spacing = float(op.get('spacing', 0.6))
+    pole = op.get('pole', 'spruce_fence')
+    base = op.get('base', 'cobblestone_wall')
+    string = op.get('string', 'brown_wool')
+    for n, d in enumerate(op.req('d')):
+        ends = []
+        for sg in (-1, 1):
+            x, z = b.along({'along': lane, 'd': d, 'side': side * sg}, b.where)
+            cx, cz = math.floor(x), math.floor(z)
+            if not b.grid.has(cx, 0, cz):
+                b.put(cx, 0, cz, base)
+                for y in range(1, h + 1):
+                    b.put(cx, y, cz, pole)
+            else:
+                for y in range(1, h + 1):
+                    if not b.grid.has(cx, y, cz):
+                        b.put(cx, y, cz, pole)
+            ends.append((cx + 0.5, h + 0.75, cz + 0.5))
+        (x1, y1, z1), (x2, y2, z2) = ends
+        span = math.dist((x1, z1), (x2, z2))
+        steps = max(2, int(span / spacing))
+        thin_x = abs(x2 - x1) < abs(z2 - z1)  # the string runs mostly along z: flags are thin in x
+        for k in range(1, steps):
+            t = k / steps
+            px, pz = x1 + (x2 - x1) * t, z1 + (z2 - z1) * t
+            py = y1 - sag * 4 * t * (1 - t)
+            c = colours[(k + n) % len(colours)]
+            if string:
+                # The string: a thin piece from this flag halfway to the last one.
+                qx, qz = x1 + (x2 - x1) * (k - 0.5) / steps, z1 + (z2 - z1) * (k - 0.5) / steps
+                b.display_box(string, [min(px, qx) - (0.015 if thin_x else 0), py, min(pz, qz) - (0 if thin_x else 0.015)],
+                              [max(px, qx) + (0.015 if thin_x else 0), py + 0.03, max(pz, qz) + (0 if thin_x else 0.015)],
+                              {'brightness': {'sky': 15, 'block': 12}})
+            for w, hh, dy in ((0.36, 0.2, 0.0), (0.2, 0.18, 0.2)):
+                lo = [px - (0.02 if thin_x else w / 2), py - dy - hh, pz - (w / 2 if thin_x else 0.02)]
+                hi = [px + (0.02 if thin_x else w / 2), py - dy, pz + (w / 2 if thin_x else 0.02)]
+                b.display_box(c, lo, hi, {'brightness': {'sky': 15, 'block': 12}})
+
+
 OPS = {
     'ground': op_ground, 'paint': op_paint, 'lane': op_lane, 'stream': op_stream, 'bridge': op_bridge,
     'box': op_box, 'carve': op_carve, 'blocks': op_blocks, 'column': op_column, 'house': op_house, 'roof': op_roof,
@@ -1536,4 +1782,5 @@ OPS = {
     'crops': op_crops, 'pile': op_pile, 'well': op_well, 'cart': op_cart, 'pots': op_pots, 'light': op_light,
     'backdrop': op_backdrop, 'shell': op_shell, 'text': op_text, 'display': op_display, 'item_frame': op_item_frame,
     'poster': op_poster, 'entity': op_entity, 'part': op_part,
+    'kerb': op_kerb, 'bunting': op_bunting,
 }

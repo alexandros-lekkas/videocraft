@@ -143,9 +143,10 @@ def _can_take(cells, x, y, z, facing, half):
     return n is None or n.props.get('facing') != facing or n.props.get('half', 'bottom') != half
 
 
-def supported(grid, ground_y=-1):
+def supported(grid, ground_y=-1, drop_leaves=0):
     """Cells not connected (face to face) to the ground layer or below: floating blocks a viewer would notice.
-    Returns a list of (count, example cell) per floating group, largest first."""
+    Returns a list of (count, example cell) per floating group, largest first. Floating groups of at most
+    `drop_leaves` cells that are only leaves (a noisy canopy's stray tufts) are removed from the grid instead."""
     cells = grid.cells
     solid = {k for k, s in cells.items() if s.id not in ('air', 'light', 'barrier', 'structure_void')}
     seen = set()
@@ -170,6 +171,10 @@ def supported(grid, ground_y=-1):
                     rest.discard(n)
                     group.append(n)
                     stack.append(n)
+        if len(group) <= drop_leaves and all(cells[k].id.endswith('_leaves') for k in group):
+            for k in group:
+                del cells[k]
+            continue
         groups.append((len(group), min(group)))
     return sorted(groups, reverse=True)
 

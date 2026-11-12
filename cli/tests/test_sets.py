@@ -220,6 +220,56 @@ class Skins(unittest.TestCase):
                 skin.paint(skin.load_spec(p))
 
 
+LANE = {'do': 'lane', 'points': [[0, 0], [40, 0], [70, 15]], 'width': 5, 'mark': 'lane'}
+STRAIGHT = {'do': 'lane', 'points': [[0, 0], [80, 0]], 'width': 5, 'mark': 'lane', 'smooth': False}
+PLATE = {'do': 'ground', 'from': [-5, -25], 'to': [80, 40]}
+
+
+class LaneDressing(unittest.TestCase):
+    def test_kerb_props_stand_beside_the_lane_and_face_it(self):
+        raw = {'name': 'k', 'build': [PLATE, STRAIGHT, {'do': 'kerb', 'from': 2, 'to': 38, 'side': 4, 'lamps': 6,
+                                                     'props': {'bench': 1, 'barrels': 1}}]}
+        g = build(raw).grid
+        props = [(k, v) for k, v in g.cells.items() if k[1] >= 0 and v.id != 'air']
+        self.assertGreater(len(props), 20)
+        # A straight lane along z = 0: everything stands 2.5 to 6 blocks off the centre line, none on the lane.
+        self.assertTrue(all(2.5 <= abs(k[2] + 0.5) <= 6 for k, _ in props), sorted({k[2] for k, _ in props}))
+        lanterns = [k for k, v in g.cells.items() if v.id == 'lantern' and v.props.get('hanging') == 'true']
+        self.assertGreaterEqual(len(lanterns), 5)
+        stairs = [(k, v) for k, v in g.cells.items() if v.id == 'spruce_stairs']
+        for (x, y, z), v in stairs:  # a bench's back is away from the lane
+            self.assertEqual(v.props['facing'], 'north' if z < 0 else 'south')
+
+    def test_kerb_skips_where_something_stands(self):
+        raw = {'name': 'k', 'build': [PLATE, STRAIGHT, {'do': 'box', 'from': [0, 0, -8], 'to': [40, 3, -3], 'block': 'stone'},
+                                      {'do': 'kerb', 'from': 2, 'to': 38, 'side': 4, 'props': {'barrels': 1}}]}
+        g = build(raw).grid
+        self.assertTrue(all(v.id == 'stone' for k, v in g.cells.items() if k[1] >= 0 and k[2] < 0 and v.id != 'air'))
+
+    def test_bunting_is_flags_across_the_lane(self):
+        raw = {'name': 'k', 'build': [PLATE, STRAIGHT, {'do': 'bunting', 'd': [10, 20], 'side': 4.5}]}
+        b = build(raw)
+        flags = [e for e in b.entities if 'box' in e and e['block'].id.endswith('_wool')]
+        self.assertGreater(len(flags), 20)
+        for e in flags:
+            (lx, ly, lz), (hx, hy, hz) = e['box']
+            self.assertLess(hx - lx, 0.1)        # thin along the lane (x), so a lens down the lane sees them
+            self.assertTrue(3.5 < ly < 6.5)
+            self.assertTrue(-5 < lz < 6)
+
+    def test_bridge_and_crops_follow_a_bend(self):
+        raw = {'name': 'k', 'build': [PLATE, LANE,
+                                      {'do': 'bridge', 'along': 'lane', 'd': [36, 50], 'width': 7},
+                                      {'do': 'crops', 'from': [42, -20], 'to': [79, 40], 'avoid': 'lane', 'margin': 5}]}
+        g = build(raw).grid
+        from videocraft.sets.ops import ribbon, smooth
+        spine = smooth(LANE['points'])
+        lane = set(ribbon(spine, 2.5))
+        self.assertFalse(any(g.get(x, -1, z).id == 'farmland' for x, z in lane if g.get(x, -1, z)))
+        on_bend = [(x, z) for (x, z), v in ribbon(spine, 2.5).items() if 44 <= v[1] <= 48]
+        self.assertTrue(on_bend and all(g.get(x, -1, z).id.endswith('_planks') for x, z in on_bend))
+
+
 class ShippedSets(unittest.TestCase):
     def test_every_set_builds_without_floating_blocks(self):
         for p in sorted(SETS_DIR.glob('*.toml')):

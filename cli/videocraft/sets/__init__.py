@@ -92,7 +92,7 @@ def build(raw):
     for i, spec in enumerate(raw.get('mark', [])):
         _mark(b, spec, f'set {name}: mark[{i}]')
     warnings = []
-    floating = shapes.supported(b.grid)
+    floating = shapes.supported(b.grid, drop_leaves=12)
     for count, cell in floating[:10]:
         warnings.append(f'{count} floating block(s) not joined to the ground, e.g. at {list(cell)} ({b.grid.get(*cell)})')
     return Built(raw, b.grid, b.entities, b.marks, warnings)
