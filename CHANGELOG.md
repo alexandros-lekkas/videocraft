@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
+  CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
+  snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that
+  pops on the word onsets, an `edit.voice` line, an optional bark, and the shot's length (`fit = extend | cut-on |
+  none`; `cut_on` ends the shot on a word). Lines are cached by content hash; `voice.json` in each iteration; without a
+  voice installed, estimated timings. Commands `voice setup | doctor | say | script | check`; `examples/talk.toml`.
 - Camera rigs for the benchmark: `lead` (the lead track), `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`,
   `face`, with `fov` (or eased `[from, to]`), seeded `drift`, block avoidance and positions on actors; shot keys
   `preroll`, `time`, `weather`; `world.preset` (`flat`, `void`) and `world.save` from `cache/worlds/`; batched,
