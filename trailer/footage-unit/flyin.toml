@@ -1,0 +1,109 @@
+# Footage unit: the camera flies in from high over the barn yard to the opening framing of the take.
+#   bin/videocraft run trailer/footage-unit/flyin.toml
+# The cast stands on its tape marks (marks.toml), a second camera on a tripod beside the director. The lens starts
+# high and wide over the yard and comes down in one smooth move to a low framing of the goat and the fox.
+name = "fu-flyin"
+seed = 5
+description = "The camera flies in from high and wide to the take's opening framing"
+
+[world]
+seed = "videocraft"
+time = 11000
+
+[[world.set]]
+name = "barn-stage"
+at = [0, 230, 0]
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill 12 230 -1 12 231 0 air strict",
+  "fill 13 230 -12 31 231 9 air replace minecraft:tall_grass strict",
+  "fill 13 230 -12 31 230 9 air replace minecraft:short_grass strict",
+  "setblock 19 230 -4 yellow_carpet strict",
+  "setblock 19 230 2 yellow_carpet strict",
+  "setblock 22 230 -6 yellow_carpet strict",
+  "setblock 22 230 -1 yellow_carpet strict",
+  "setblock 22 230 4 yellow_carpet strict",
+  "fill 24 230 -6 24 231 -6 spruce_fence strict",
+  "summon minecraft:block_display 23.62 232.0 -6.3 {block_state:\"minecraft:black_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.76f,0.5f,0.6f]}}",
+  "summon minecraft:block_display 23.4 232.1 -6.15 {block_state:\"minecraft:gray_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.24f,0.3f,0.3f]}}",
+  "summon minecraft:block_display 23.75 232.5 -6.22 {block_state:\"minecraft:red_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.1f,0.1f,0.1f]}}",
+]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "goat"
+at = [19.5, 230, -3.5]
+facing = -70
+left_horn = false
+tint = "#8c9fc2"
+
+[[actor]]
+id = "duke"
+kind = "mob"
+entity = "fox"
+at = [19.5, 230, 2.5]
+facing = -70
+variant = "snow"
+
+[[actor]]
+id = "hen-1"
+kind = "mob"
+entity = "chicken"
+at = [22.5, 230, -5.5]
+facing = -70
+
+[[actor]]
+id = "hen-2"
+kind = "mob"
+entity = "chicken"
+at = [22.5, 230, -0.5]
+facing = -70
+
+[[actor]]
+id = "hen-3"
+kind = "mob"
+entity = "chicken"
+at = [22.5, 230, 4.5]
+facing = -70
+
+[[actor]]
+id = "director"
+kind = "mannequin"
+skin = "../../examples/skins/ben.png"
+at = [24.8, 230, -7.3]
+facing = 70
+
+[[shot]]
+name = "flyin"
+duration = 7.0
+camera = { rig = "dolly", from = [27.0, 263.0, 21.0], to = [29.0, 232.6, 4.0], at = [20.5, 231.0, -1.8], ease = "smooth", fov = [72, 56] }
+
+[[shot.cue]]
+at = 0.0
+do = "look"
+actor = "nibs"
+target = "duke"
+hold = 2.5
+
+[[shot.cue]]
+at = 3.0
+do = "look"
+actor = "duke"
+target = "nibs"
+hold = 2.0
+
+[[shot.cue]]
+at = 5.2
+do = "turn"
+actor = "director"
+to = "nibs"
+
+[[shot.cue]]
+at = 5.9
+do = "pose"
+actor = "director"
+pose = "point"
+seconds = 1.0
