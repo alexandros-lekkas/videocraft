@@ -12,3 +12,5 @@ out/
 __pycache__/
 *.egg-info/
 .DS_Store
+# Local (the owner decides whether these are published)
+/stories/honeypot/
