@@ -2,8 +2,8 @@
 
 A shot script is a TOML file (or JSON with the same shape). `bin/videocraft compile <file>` checks it and prints the
 plan the mod will play; every error names where it is and what is allowed. The design behind it is in
-[DESIGN.md](DESIGN.md#2-the-shot-script). **Implemented** marks what works today; the rest is planned and owned by the
-workstream in brackets.
+[DESIGN.md](DESIGN.md#2-the-shot-script). **Implemented** marks what works today, and the workstream that owns a
+part is in brackets. As of 2026-11-12 everything in this file is implemented unless it says *not built*.
 
 ## Top level
 
@@ -27,7 +27,7 @@ workstream in brackets.
 | `settle` | `4.0` | Seconds after arrival before staging, and then until every section in view is drawn. |
 | `preset` | `default` | For a seed world: `default`, `flat` (grass to the horizon) or `void` (nothing but a small platform at the origin); `flat` and `void` have no structures, so they make stages [a]. |
 | `[[world.stage]]` | | Cues (below) run once before the first shot, never recorded. |
-| `[[world.set]]` | | A set from `sets/` (`name`, `at` [0, 230, 0], `rotate`, `mirror`, `as`): built at compile time and staged before the script's own stage cues; its marks become anchors `<set>:<mark>` (docs/SETS.md) [sets]. |
+| `[[world.set]]` | | A set from `sets/` (`name`, `at` [0, 230, 0], `rotate`, `mirror`, `as`): built at compile time and staged before the script's own stage cues; its marks become anchors `<set>:<mark>` (docs/SETS.md) [sets]. The compiler writes `world.sets`, `anchors`, `paths` and `views` into the plan from it; a script does not set them. |
 
 On arrival the world is made to hold still: mob spawning, random ticks (leaf decay, crops), fire spread, vines,
 raids, traders and advancement toasts are off, new chunks generate without their animals, and the player is put on
@@ -164,7 +164,7 @@ word with its `frame` and `box`.
 
 | `do` | Keys (defaults) |
 |:--|:--|
-| `caption` | `text` (a string, wrapped and balanced over at most two lines, or a list of lines); a word starting `*` is the key word (yellow, breathes). Or `words = [{ w = "Hey.", at = 0.0 }, …]`: each word pops on the frame nearest cue `at` + its `at` (seconds), exactly (the voice timeline's way in); `br = true` breaks the line before a word. `style` (`pop`: words pop in, `stagger` 0.12 s apart; `whole`: all on the first frame, no animation), `position` (`bottom`, `top`, `center`), `size` (63), `hold` (seconds after the last word lands; default until replaced or the cut; ends with a 5-frame fade), `speaker` (a name, or `{ name, color }`: a coloured tag above), `color` (`#ffffff`), `key_color` (`#ffe23b`), `shade` (false: a dark gradient behind). |
+| `caption` | `text` (a string, wrapped and balanced over at most two lines, or a list of lines); a word starting `*` is the key word (yellow, breathes). Or `words = [{ w = "Hey.", at = 0.0 }, …]`: each word pops on the frame nearest cue `at` + its `at` (seconds), exactly (the voice timeline's way in); `br = true` breaks the line before a word. `style` (`pop`: words pop in, `stagger` 0.12 s apart; `whole`: all on the first frame, no animation), `position` (`bottom`, `top`, `center`), `size` (63), `hold` (seconds after the last word lands; default until replaced or the cut; ends with a 5-frame fade), `speaker` (a name, or `{ name, color }`: a coloured tag above; `speaker_color` is the colour with a plain name), `color` (`#ffffff`), `key_color` (`#ffe23b`), `shade` (false: a dark gradient behind). |
 | `title` | `text` (big centred words with depth; `*` key words), `subtitle`, `style` (`pop`, `drop`: letters drop in one after another and bounce, `whole`), `position` (`center`, `top`, `bottom`), `size` (112, shrinks to fit one line, then two), `subtitle_size` (56), `color`, `subtitle_color`, `shade` (false; true or an opacity draws a soft band behind), `hold`, `fade_in`, `fade_out` (seconds). |
 | `card` | A full-frame card: `background` (`#000000`), `opacity` (1.0; less lets the picture through), `title`, `subtitle`, `style` (`whole`), `fade_in`, `fade_out` (seconds; without `hold` the fade out ends on the cut), `hold`, and the sizes and colours of `title`. For end cards and graphic inserts. |
 | `lower_third` | `text` (a name), `subtitle` (a line under it), `color` (the bar, `#ffe23b`), `side` (`left`, `right`), `size` (56), `hold` (slides out at its end). Slides in from the side on a dark panel at the bottom of the safe area. |
@@ -378,7 +378,7 @@ start); `bin/videocraft voice check <run>` measures captions, cuts and voice aga
 unknown actor or camera subject, an anchor naming a set no `[[world.set]]` places, text that cannot be complete for
 `max(1.2 s, 0.5 s + 0.3 s a word)` before the next text or the end of the shot, and two different kinds of text
 up at once (a caption replacing a caption is fine). Warnings: an action that is not built in and not namespaced,
-over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and `until`
-or an edit clip's `in`/`out` naming a mark no cue makes. Notes: one-word montage text under the reading time, and
-anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
+over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
+clip's `in`/`out` (or a shot `until`, which is not built yet) naming a mark no cue makes. Notes: one-word montage
+text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
 are in `measure/report.md` (docs/REVIEW.md).
