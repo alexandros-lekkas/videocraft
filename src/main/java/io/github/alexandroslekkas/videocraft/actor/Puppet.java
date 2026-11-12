@@ -233,9 +233,10 @@ public final class Puppet implements Actor {
 			living.refreshDimensions();
 		}
 		tint = Looks.tint(spec);
+		// The entity first: the start states (Looks.after) are applied to it, and were null before the first spawn.
+		entity = living;
 		Looks.after(this, living, spec);
 		if (living instanceof net.minecraft.world.entity.animal.bee.Bee bee && spec.bool("angry", false)) bee.setPersistentAngerEndTime(Long.MAX_VALUE / 4);
-		entity = living;
 		Puppets.own(living, this);
 		level.addEntity(living);
 	}

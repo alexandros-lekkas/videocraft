@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- An actor's starting `states` (`states = ["sleep"]` on a fox, `["lower"]` on a goat) work: they were applied before
+  the puppet's entity existed, so every one but `flap` failed the take ("fox has no state 'sleep'").
 - The mix is mastered to -2 dBTP (was -1): the AAC encode of the master overshoots the mix by 0.8-0.9 dB, so a
   -1.0 mix measured -0.5 dBTP in `master.mp4`.
 - `clips cut --method reshoot` keeps actors' skins: a relative `skin` path is taken as the take resolved it, not
