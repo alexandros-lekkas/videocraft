@@ -107,6 +107,9 @@ They protect the owner's machine and game. They are not preferences.
 - **Homebrew's ffmpeg has no `drawtext`** (`bin/videocraft doctor` shows it), so all text is rendered in the game. A
   caption drawn as a Screen cannot overlap another screen, so text is drawn on the HUD layer and again after any
   screen draws (`TextLayer`).
+- **Exact push-in holds** need the crop at even offsets and sizes (yuv420p chroma); ffmpeg's `scale=flags=neighbor`
+  then equals source index `floor((2x+1)·cw / 2W)` on every plane (`videocraft edit verify` checks it). Sub-pixel
+  zooms use `perspective=…:eval=frame` with `in` (ffmpeg 9 has no `n` there).
 - **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype, not yet re-checked here** (no
   third-person or actor shots exist yet): view bobbing must be off for third-person cameras, and the camera must
   follow a ground reference, not the player's head, or it bobs with steps and jumps; auto-jump must be off (it is, in
