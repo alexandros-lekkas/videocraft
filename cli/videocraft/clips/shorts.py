@@ -203,12 +203,12 @@ def subject_xs(seg, plan, raw_shot, subject, width, height):
                 out[int(r['frame'])] = [p[0] * width]
         return out, f'point {point}'
     who = [hint] if isinstance(hint, str) else []
-    main = cam.subject_of(shot) if not who else None   # the rig's subject (follow rigs: the player)
+    subjects = (shot.get('camera') or {}).get('subjects')
+    if not who and isinstance(subjects, list):           # a two-shot: both, so the layout can tell they are apart
+        who += [str(x) for x in subjects]
+    main = cam.subject_of(shot) if not who else None     # the rig's subject (follow rigs: the player)
     if main:
         who.append(main)
-    subjects = (shot.get('camera') or {}).get('subjects')
-    if not hint and isinstance(subjects, list):          # a two-shot: both, so the layout can tell they are apart
-        who += [str(x) for x in subjects if str(x) not in who]
     who += [str(a['actor']) for a in actors if str(a['actor']) not in who]
     if not who:
         return {}, None
@@ -277,6 +277,9 @@ def reframe_plan(it, m, pieces, subject=None):
         spread = sorted(spreads)[len(spreads) // 2] if len(spreads) > len(targets) * 0.3 else None
         boxes = text_boxes(seg, src_in, src_out)
         layout, why = reframe.layout(spread, max((x1 - x0 for _, _, x0, x1 in boxes), default=0), cw)
+        shot_cam = next((s.get('camera') or {} for s in plans[run]['shots'] if s['name'] == seg.shot), {})
+        if layout == 'follow' and isinstance(shot_cam.get('subjects'), list) and len(shot_cam['subjects']) > 1 and not spreads:
+            layout, why = 'fit', 'a two-shot whose second subject is not logged (no actors.csv): both are kept'
         centres = reframe.operator(targets, m.fps, cw, width) if layout == 'follow' else [width / 2] * frames
         if layout == 'follow' and boxes:
             why = text_cut(boxes, srcs, centres, cw)

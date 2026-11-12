@@ -92,7 +92,7 @@ when `--method auto`, and says so.
   holds while the subject stays near the centre), at most 1.5 crop widths a second and 6 a second²; it starts each
   clip already framed on the subject's first 0.3 s;
 - the layout: `follow`, or `fit` (the whole frame across the width over a blurred, darkened fill of itself) when two
-  subjects are further apart than 0.8 of the crop, or the take drew text wider than the crop or outside the crop's
+  subjects are further apart than 0.8 of the crop (or a two-shot whose second subject is not logged), or the take drew text wider than the crop or outside the crop's
   path (re-framing cannot re-lay text, so it never cuts words off).
 
 `clip.json` `subject` measures what it got: frames seen, inside the crop, inside its centre 60 %, the crop's
