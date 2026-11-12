@@ -231,6 +231,17 @@ name = "desk-2"
 at = [4, 0, -1]
 facing = "north"
 
+# Standing places at the ends of the meeting table (meeting-1 and -2 below are the chairs: seats, for a sitting pose).
+[[mark]]
+name = "meeting-stand-1"
+at = [-10, 0, -4]
+facing = "east"
+
+[[mark]]
+name = "meeting-stand-2"
+at = [-5, 0, -4]
+facing = "west"
+
 [[mark]]
 name = "meeting-1"
 at = [-8, 0, -2]
