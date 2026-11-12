@@ -519,8 +519,29 @@ public final class Puppet implements Actor {
 			case "flap" -> flapUntil = on ? Double.POSITIVE_INFINITY : -1;
 			default -> throw unsupported(n, where);
 		}
+		boolean was = states.contains(n);
 		if (on) states.add(n); else states.remove(n);
+		if (was != on) {
+			String flag = switch (n) { case "sleep", "lie" -> "sleep"; case "crouch", "sneak", "bow" -> "crouch"; default -> n; };
+			// How long the body takes to get there: a fox drops onto its haunches quicker than it curls up to sleep.
+			double seconds = switch (flag) { case "sit" -> 0.32; case "sleep" -> 0.75; case "crouch" -> 0.16; default -> 0.25; };
+			shiftFlag = flag;
+			shiftStart = now;
+			shiftSeconds = seconds * (0.9 + random.nextDouble() * 0.2);
+		}
 	}
+
+	private String shiftFlag;
+	private double shiftStart, shiftSeconds;
+
+	/** The last change of an on/off pose (sit, sleep, crouch) while it is still easing in, else null. */
+	public Shift shift() {
+		if (shiftFlag == null || now - shiftStart >= shiftSeconds) return null;
+		return new Shift(shiftFlag, Stride.smooth((now - shiftStart) / shiftSeconds));
+	}
+
+	/** A change of an on/off pose, for {@link PoseBlend}: which flag, and how far along it is (0 the old pose, 1 the new). */
+	public record Shift(String flag, double weight) {}
 
 	/** Flaps (or keeps off the ground) until {@code seconds} from now. */
 	void flap(double seconds) {

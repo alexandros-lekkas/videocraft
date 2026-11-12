@@ -20,6 +20,8 @@
     "actor.FoxAccess",
     "actor.ItemEntityAccess",
     "actor.ClientMannequinAccess",
+    "actor.PoseBlendMixin",
+    "actor.PoseBlendSubmitMixin",
     "sound.SoundEngineMixin",
     "sound.SoundInstanceAccessor"
   ],
