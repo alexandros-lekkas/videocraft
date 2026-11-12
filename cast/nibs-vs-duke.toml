@@ -4,6 +4,9 @@
 # Default engine: Qwen3-TTS 12Hz 1.7B CustomVoice (8-bit MLX), a preset voice steered by an instruction. Measured in
 # the voice lab: ryan + "cocky" median f0 225 Hz, aiden + "smug" 131 Hz (9.4 semitones apart), 0 ASR errors in 52
 # words, bit-identical with the seed. `draft` is the Kokoro-82M fallback (VIDEOCRAFT_VOICE=draft): 5x faster.
+# Pace: every character aims at 3.2 words a second (`pace`, the default): lines are trimmed, their pauses capped and
+# a slow one stretched (cli/videocraft/voice/pace.py). The first films ran 1.2-3.5 words a second and felt slow;
+# so no instruction here asks for slow or drawling delivery.
 
 [[character]]
 id = "nibs"
@@ -11,8 +14,7 @@ name = "Nibs"
 color = "#a8c8ff"
 engine = "qwen3"
 voice = "ryan"
-instruct = "Fast-talking, punchy and cocky. A brash show-off who rattles off every line at top speed, no pauses, grinning the whole time."
-speed = 1.1
+instruct = "Cocky, brash and bright. A fast-talking show-off who loves the sound of his own voice, grinning the whole time."
 seed = 7
 bark = "minecraft:entity.goat.ambient"
 bark_volume = 0.6
@@ -24,12 +26,11 @@ name = "Duke"
 color = "#e8eef5"
 engine = "qwen3"
 voice = "aiden"
-instruct = "Smug and low. A sly, condescending fox, pleased with himself, quick and crisp, never slow."
-speed = 1.1
+instruct = "Smug, low and brisk. A sly fox who talks fast and cool, pleased with himself and condescending, never pausing for long."
 seed = 7
 bark = "minecraft:entity.fox.ambient"
 bark_volume = 0.5
-draft = { engine = "kokoro", voice = "am_onyx", speed = 0.85 }
+draft = { engine = "kokoro", voice = "am_onyx", speed = 1.05 }
 
 # The narrator (title cards, the voice over a montage): Kokoro's steadiest male voice, no acting needed.
 [[character]]
@@ -38,5 +39,5 @@ name = "Narrator"
 color = "#ffffff"
 engine = "kokoro"
 voice = "bm_george"
-speed = 0.95
+speed = 1.05
 seed = 7
