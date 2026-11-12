@@ -93,6 +93,15 @@ def verify(it, hold_samples=3):
             entry['checks'].append({'what': 'black', 'frames': clip['out_frames'], 'pass': ok})
         else:
             plain = not clip.get('speed_keys') and not clip.get('look')
+            if clip.get('speed_keys') and not clip.get('look') and all(pc['kind'] == 'plain' for pc in clip['push']):
+                # Retiming only repeats or drops whole frames: each output frame is the source frame src_map names.
+                video = it.take / 'shots' / clip['shot'] / 'video.mp4'
+                src = _source(video, clip['src_in'], clip['src_out'] - clip['src_in'], w, h)
+                lo, hi = clip['fade_in'], clip['out_frames'] - clip['fade_out']
+                hashes = [hashlib.md5(f).hexdigest() for f in src]
+                expect = [hashes[s - clip['src_in']] for s in clip['src_map'][lo:hi]]
+                entry['checks'].append({'what': 'speed: every output frame is the source frame src_map names', 'out': [start + lo, start + hi],
+                                        'pass': expect == cut[start + lo:start + hi]})
             video = it.take / 'shots' / clip['shot'] / 'video.mp4'
             out_at = start
             for piece in clip['push']:
