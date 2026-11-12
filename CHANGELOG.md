@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Sounds by meaning, Minecraft first: a committed catalog of all 1991 sound events and 92 music tracks of 26.3 (names,
+  tags, measured lengths, tempo, entries and loops; no audio), a comedy palette (`palette = "drumroll"`), `tag = "pop"`
+  on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
+  `[edit.mix]`, an original library of 79 code-made sounds that original-only exports swap in automatically, five more
+  synth bed styles, and `audio find`, `audio play-sheet`, `audio catalog --refresh`, `audio library` (docs/SOUNDS.md).
 - The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
   tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
 - `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and

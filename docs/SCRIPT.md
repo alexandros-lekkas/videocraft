@@ -302,25 +302,43 @@ or not positional with `relative = true`. Bad ids, instruments, notes or categor
 
 | `do` | Keys (defaults) | |
 |:--|:--|:--|
-| `sound` | `id` (an event: `minecraft:entity.chicken.egg`, `block.note_block.bell`, or `videocraft:<name>`), `pos` / `relative`, `volume` (1), `pitch` (1, playback rate 0.5–2), `category` (`neutral`; `master` if relative) | One sound, on the cue's frame. |
+| `sound` | `id` (an event: `minecraft:entity.chicken.egg`, `block.note_block.bell`, or `videocraft:<name>`), or by meaning: `tag`, `palette`, `library` (below); `pos` / `relative`, `volume` (1), `pitch` (1, playback rate 0.5–2), `category` (`neutral`; `master` if relative) | One sound, on the cue's frame. |
 | `tune` | `blocks` (a list of positions) or `block` (one), `notes`, `bpm` (120), `step` (0.5 beats per token), `instrument` (the block's own, else `harp`), `volume` (3, as a note block), `particles` (true), `mark` (a label noted in `marks.json` on each note's frame, for cuts on the beat) | A melody on note blocks: note *i* plays on block *i* mod *n*, on its frame, with the instrument's real sound at the note's pitch and the note particle rising from the block (as vanilla's note block). |
-| `ambience` | `id`, `pos` / `relative` / actor, `every` (0.8 s mean gap), `jitter` (0.5 of the gap), `spread` (4 blocks), `volume` (0.5), `pitch` (1), `pitch_jitter` (0.1), `duration` (to the end of the shot), `category` (`ambient`) | A bed of one event repeated with seeded jitter in time, pitch, volume and place (crickets: `videocraft:cricket`). |
+| `ambience` | `id` (or `tag`, `palette`, `library`), `pos` / `relative` / actor, `every` (0.8 s mean gap), `jitter` (0.5 of the gap), `spread` (4 blocks), `volume` (0.5), `pitch` (1), `pitch_jitter` (0.1), `duration` (to the end of the shot), `category` (`ambient`) | A bed of one event repeated with seeded jitter in time, pitch, volume and place (crickets: `videocraft:cricket`). |
 | `particles` | `id` (a simple particle: `heart`, `note`, `poof`, `happy_villager`, `cloud`, `flame`, `smoke`, `crit`, `angry_villager`, `splash`…), `pos` or actor, `offset` ([0, 0, 0]), `count` (8), `spread` (0.4 or [x, y, z]), `speed` (0), `every` (0: one burst), `duration` | A burst, or a stream every `every` seconds. Seeded. |
 
 `notes`: one token per step, `-` a rest, `c4*2` a note held two steps, `c4+e4+g4` a chord; names at harp pitch
 within a note block's range, `f#3` to `f#5` (or the block's note value 0–24).
 
 Synthesized events (no game sound; the mix makes them, and they are original audio): `videocraft:kick`, `snare`,
-`hat`, `crash`, `ding` (a bell), `dun` (a low sting), `sting` (a rising stab), `cricket`, `pop`, `whoosh`, `boing`.
+`hat`, `crash`, `ding` (a bell), `dun` (a low sting), `sting` (a rising stab), `cricket`, `pop`, `whoosh`, `boing`,
+and `videocraft:lib/<name>`, any of the 79 sounds of the original library.
+
+**Sounds by meaning** ([SOUNDS.md](SOUNDS.md)). Instead of `id`, a `sound` or `ambience` cue may name what it means;
+the compiler resolves it against the committed catalog (no game assets needed) and writes the concrete `id` into the
+plan:
+
+| Key | Meaning |
+|:--|:--|
+| `tag = "pop"` | The best Minecraft event carrying every tag (`"footstep wood"`, `"goat hurt"`, `"crowd"`); a tag no Minecraft sound has plays the matching library sound. `videocraft audio find <words>` shows what a tag finds. |
+| `palette = "drumroll"` | A comedy palette entry: one event with a suggested pitch and volume (`boing`, `pop`, `plop`, `ding`, `fail`, `record-scratch`, `dramatic-sting`, `cheer`…), a sequence (`rimshot`, `wah-wah`, `ta-da`, `dun-dun-dun`, `cash-register`) or a roll (`drumroll`, `crowd`, `applause`) that expands into several cues from `at`; steps past the end of the shot are left out. Some are original only (`slide-whistle-up`, `cartoon-fall`, `crickets`, `typewriter`). |
+| `library = "slide-whistle-up"` | An original library sound (`videocraft audio library`). |
+| `source` | `"auto"` (default: Minecraft first, the library when the catalog has nothing), `"minecraft"` (fail if none), `"original"` (the library sound). |
+| `vary = true` | A seeded pick among the best three (or the palette's alternatives) instead of the first. |
+
+A resolved cue keeps `tag`/`palette` and gains `id`, the palette's `pitch`/`volume` when the cue gave none,
+`original` (the library sound that replaces it in an original-only mix) and, on the later steps of a sequence or roll,
+`part`. Ids are still accepted everywhere.
 
 ### The mix: `[edit]` keys
 
 | Key | Default | Meaning |
 |:--|:--|:--|
 | `audio` | `"game"` | `"game"`: logged game sounds from your assets. `"original"`: no byte of game audio: synthesized stand-ins for logged sounds (footstep ticks, note-block tones at the logged pitch, plops, thuds; others are left out), the synth bed instead of a game track, voice. `"none"`: no audio stream. |
-| `[edit.music]` | none | `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
+| `[edit.music]` | none | `source = "auto"` (the default unless only a `style` or a `track` is named): `mood` = `calm`, `upbeat`, `tense`, `sad`, `triumphant`, `mysterious`, `playful` (default `upbeat`) picks a game track from the music map by mood, `bpm` and length when the mix may use game audio and the assets are there, starting at its measured entry (`start` overrides) and looping at its measured loop point when short; `exclude = [files]`, `rank = 1` for the next pick, `vocals = true` to allow sung tracks; otherwise the synth bed in the mood's style. `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`, `comedy-chase`, `suspense`, `keynote`, `lullaby`, `heroic`, or a `mood`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it; an original-only mix plays the synth bed in the track's mood). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
 | `[[edit.music.cue]]` | | `shot` and `at` (seconds in the shot), or `time` (seconds in the cut); `do` = `out` (fade to silence), `in`, `drop` (silent for `length`, default one beat, then back), `thin` (drums only), `full` (all stems; `gain` in dB to come back harder), `hit` (a crash and kick on the beat); `fade` (s). |
-| `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else). |
+| `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`, or `"tag:scream"`: events the catalog tags so), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else; `{ "tag:footstep wood" = 12 }`). |
+| `[[edit.sfx]]` | | A sound placed by the edit, not logged by the take (a sting on a cut, a whoosh over a transition): `shot` and `at` (seconds in the shot) or `time` (seconds in the cut); `id`, `tag`, `palette` or `library`; `source`; `gain` (dB), `pan`, `pitch`. Game audio first (a seeded variant from your assets), the library sound in an original-only mix. Not silenced over black gaps; the bed ducks under it. |
 | `voice` | | `[{ file, shot, at, gain }]`, written by the dialogue resolver: each line placed at `at` seconds into the shot (dB `gain`), levelled, never cut at a clip end. |
 
 Each logged sound lands at the output time of its frame (through trims, speed and black gaps), at its pitch, quieter
@@ -344,7 +362,9 @@ Recipes (the benchmark's sound column):
 
 Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
 logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
-`videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
+`videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`, `videocraft audio find <words>`,
+`videocraft audio play-sheet <tag>`, `videocraft audio catalog [--refresh]`, `videocraft audio library [--render]`
+([SOUNDS.md](SOUNDS.md)).
 
 ## Dialogue
 
