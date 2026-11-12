@@ -87,6 +87,8 @@ def compile_script(raw, source='script'):
         if 'id' not in actor or not NAME.match(str(actor['id'])):
             raise ScriptError(f'actor[{i}]: id = "<name>" is required')
         actors.append({'kind': 'npc', **actor})
+        if isinstance(actor.get('skin'), str) and Path(source).is_file():  # a skin PNG is relative to the script
+            actors[-1]['skin'] = str((Path(source).parent / actor['skin']).resolve())
 
     shots, names = [], set()
     for i, shot in enumerate(raw.get('shot', [])):

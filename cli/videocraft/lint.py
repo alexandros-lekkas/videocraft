@@ -22,7 +22,7 @@ from videocraft import script
 TEXT_ACTIONS = {'caption', 'title', 'lower_third', 'keycap', 'card', 'say'}
 BUILT_IN = {'command', 'mark', 'wait',
             'walk', 'run', 'look', 'turn', 'jump', 'crouch', 'swing', 'use', 'break', 'place', 'select', 'type', 'open',
-            'close', 'point', 'click', 'pose', 'stop', 'hop', 'state', 'hold', 'emit', 'voice', 'nod', 'shake', 'blink',
+            'close', 'point', 'click', 'pose', 'stop', 'hop', 'state', 'hold', 'emit', 'voice', 'nod', 'shake', 'talk', 'blink',
             'caption', 'title', 'keycap', 'lower_third', 'card', 'clear', 'say', 'sound', 'tune', 'particles', 'ambience'}
 BUILT_IN_ANCHORS = {'spawn'}
 STAGGER = 0.12          # seconds between popped words when the cue gives no explicit word times
