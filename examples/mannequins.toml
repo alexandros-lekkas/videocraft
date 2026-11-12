@@ -1,0 +1,135 @@
+# Player-shaped actors: two mannequins with skins painted by examples/skins/paint.py (original, no network skins).
+#   bin/videocraft run examples/mannequins.toml
+# Wide: Ana walks in across the square to Ben, stops facing him and waves; Ben turns to her, head first, and nods.
+# Closer: Ana talks with her hands, Ben nods along, holds out the cake he brought, Ana points at it, Ben shrugs, Ana facepalms.
+name = "mannequins"
+seed = 5
+description = "Mannequin puppets: walk, turn to each other, wave, talk, nod, hold, point, shrug, facepalm."
+
+[world]
+seed = "videocraft"
+time = 9000
+settle = 3.0
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill -14 99 -14 14 99 14 grass_block",
+  "fill -6 99 -6 6 99 6 polished_andesite",
+  "fill -6 99 0 6 99 0 smooth_stone",
+  "setblock -5 100 5 lantern",
+  "setblock 5 100 -5 barrel",
+  "setblock 5 101 -5 flower_pot",
+  "fill -6 100 -6 -6 100 -2 oak_fence",
+]
+
+[[actor]]
+id = "ana"
+kind = "mannequin"
+skin = "skins/ana.png"
+model = "slim"
+at = [-4.5, 100, -4.0]
+facing = 0
+
+[[actor]]
+id = "ben"
+kind = "mannequin"
+skin = "skins/ben.png"
+at = [2.5, 100, 2.5]
+facing = -90                    # looking east, away from where Ana comes from
+
+# ---- Wide: the meeting ----
+[[shot]]
+name = "meet"
+duration = 7.0
+camera = { rig = "fixed", eye = [1.4, 101.45, 7.4], at = [1.2, 100.95, 2.2], fov = 52 }
+
+[[shot.cue]]
+at = 0.0
+do = "hold"
+actor = "ben"
+item = "minecraft:cake"         # he has brought a cake: at his side until he offers it
+
+[[shot.cue]]
+at = 0.3
+do = "walk"
+actor = "ana"
+path = [[-3.5, 100, -0.5], [-1.4, 100, 2.0], [0.75, 100, 2.5]]
+face = "ben"
+
+[[shot.cue]]
+at = 3.4
+do = "turn"
+actor = "ben"
+to = "ana"
+follow = true
+
+[[shot.cue]]
+at = 5.0
+do = "pose"
+actor = "ana"
+pose = "wave"
+seconds = 1.3
+
+[[shot.cue]]
+at = 5.45
+do = "nod"
+actor = "ben"
+
+# ---- Closer: the conversation ----
+[[shot]]
+name = "talk"
+duration = 8.4
+camera = { rig = "fixed", eye = [1.15, 101.55, 5.3], at = [1.6, 101.15, 2.45], fov = 46 }
+
+[[shot.cue]]
+at = 0.2
+do = "talk"
+actor = "ana"
+seconds = 2.4
+
+[[shot.cue]]
+at = 0.7
+do = "nod"
+actor = "ben"
+size = 0.7
+
+[[shot.cue]]
+at = 1.7
+do = "nod"
+actor = "ben"
+size = 0.5
+
+[[shot.cue]]
+at = 2.9
+do = "pose"
+actor = "ben"
+pose = "hold"                   # the arm out: offering it
+seconds = 2.0
+
+[[shot.cue]]
+at = 3.5
+do = "look"
+actor = "ana"
+target = [1.8, 101.0, 2.45]     # down at the cake
+hold = 1.4
+
+[[shot.cue]]
+at = 3.9
+do = "point"
+actor = "ana"
+seconds = 1.1
+
+[[shot.cue]]
+at = 5.2
+do = "pose"
+actor = "ben"
+pose = "shrug"
+seconds = 1.2
+
+[[shot.cue]]
+at = 6.4
+do = "pose"
+actor = "ana"
+pose = "facepalm"
+seconds = 1.7

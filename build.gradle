@@ -30,6 +30,8 @@ loom {
 			// -Ptake=<dir>: play <dir>/plan.json, write the take into <dir>, quit (see docs/DESIGN.md).
 			if (project.hasProperty('take')) vmArg "-Dvideocraft.take=${project.property('take')}"
 			if (project.hasProperty('ffmpeg')) vmArg "-Dvideocraft.ffmpeg=${project.property('ffmpeg')}"
+			// world.save comes from cache/worlds/<name> in this checkout (or -PworldCache=<dir>), copied fresh per take.
+			vmArg "-Dvideocraft.worlds=${project.findProperty('worldCache') ?: file('cache/worlds').absolutePath}"
 			// Loopback control port: bin/videocraft passes its slot's port (25750-25752); never 25590 (a real game's MCP port).
 			vmArg "-Dvideocraft.port=${project.findProperty('controlPort') ?: '25750'}"
 			if (hiddenRun()) vmArg "-Dvideocraft.hidden=true"
@@ -69,7 +71,7 @@ java {
 }
 
 // Every *Checks class in src/smoke runs as part of `check` (and so `build`). Add yours to this list.
-def checks = ['PlanChecks', 'RigChecks', 'TextChecks', 'SoundChecks']
+def checks = ['PlanChecks', 'RigChecks', 'TextChecks', 'SoundChecks', 'RigMoveChecks', 'ActorChecks']
 checks.each { name ->
 	tasks.register(name.uncapitalize(), JavaExec) {
 		description = "Plain-JVM check ${name} (no game window)."

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Camera rigs for the benchmark: `lead` (the lead track), `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`,
+  `face`, with `fov` (or eased `[from, to]`), seeded `drift`, block avoidance and positions on actors; shot keys
+  `preroll`, `time`, `weather`; `world.preset` (`flat`, `void`) and `world.save` from `cache/worlds/`; batched,
+  checked staging commands; `stand_in`/`glide` subjects; the whole plan checked before the world loads;
+  `examples/rigs.toml` films every rig.
 - The story pipeline (`docs/STORY.md`): `story new/draft/revise/build/show/diff/lock/list`, `series new/status`
   and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
   `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
@@ -16,6 +21,17 @@
   (an `.mrpack`), `runs` with scores, and `index.json` with the parent chain. Rubrics: `docs/REVIEW.md` (general) and
   `docs/benchmarks/pinksheep-style.rubric.toml`. `doctor` also checks game sounds, the voice venv and the reviewers,
   and runs a `doctor()` from any command group that defines one.
+- Actors: `[[actor]]` `kind = "mob"` (any living entity, with its own variants and states, `tint`, `scale`) and
+  `kind = "mannequin"` (a local PNG `skin`) are deterministic client-side puppets on the frame clock; actions
+  `place`, `walk`/`run` (gaits, eased, over steps), `stop`, `turn`, `look` (to the lens), `hop`, `state` (fox sit,
+  sleep, bow; goat lower; chicken flap...), `hold`, `emit` (an egg), `voice`, `swing`, `nod`, `shake`, `talk`, `pose`;
+  their own footsteps and voices through the client's sound system; `shots/<name>/actors.csv`;
+  `examples/animals.toml`, `examples/mannequins.toml`; `ActorChecks`.
+- Actors read as alive in dense frame strips: vanilla's on/off poses (fox sit and sleep, wolf/cat sit, mannequin sit
+  and crouch) ease instead of popping; head and body turns are capped in speed and acceleration by body type; `turn`
+  with `follow` really turns the body; `examples/mannequins.toml` is a wide meeting and a closer conversation (wave,
+  talk, nod, a cake held and offered, point, shrug, facepalm); the played player walks, jumps, turns and swings
+  (`examples/walk.toml`).
 - Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
   chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
   their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and

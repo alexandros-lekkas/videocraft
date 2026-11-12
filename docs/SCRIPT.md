@@ -19,17 +19,84 @@ workstream in brackets.
 | Key | Default | Meaning |
 |:--|:--|:--|
 | `seed` | random | A new world from this seed (text or number, as on the Create World screen). |
-| `save` | | Instead of `seed`: a copy of a saved world (the CLI copies it into `run-game/saves/` for the take) [a]. |
+| `save` | | Instead of `seed`: a copy of the saved world `cache/worlds/<save>/` (git-ignored), made fresh for every take, so no take sees what the last one built [a]. |
 | `gamemode` | `creative` | `survival`, `creative`, `adventure`, `spectator`: the player's mode in player shots. |
 | `time` | `6000` | Time of day; the daylight cycle is stopped. |
 | `weather` | `clear` | `clear`, `rain`, `thunder`; the weather cycle is stopped. |
 | `settle` | `4.0` | Seconds after arrival before staging, and then until every section in view is drawn. |
+| `preset` | `default` | For a seed world: `default`, `flat` (grass to the horizon) or `void` (nothing but a small platform at the origin); `flat` and `void` have no structures, so they make stages [a]. |
 | `[[world.stage]]` | | Cues (below) run once before the first shot, never recorded. |
 
-## `[[actor]]` [b]
+On arrival the world is made to hold still: mob spawning, random ticks (leaf decay, crops), fire spread, vines,
+raids, traders and advancement toasts are off, new chunks generate without their animals, and the player is put on
+the world spawn point (the `spawn` anchor is the same in every take of one seed).
 
-`id` (required), `kind` (`mannequin`), `at` (a position), `skin` (a PNG path), `name` (a tag, or none). The player is
-always there as `player`.
+## `[[actor]]` (implemented for mobs and mannequins) [b]
+
+Actors besides the player (always there as `player`) are **puppets**: client-side entities that only the script
+moves. No AI, no gravity surprises, never despawn, not pushed, silent unless scripted. They are driven on the take's
+frame clock (ticked at 20 Hz by the puppet, drawn at its own fraction of a tick), so the same plan and seed give the
+same `actors.csv`. They walk by vanilla's own walk cycle (legs swing with the distance really moved), find the ground
+under them (slabs, stairs and carpets stepped, a block hopped, the drawn top of fences and walls), turn head first and
+body after, glance about between beats, and make their own footstep sounds through the client's sound system.
+
+| Key | Default | Meaning |
+|:--|:--|:--|
+| `id` | required | Lowercase name; cues name it in `actor`. |
+| `kind` | `mannequin` | `mob` (any living entity) or `mannequin` (player-shaped). |
+| `entity` | | For `mob`: `goat`, `fox`, `chicken`, `sheep`, `cow`, `pig`, `wolf`, `cat`, `villager`, `bee`, `iron_golem`... (`minecraft:` implied). |
+| `at` | required | Where it stands (a position; anchors from staging work). The feet go on the ground found near it. |
+| `facing` | `0` | Degrees (0 south, 90 west, -90 east) or a position to face. |
+| `variant` | | The entity's own variant: a fox's `snow`/`red`; a cat's, wolf's, chicken's, cow's, pig's or frog's variant id. |
+| `left_horn`, `right_horn`, `screaming` | | A goat's horns and its screaming kind (its bleats and voice become screams). |
+| `baby` | `false` | A baby (ageable mobs). |
+| `color` | | A sheep's wool (a dye colour). |
+| `tint` | | `"#rrggbb"` multiplied over the model: a slate-blue goat without a texture file. |
+| `scale` | `1` | Body size (0.0625 to 16); paces are not scaled. |
+| `name`, `show_name` | | A custom name; the tag is shown only with `show_name = true`. |
+| `states` | `[]` | States to start in (below), e.g. `["sit"]`. |
+| `life` | by body | Idle life: `calm` (glances now and then, a weight shift), `busy` (a bird's quick head), `off`. |
+| `nbt` | | Any further saved data, SNBT, as `/summon` takes it. |
+| `skin` | | For `mannequin`: a 64x64 PNG, relative to the script (never fetched from the network). |
+| `model` | `wide` | For `mannequin`: `wide` or `slim` arms. |
+
+Each recorded frame of each shot writes a row per puppet to `shots/<name>/actors.csv`:
+`frame,actor,x,y,z,yaw,head_yaw,head_pitch,state` (feet as drawn, body yaw, head's world yaw, head pitch positive
+down; `state` is `idle`, `air` or the gait while walking, then scripted states and gestures joined with `+`).
+
+### Actor actions
+
+`actor` names the puppet. A cue's `at` is its time, so places are `to` and look targets `target`. A **target** is an
+actor id (its head), `"camera"` (the lens of the frame) or a position; a **heading** is a number of degrees or a target.
+
+| `do` | Keys | Meaning |
+|:--|:--|:--|
+| `place` | `to`, `facing` | Puts it there at once (a jump cut), feet on the ground. Use it at the start of a shot. |
+| `walk` | `path` (positions) or `to`; `gait` (`walk`, `strut`, `trot`, `run`) or `speed` (blocks/s); `accel` (0.35 s), `arrive` (0.5 s braking; 0 stops dead), `face` (a heading after arriving), `mark` (label on arrival) | A smooth curve through the points from where it is, eased in and out, pace varied a little by the seed. A strut carries the head high and swings the shoulders. Ends when it arrives. `run` is `walk` with `gait = "run"`. |
+| `stop` | `arrive` (0.35 s) | Brakes and stops where it comes to rest. |
+| `turn` | `to` (a heading), `pace` (1; 2 snaps), `follow` (keep turning toward a moving target), `mark` | Head first, body after a short delay; ends when settled. |
+| `look` | `target`, `hold` (seconds; default to the end of the shot), `back` (true when `hold` is given) | Head only (within the neck's reach), following a moving target, then back. |
+| `hop`, `jump` | `height` (0.55), `seconds` | A hop on the spot. |
+| `state` | `state`, `on` (true), `seconds` (then off again) | The entity's own poses: fox `sit`, `sleep`, `crouch` (a bow), `pounce`, `tilt`, `faceplant`; goat `lower` (head down as if to ram; `crouch` too); cat `sit`, `lie`; wolf/parrot `sit`; mannequin `sit`, `sleep`, `crouch`; anyone `flap` (off the ground: a chicken's wings). An entity without the state fails the take listing those it has. `crouch` is a shortcut action. |
+| `hold` | `item` (an item id, or `none`), `hand` (`main`, `off`) | A fox carries it in its mouth; a mannequin in its hand. |
+| `emit` | `item` (a chicken: `minecraft:egg`), `sound` (a chicken: its egg sound; `none`), `pop` (2.4 blocks/s up), `side` | Drops an item from behind the body (a chicken lays an egg): it pops out, falls and rests, spinning as items do. |
+| `voice` | `sound` (`ambient`, `hurt`, `death`, `scream`, `eat`, `sleep`, or a sound id), `pitch` (vanilla's, seeded), `volume` | The entity's own sound at its head. A screaming goat's `ambient` is already a scream. |
+| `swing` | `hand` | Swings an arm. |
+| `nod`, `shake` | `seconds`, `size` (negative: a nod upward) | Head gestures, eased in and out. |
+| `talk` | `seconds` (2), `size` | Small irregular nods, and talking hands on a mannequin, while a line is spoken. |
+| `pose`, `point` | `pose` (`wave`, `point`, `shrug`, `cheer`, `facepalm`, `type`, `think`, `hold`, `sit`, `crouch`, `sleep`, `none`), `seconds` (default: held until `none`) | Mannequin arm poses on top of the walk, one at a time, eased in and out. |
+
+Vanilla's on/off poses (a fox's or wolf's or cat's `sit`, a fox's `sleep`, a mannequin's `sit` and `crouch`) are eased
+over a third of a second (sleep: three quarters) instead of switching in one frame. Turns are held to a body's speed: a
+mannequin's head turns at most about 380 degrees a second and gets going over a few ticks; a bird's head still snaps.
+`turn` with `follow = true` keeps the turn's start and direction while the target moves.
+
+**The played player** (`actor = "player"`, the default) is driven, not animated: held movement keys through the
+game's own input (its acceleration, walk cycle, sprint and jumps) and a human hand on the view. `walk` (`path` or
+`to`, `gait = "run"` or `sprint = true` sprints on the straights, `face` a target to arrive turned to, `mark`; a block
+in the way is jumped), `stop`, `turn` (`to` a heading or target, `tolerance` degrees, `mark`), `look` (`target`,
+`hold`), `hop`/`jump`, `crouch` or `state = "crouch"` (`on`, `seconds`), `swing`. Not frame-exact between takes: the
+player runs on the client's own ticks. Not built: `blink` (no vanilla model has eyelids; the action says so).
 
 ## `[[shot]]` (implemented)
 
@@ -40,9 +107,20 @@ always there as `player`.
 | `camera` | required | `{ rig = "<id>", … }`, the rig's parameters below. |
 | `hud` | `true` | First-person shots only: draw the hotbar, hearts and crosshair. |
 | `bob` | `true` | First-person shots only: view bobbing. Always off for camera and third-person rigs. |
+| `preroll` | `0` | Seconds the timeline and the rig run before frame 0, unrecorded: the shot opens with the subject already walking and the operator settled. Cues may have `at` down to `-preroll` [a]. |
+| `time` | the world's | Time of day for this shot (ticks), set when it starts preparing [a]. |
+| `weather` | the world's | `clear`, `rain`, `thunder` for this shot, at once (no easing in) [a]. |
 | `[[shot.cue]]` | | The timeline. |
 
-Before recording, each shot waits at least one second of game time and until the world around the camera is drawn.
+Before recording, each shot waits at least one second of game time and until the world around the camera is drawn:
+every chunk in reach has arrived, nothing is left to compile, the weather is at its target and the drawn section
+count has held for half a second. Then the client is put back to a known state (game time, randoms, animation
+frames), so the same plan gives the same `frames.csv`.
+
+**The whole plan is checked before the world loads** [a]: unknown actions and rigs, actors that are not staged
+(`[[actor]]`, a `stand_in`, or `player`), cue times outside their shot, and every rig's and action's own parameter
+checks. The take fails in seconds with the first problem, naming its shot and cue (`shots.lead.camera: fov is 30.0
+to 110.0 degrees, not 150.0`); the rest are in `game.log`.
 
 ## Cues
 
@@ -54,7 +132,10 @@ Cues at the same time start in the order written.
 | `command` | `command = "…"` or `commands = […]` | **Implemented.** Runs on the integrated server, output suppressed. |
 | `mark` | `label` | **Implemented.** Notes the frame in `marks.json` for the edit and measure. |
 | `wait` | `seconds` | **Implemented.** Holds a staging block. |
-| `walk`, `run`, `look`, `turn`, `jump`, `crouch`, `swing`, `use`, `break`, `place`, `select`, `type`, `open`, `close`, `point`, `click`, `pose` | see DESIGN.md | [b] |
+| `command` (long lists) | `commands = […]`, `forceload = [x1, z1, x2, z2]`, `strict` (`true`) | **Implemented** [a]. Runs in batches of 30 ms of server time per frame, positioned at the `spawn` anchor (so `~ ~ ~` is there); `forceload` loads the area first and waits for it; the take fails with the first command that errors (its index and the game's message) unless `strict = false`. |
+| `stand_in` | `id`, `place` (position), `facing` (0), `entity` (`minecraft:mannequin`) | **Implemented** [a]. A subject for checking camera rigs, in `[[world.stage]]`: a client-side entity the runtime moves exactly. Not a character (no gait). |
+| `glide` | `actor` (a stand-in), `path` (positions), `speed` (1.4), `ease` (0.5 s), `mark` | **Implemented** [a]. Along a smooth curve through the points at a steady speed, easing in and out, facing the way it goes. Its first point is where the stand-in is put on the cue's frame. |
+| `place`, `walk`, `run`, `stop`, `turn`, `look`, `hop`, `jump`, `state`, `crouch`, `hold`, `emit`, `voice`, `swing`, `nod`, `shake`, `talk`, `point`, `pose` | see [Actor actions](#actor-actions) | **Implemented** for puppets [b]; for the player: `walk`, `run`, `stop`, `turn`, `look`, `hop`, `jump`, `crouch`, `swing`. |
 | `caption`, `title`, `card`, `lower_third`, `keycap`, `clear` | see [Text](#text) | **Implemented.** |
 | `<modid>:<name>` | the plugin's | Another mod's action ([DESIGN.md](DESIGN.md#6-extension-point)). |
 | `sound`, `tune`, `ambience`, `particles` | see [Audio](#audio) | **Implemented** (audio). |
@@ -88,16 +169,34 @@ word with its `frame` and `box`.
 
 ## Positions
 
-`[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival.
+`[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival. Or on an actor,
+where it stands when the position is read: `{ actor = "nibs", offset = [x, y, z] }` (world axes) or
+`{ actor = "nibs", front = 3, right = 0.5, up = 1.2 }` (along the way it faces).
 
 ## Camera rigs
 
-| `rig` | Keys | Status |
-|:--|:--|:--|
-| `orbit` | `center` (position), `radius` (8), `height` (3, above the center), `from` (0°, south of the center), `sweep` (90°, clockwise from above), `look` (position, default the center), `ease` (`linear`, `smooth`, `out`), `fov` (70) | **Implemented.** |
-| `fixed` | `eye`, `at` (positions), `fov` | **Implemented.** |
-| `first` | `fov` | **Implemented** (the player's eyes; needs actor actions to be interesting). |
-| `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot` | | [a] |
+Every rig takes `fov` (degrees, 30 to 110; or `fov = [from, to]` eased over the shot with `fov_ease`) and `drift`
+(0 to 3 degrees of slow, seeded handheld wander in yaw and pitch; default 0). Rigs that film a `subject` (an actor
+id) follow where its feet are on the ground, never its head, so steps and jumps do not bob the camera; they trail it
+by `lag` seconds through a critically damped operator (no overshoot), pull in front of blocks between them and the
+subject (and rise a little if they would come very close) instead of passing through them, and pick the subject up at
+once when a cue puts it somewhere new. All [a], **implemented**, checked in `RigMoveChecks` and `examples/rigs.toml`.
+
+| `rig` | Keys (defaults) |
+|:--|:--|
+| `lead` | The lead track: the camera travels backwards in front of a subject walking toward it. `subject`, `distance` (4, in front along its smoothed heading), `height` (1.0 above its feet), `pitch` (5, down), `fov` (105), `side` (0, lateral offset to the camera's right), `yaw_drift` (0, degrees the camera swings round the subject over the shot), `swing` (false: true lets the camera arc round when the subject turns where it stands), `lag` (0.25). Holds the subject's centre and size; eases to a stop with it. |
+| `chase` | Behind the subject looking over it: `subject`, `distance` (4), `height` (1.6), `look` (1.0, aim height above its feet), `side` (0), `fov` (70), `lag` (0.3). |
+| `track` | Alongside, moving parallel: `subject`, `side` (`right` or `left`), `distance` (4), `height` (1.2), `look` (0.9), `ahead` (0, forward along its way), `fov` (70), `lag` (0.3). |
+| `dolly` | The eye moves `from` → `to` (positions) over the shot (`ease`: `smooth`, `linear`, `out`), looking at `at` (a position) or a `subject` (with `look`, `lag` 0.4). `fov` (70). |
+| `crane` | From `eye`, rises by `rise` (3; negative comes down) or moves to `to`, looking at `at` or a `subject`. `ease`, `fov` (70). |
+| `locked` | A tripod at `eye` that pans and tilts to keep a `subject`, trailing by `lag` (0.5). `look`, `fov` (70). |
+| `two_shot` | Two subjects in one frame: `subjects = ["a", "b"]`; the camera stands off the line between them (`side` 1 or -1) far enough that both fit side by side and head to feet with `margin` (1.0) around them, at least `min_distance` (2.5); `height` (1.4), `look` (0.8), `lag` (0.4), `fov` (60). |
+| `face` | A close-up: `distance` (1.2) in front of the subject's eyes on its heading, `angle` (0, degrees round to its right), `height` (0, above the eyes), `fov` (30), `lag` (0.3). The lens never comes nearer the head than the model reaches. |
+| `orbit` | `center` (position), `radius` (8), `height` (3, above the center), `from` (0°, south of the center), `sweep` (90°, clockwise from above), `look` (position, default the center), `ease` (`linear`, `smooth`, `out`), `fov` (70). |
+| `fixed` | `eye`, `at` (positions; either may be on an actor, read when the shot starts), `fov`. |
+| `first` | The player's own eyes; `fov`. |
+
+Camera rigs draw a clean frame: no hotbar, hand, crosshair, chat, name tags, boss bars, toasts or held item.
 
 ## `[edit]`
 
