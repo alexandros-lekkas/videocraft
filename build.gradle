@@ -71,7 +71,7 @@ java {
 }
 
 // Every *Checks class in src/smoke runs as part of `check` (and so `build`). Add yours to this list.
-def checks = ['PlanChecks', 'RigChecks', 'TextChecks', 'SoundChecks', 'RigMoveChecks', 'ActorChecks']
+def checks = ['PlanChecks', 'RigChecks', 'TextChecks', 'SoundChecks', 'RigMoveChecks', 'ActorChecks', 'FlightChecks']
 checks.each { name ->
 	tasks.register(name.uncapitalize(), JavaExec) {
 		description = "Plain-JVM check ${name} (no game window)."

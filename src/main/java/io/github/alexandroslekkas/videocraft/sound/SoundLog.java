@@ -82,7 +82,8 @@ public final class SoundLog {
 	public static RandomSource random(Identifier id) {
 		long h = seed() * 0x9E3779B97F4A7C15L;
 		h ^= (shot == null ? 0 : shot.shot().hashCode()) * 0xC2B2AE3D27D4EB4FL;
-		h ^= ((long) abs << 20) ^ (seq++ * 0x165667B19E3779F9L) ^ id.hashCode();
+		// The shot's own frame index, not the frames since it began preparing: preparation takes longer in one take than another.
+		h ^= ((long) (shot == null ? abs : shot.frame()) << 20) ^ (seq++ * 0x165667B19E3779F9L) ^ id.hashCode();
 		return RandomSource.create(h);
 	}
 

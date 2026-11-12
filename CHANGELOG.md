@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),
+  `swarm` (bees on concentric tilting orbits that never touch each other or the body they circle), `land` (on a block,
+  or on an actor's shoulder and ride along); `[[actor]]` keys `flying`, `angry`, `buzz_volume`; wings beat by vanilla's
+  own animation and fold through the pose blend; buzz through the sound log; `FlightChecks`, `examples/bees.toml`.
+  Puppets no longer tick during staging and the sound log seeds by the shot's frame, so two takes with different
+  preparation lengths give identical `actors.csv` and `sounds.csv`.
 - Docs for people: a README with install, a quickstart timed from a fresh clone (5.5 min first-time setup, then
   about a minute a take), how it works, a docs map and an honest status; `docs/GALLERY.md`; DESIGN.md's status and
   milestones, AGENTS.md's project map and commands, and SCRIPT.md brought up to the code.

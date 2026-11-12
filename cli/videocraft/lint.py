@@ -28,6 +28,7 @@ BUILT_IN = COMPILED | {
     'command', 'mark', 'stand_in', 'glide', 'wait',                                         # director/CoreActions
     'place', 'walk', 'run', 'stop', 'turn', 'look', 'hop', 'jump', 'state', 'crouch', 'hold', 'emit', 'voice',
     'swing', 'nod', 'shake', 'talk', 'point', 'pose', 'blink',                                # actor/Actions
+    'fly', 'hover', 'swarm', 'land',                                                          # actor/FlightActions
     'caption', 'title', 'card', 'lower_third', 'keycap', 'clear',                             # text/TextActions
     'sound', 'tune', 'ambience', 'particles',                                                 # sound/SoundActions
 }

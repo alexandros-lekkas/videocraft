@@ -61,6 +61,9 @@ body after, glance about between beats, and make their own footstep sounds throu
 | `nbt` | | Any further saved data, SNBT, as `/summon` takes it. |
 | `skin` | | For `mannequin`: a 64x64 PNG, relative to the script (never fetched from the network). |
 | `model` | `wide` | For `mannequin`: `wide` or `slim` arms. |
+| `flying` | by entity | Starts in the air exactly at `at`, hovering (no ground found under it): true for `bee`, `allay`, `bat`, `vex`, `phantom`, `ghast`, `happy_ghast`, `blaze`. See [Flying actors](#flying-actors). |
+| `angry` | `false` | A bee's anger: red eyes, the aggressive buzz, no bob. |
+| `buzz_volume` | `1` | Scales a flyer's wing sound (a bee's buzz, a bat's, a parrot's flaps). |
 
 Each recorded frame of each shot writes a row per puppet to `shots/<name>/actors.csv`:
 `frame,actor,x,y,z,yaw,head_yaw,head_pitch,state` (feet as drawn, body yaw, head's world yaw, head pitch positive
@@ -99,6 +102,25 @@ game's own input (its acceleration, walk cycle, sprint and jumps) and a human ha
 in the way is jumped), `stop`, `turn` (`to` a heading or target, `tolerance` degrees, `mark`), `look` (`target`,
 `hold`), `hop`/`jump`, `crouch` or `state = "crouch"` (`on`, `seconds`), `swing`. Not frame-exact between takes: the
 player runs on the client's own ticks. Not built: `blink` (no vanilla model has eyelids; the action says so).
+
+### Flying actors
+
+A bee, a parrot, an allay, a bat (or a chicken's flap-glide) flies by these actions instead of `walk`, which refuses a
+puppet in the air. Flight never falls: there is no gravity. Every motion hands over to the next without a jump in
+position or speed (the gap closes on a critically damped spring at most 2.6 blocks/s faster than the new motion); the
+body heads the way it travels, banks into turns (a coordinated turn: right wing down turning right, up to 40°) and
+pitches with climbs and dives. In the air the wings beat (vanilla's own animation: a bee's wings, a parrot's flying
+pose); landing and taking off ease the model between the two poses over a quarter of a second. Each puppet plays its
+wing sound through the sound log while airborne: a bee's own loop samples replayed every two seconds or so from where
+it is (overlapping into a steady buzz, the aggressive loop when angry), a bat's loop, a parrot's flaps. `actors.csv`
+`state` is `fly`, `hover` or `perch`. Same plan and seed, same flight (`FlightChecks`, `examples/bees.toml`).
+
+| `do` | Keys | Meaning |
+|:--|:--|:--|
+| `fly` | `path` (positions in the air) or `to`; `speed` (blocks/s: bee 2.6, parrot 3.6, allay 3, bat 4.2, chicken 2), `accel` (0.45 s), `arrive` (0.6 s), `bank` (1; 0 flies level, 2 doubles it), `face` (a heading held on arrival), `mark` | A smooth 3-D curve from where it is through the points, eased in and out, then it hovers where it arrived. Ends on arrival. A perched flyer takes off. |
+| `hover` | `to` (default where it is), `radius` (0.25 blocks of slow seeded drift), `bob` (0.06), `face` (a heading or target, read when the cue starts), `seconds` (the cue's length; the hover goes on until the next flight cue) | Stays near a point. |
+| `swarm` | `bees` (actor ids; or `actor` for one), `around` (an actor id or a position), `radius` (the innermost orbit; default just clear of the body), `outer` (spread the orbits out to this), `lift` (centre height above the feet; 0.55 of the body's height), `speed` (2.4 blocks/s), `angry` (sets or clears a bee's anger), `seconds`, `mark` | Each bee circles on a sphere of its own radius round the centre, its plane of flight tilting and turning slowly (seeded), so two bees are never nearer than the gap between their radii (most of a bee's width), and the tilt is held so a bee is always clear of the body it circles (an upright cylinder) and above the floor; on the way in it is kept out of the body too. Follows a moving actor. Ends at once (or after `seconds`); the swarm goes on. |
+| `land` | `on` (an actor id or a position), `side` (`right`; `left`), `front`, `right`, `up` (blocks in the actor's frame), `speed` (2.2), `mark` | Comes in over the spot from its side and settles onto it. On a position: the block top under it, and it stands there as a grounded puppet. On an actor: a player-shaped body's shoulder by default (up 1.41, right 0.34, scaled with its height), another body's back; then it rides there, turning with the actor (ticked after it, so it never trails a tick). Ends on touchdown. |
 
 ## `[[shot]]` (implemented)
 
