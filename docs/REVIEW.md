@@ -24,6 +24,7 @@ bin/videocraft climb x.toml --budget 3            # propose → run --parent →
 | `strips/<nn>-<shot>.jpg` | One image per clip: its first, last and every n-th frame, 640x360 each, three across, with the shot name, the shot's own frame, the master frame and the timecode in the cut burnt into the margin. |
 | `contact/sheet-<k>.jpg` | The whole cut at 4 frames a second, 320x180 tiles, six across, timecode and shot under each. |
 | `cuts/cut-<nn>.jpg` | Every join: the three frames before (top row) and the three after (bottom row). |
+| `sound.md`, `sound/loudness-<k>.png` | The sound sheet: every placed effect (master frame `M`, shot frame `S`, event, file, gain), voice lines with word onsets, music cues, the black gaps' loudness, and per shot the script's visible actions beside what is heard. The charts draw the master's momentary loudness and peak level over the clips and joins, with lanes for voice words, game and synth effects and music cues, 15 s a row. Every role that scores `sound` gets them. |
 | `captions.md` | Every line of text per shot: from `text.json` (frames, words, cap height) and from the script's cues. |
 | `report.md`, `metrics.json` | From measure: shot statistics, black, frozen, loudness, camera, framing, text rules. |
 | `script.toml`, `rubric.toml` | The script as authored; the rubric used. |
@@ -36,8 +37,8 @@ cite "shot `s05-snacks`, 0:13.40" exactly.
 ## What reviewers are told
 
 - They judge **stills and measurements**. They cannot watch motion or hear sound: movement is inferred from frame
-  sequences and `frames.csv`-derived numbers (camera speed, jerk, subject framing); sound only from loudness numbers
-  and the sound events the script and logs list. Where a criterion depends on what they cannot perceive, they say so
+  sequences and `frames.csv`-derived numbers (camera speed, jerk, subject framing); sound from the sound sheet (every
+  effect and voice word on its frame) and the loudness charts. Where a criterion depends on what they cannot perceive, they say so
   and score from the evidence, not from hope.
 - They cite **shot names and timecodes** for every claim.
 - They give a **1-10 score per criterion** they are assigned, using the rubric's 5 and 9 anchors; pass/fail on each
@@ -172,8 +173,8 @@ focus = "Use the shot table, the length histogram and the contact sheets at 4 fr
 id = "sound"
 name = "Sound reviewer"
 criteria = ["sound"]
-images = []
-focus = "You cannot hear. Judge only the loudness numbers and the sound events the script and the logs list."
+images = ["sound", "strips"]
+focus = "You cannot hear. Judge from the sound sheet (sound.md: every effect, voice word and music cue on its master frame, and what is heard per shot), the loudness charts and the strips: effects on the frames of their visible actions, the bed ducked under voice, silence at the dips, the master level."
 
 [[role]]
 id = "technical"

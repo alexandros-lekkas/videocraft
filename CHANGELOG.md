@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
+  tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
+- `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and
+  `master-original-audio.mp4` beside the game-audio files, from a second mix in `cut/audio-original.wav`; the game
+  mix in `cut/audio.wav` is never overwritten.
+- A walk carried over a cut ends cleanly on the next shot's first movement cue (`turn`, `state`, `pose` brake it in
+  0.25 s, a turn follows once it stands; `place` and `walk` replace it), and a `place` rewrites that frame's
+  `actors.csv` row, which was logged at the old walk's spot.
+- `measure` finds hard cuts in dark, graded footage (a brightness-scaled minimum when the jump stands ten times
+  over the stillness around it), and warns of a repeated frame at a cut only when it straddles the cut inside a
+  moving shot, not when one side is a locked-off still.
+- `review packet` writes a sound sheet for the sound reviewer: `sound.md` (every placed effect, voice word and music
+  cue on its master frame, the dips' loudness, per shot the visible actions beside what is heard) and loudness charts
+  `sound/loudness-<k>.png`; the sound prompt now judges sync, ducking and silence at the dips from them.
 - The benchmark film `examples/nibs-vs-duke.toml` (docs/benchmarks/pinksheep-style.md): thirty shots and an end
   card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
   flashback, dips to black and the six-shot montage cut on the spoken words; production log in

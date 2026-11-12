@@ -119,8 +119,8 @@ focus = "Compare the shot table and histogram with the reference's (30 shots, me
 id = "sound"
 name = "Sound reviewer"
 criteria = ["sound"]
-images = []
-focus = "You cannot hear. Judge from the loudness numbers (integrated, true peak, silences at the dips, the momentary curve) and the listed sound events against the shot list's sound column."
+images = ["sound", "strips"]
+focus = "You cannot hear. Judge from the sound sheet (sound.md: every effect, voice word and music cue on its master frame, and what is heard per shot), the loudness charts and the strips: effects on the frames of their visible actions, the bed ducked under voice, silence at the dips, the master level; and the shot list's sound column."
 
 [[role]]
 id = "technical"

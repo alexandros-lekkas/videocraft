@@ -27,11 +27,37 @@ def numbers_for(rub, rid, metrics):
     return out
 
 
+def hears(rub, rid):
+    """True when the role scores sound: it gets the sound sheet and the loudness charts whatever its image list says."""
+    return any(c['id'] == 'sound' for c in rubrics.criteria_of(rub, rid))
+
+
 def images_for(rub, rid, manifest):
+    kinds = list(rubrics.role(rub, rid).get('images', []))
+    if hears(rub, rid) and 'sound' not in kinds:
+        kinds.append('sound')
     files = []
-    for kind in rubrics.role(rub, rid).get('images', []):
+    for kind in kinds:
         files += manifest['files'].get(kind, [])
     return files
+
+
+SOUND = [
+    '## Judging sound without hearing it', '',
+    'You cannot hear the cut: say so in a note. Your evidence is `sound.md` (read all of it) and the loudness charts '
+    '`sound/loudness-<k>.png` (look at every one). Judge these, citing shot, timecode and master frame `M`:', '',
+    '- **Sync.** `sound.md` lists every placed effect with its master frame `M`, and the script\'s visible actions '
+    '(jumps, hits, nods, steps) with theirs. An action shown in the strips or cut pairs (their labels carry `M`) should '
+    'have its sound within about 2 frames; a visible action with no sound in its shot\'s "Heard" column is a miss; a sound '
+    'with no visible cause is a stray. Dense effect ticks in the GAME lane of a chart with flat loudness mean the effects '
+    'are buried.',
+    '- **Voice and ducking.** Voice lines are blue spans with a tick per word onset. The music should dip under them '
+    '(the curve stays near the voice level, not above it) and come back after; music cues are listed with their frames.',
+    '- **Silence at the dips.** Black gaps are tinted red in the charts and tabled in `sound.md`: deliberate silence is '
+    'the curve under -50 LUFS across the gap (momentary is a 400 ms window, so allow it 0.4 s to fall after the edge). '
+    'Sound that dies well before the picture does, or runs through the black, is a timing fault.',
+    '- **Level.** The integrated level and true peak; uneven stretches show as the curve wandering far from the -14 line.',
+    '- **Coverage.** Shots whose "Heard" column is only music, or "silence", where the strips show something happening.', '']
 
 
 def schema(rub, rid):
@@ -65,8 +91,8 @@ def prompt(rub, rid, manifest, metrics, packet_dir):
          '## What you can and cannot perceive', '',
          '- You see **still frames and numbers only**. You cannot watch motion and you cannot hear sound.',
          '- Motion is evidenced by frame sequences in the strips (first, last and every n-th frame of each clip) and by '
-         'the camera and framing numbers measured from the game\'s own per-frame log. Sound is evidenced only by the '
-         'loudness numbers and by the sound events the script and the logs list.',
+         'the camera and framing numbers measured from the game\'s own per-frame log. Sound is evidenced by the '
+         'sound sheet (`sound.md`: every effect, voice word and music cue on its frame) and the loudness charts.',
          '- Where a criterion depends on something you cannot perceive, say so in a note and score from the evidence you '
          'have; do not give the benefit of the doubt, and do not punish what you cannot see either.',
          '- Labels in the images: `0:12.34` is the timecode in the cut, `M` the frame of the cut, `S` the frame of the shot.',
@@ -89,7 +115,9 @@ def prompt(rub, rid, manifest, metrics, packet_dir):
         L += [f'- `{f}`' for f in images]
     else:
         L.append('No images for this role: judge from the numbers, the captions and the script.')
-    L += ['', 'Also in the packet: `captions.md` (every caption per shot), `report.md` (all measurements), `script.toml` (the script).',
+    if hears(rub, rid):
+        L += [''] + SOUND
+    L += ['', 'Also in the packet: `sound.md` (the sound sheet), `captions.md` (every caption per shot), `report.md` (all measurements), `script.toml` (the script).',
           '', '### Numbers (from measure/metrics.json)', '', '```json', json.dumps(numbers_for(rub, rid, metrics), indent=1)[:60000], '```', '',
           '## What to return', '',
           'Write your reasoning first if you like, then end with **one** fenced ```json block, exactly this shape and nothing '

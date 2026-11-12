@@ -76,7 +76,7 @@ actor id (its head), `"camera"` (the lens of the frame) or a position; a **headi
 
 | `do` | Keys | Meaning |
 |:--|:--|:--|
-| `place` | `to`, `facing` | Puts it there at once (a jump cut), feet on the ground. Use it at the start of a shot. |
+| `place` | `to`, `facing` | Puts it there at once (a jump cut), feet on the ground, ending any walk. Use it at the start of a shot. A walk still going when its shot cuts carries on into the next shot until that shot moves the actor: `place` or a new `walk` replace it at once, a `turn`, `state` or `pose` brings it to rest in a quarter second first (a turn is made once it stands). |
 | `walk` | `path` (positions) or `to`; `gait` (`walk`, `strut`, `trot`, `run`) or `speed` (blocks/s); `accel` (0.35 s), `arrive` (0.5 s braking; 0 stops dead), `face` (a heading after arriving), `mark` (label on arrival) | A smooth curve through the points from where it is, eased in and out, pace varied a little by the seed. A strut carries the head high and swings the shoulders. Ends when it arrives. `run` is `walk` with `gait = "run"`. |
 | `stop` | `arrive` (0.35 s) | Brakes and stops where it comes to rest. |
 | `turn` | `to` (a heading), `pace` (1; 2 snaps), `follow` (keep turning toward a moving target), `mark` | Head first, body after a short delay; ends when settled. |
@@ -266,10 +266,15 @@ the BT.709 matrix. Fades include the look (a framed flashback fades up from blac
 
 | `preset` | Output | Keys |
 |:--|:--|:--|
-| `x-1080p60` | `cut/x-1080p60.mp4`: 1080p, up to 60 fps, under 25 MB (quality steps down only if needed), AAC 192k | `name` |
-| `readme-720p30` | `cut/readme-720p30.mp4`: 720p, 30 fps, under 10 MB, AAC 128k | `name` |
+| `x-1080p60` | `cut/x-1080p60.mp4`: 1080p, up to 60 fps, under 25 MB (quality steps down only if needed), AAC 192k | `name`, `audio` |
+| `readme-720p30` | `cut/readme-720p30.mp4`: 720p, 30 fps, under 10 MB, AAC 128k | `name`, `audio` |
 | `gif` | `cut/preview.gif`: silent loop, 640 px on the long side, smaller until under `max_mb` (6) | `from`, `seconds` (5), `max_mb`, `name` |
 | `poster` | `cut/poster.png` (always written, half a second before the end) | `at` (seconds), `name` |
+
+`audio = "original"` on a video export also writes `cut/<name>-original-audio.mp4` (and `cut/master-original-audio.mp4`):
+the same picture with a second mix that holds no game audio (synth bed, synthesized stand-ins, voice; what `[edit]
+audio = "original"` makes), mixed into `cut/audio-original.wav` + `audio-original.json`, so `cut/audio.wav` stays the game
+mix. `videocraft cut <run> --original-audio` (or `edit cut … --original-audio`) does it for every video export.
 
 **Sound.** After `timeline.json` the cut calls the audio workstream's `videocraft.audio.mix.build(it)` while the
 picture encodes and muxes the `cut/audio.wav` it returns as AAC 192k, cut or padded to the picture's length. With
