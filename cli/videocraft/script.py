@@ -13,7 +13,7 @@ PLAN_VERSION = 1
 NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description'}
 WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage'}
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note'}
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'vertical'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -104,6 +104,10 @@ def compile_script(raw, source='script'):
         camera = shot.get('camera')
         if not isinstance(camera, dict) or 'rig' not in camera:
             raise ScriptError(f'shot {sname}: camera = {{ rig = "orbit", ... }} is required')
+        vertical = shot.get('vertical') or {}  # [shot.vertical]: camera keys for a vertical take (docs/CLIPS.md)
+        _unknown(vertical, {'camera', 'subject', 'note'}, f'shot {sname}.vertical')
+        if output['height'] > output['width'] and isinstance(vertical.get('camera'), dict):
+            camera = {**camera, **vertical['camera']}
         out = {'name': sname, 'duration': duration, 'camera': camera, 'timeline': _cues(shot.get('cue'), f'shot {sname}.cue', duration)}
         for key in ('hud', 'bob'):
             if key in shot:
