@@ -86,7 +86,7 @@ do = "mark"
 label = "landed"
 
 [edit]
-music = { track = "minecraft:music/game/wet_hands", start = 13.4, loudness = -16 }
+music = { source = "synth", style = "upbeat", bpm = 120 }   # or source = "game", track = "music/game/wet_hands"
 
 [[edit.clip]]
 shot = "arrive"
@@ -106,7 +106,10 @@ What it expresses, and who implements it:
 | Shots | `[[shot]]`: `name`, `duration`, `camera` (rig + parameters), `hud`, `bob`, `[[shot.cue]]` timeline | a (shot, rigs), b (actor cues), c (text cues) |
 | Cues | `at` (seconds into the shot), `do` (an action id), `actor`, the action's own parameters | whoever owns the action |
 | Marks | `do = "mark"` or any action calling `ShotContext.mark`; written to `marks.json` in frames | a (mechanism), everyone (use) |
-| Edit | `[edit]`: `[[edit.clip]]` order, `trim`, `push` (push-ins), `speed` (ramps), `music`, `sfx`, `[[edit.export]]` | c |
+| Edit | `[edit]`: `[[edit.clip]]` order, `trim`/`in`/`out`, `push` (push-ins), `speed` (ramps), fades and `black` gaps, `[[edit.look]]`, `[[edit.export]]` | c |
+| Sound | `[edit]`: `music` (synth bed or a game track) and its cues, `mix`, `audio`; actions `sound`, `tune`, `ambience`, `particles` | audio |
+| Dialogue | `[cast]`, `say` cues | voice |
+| Sets | `[[world.set]]`, anchors `<set>:<mark>` | sets |
 
 **End conditions.** v1: every shot ends on `duration`. Planned (a): `until = "<mark label>"` with `duration` as the
 upper bound, so a shot can end when an action reports its beat (a walk arriving) without guessing seconds; a shot
@@ -116,17 +119,22 @@ whose `until` never comes fails the take.
 arrival) always exists; actions can define more (`ShotContext.anchor(name, at)`), and plugins define their own
 (T3 Craft: `t3craft:desk/3`).
 
-**Actions v1 (built-in ids).** Runtime: `command`, `mark`, `wait`. Actors: `walk`, `run`, `look`, `turn`, `jump`,
-`crouch`, `swing`, `use`, `break`, `place`, `select`, `type`, `open`, `close`, `point`, `click`, `pose`. Text:
-`caption`, `title`, `keycap`, `lower_third`, `clear`. Rigs: `orbit`, `fixed`, `first` (built), `chase`, `track`,
-`dolly`, `crane`, `locked`, `two_shot` (planned). Every action validates its parameters when created and fails the
-take with a message naming the script location.
+**Built-in actions** (every one documented in [SCRIPT.md](SCRIPT.md)). Runtime: `command`, `mark`, `wait`,
+`stand_in`, `glide`. Actors: `place`, `walk`, `run`, `stop`, `turn`, `look`, `hop`/`jump`, `state`, `crouch`,
+`hold`, `emit`, `voice`, `swing`, `nod`, `shake`, `talk`, `pose`/`point` (`blink` is registered and says it is not
+built). Text: `caption`, `title`, `card`, `lower_third`, `keycap`, `clear`. Sound: `sound`, `tune`, `ambience`,
+`particles`. Dialogue: `say` (resolved by the compiler into `caption` cues, voice lines and shot lengths). Rigs:
+`lead`, `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`, `face`, `orbit`, `fixed`, `first`. Every action
+and rig validates its parameters when the plan is checked, before the world loads, and fails the take with a
+message naming the script location. Planned and not built: the player actions `use`, `break`, `select`, `type`,
+`open`, `close`, `click` and a drawn pointer (b).
 
 **Actors: realistic and out of scope.** The player is played, not animated: held movement keys through a scripted
 `ClientInput`, the view turned by the hand model, so acceleration, view bobbing, sprint FOV and the walk cycle are
-the game's own. NPCs are vanilla **Mannequins** (player-shaped, skinnable via a profile, posable, no AI; T3 Craft uses
-them for its agents), moved by videocraft each tick with the walk animation driven by a mixin. Skins: the player's via
-a mixin on the local skin lookup reading a PNG; Mannequins via their profile. **Out of scope:** fake players with
+the game's own. Every other actor is a **puppet**: a client-side entity (any mob, or a vanilla Mannequin for a
+player-shaped NPC with a skin from a local PNG) that the level never ticks; videocraft ticks it on the frame clock,
+so its walk cycle, poses, head turns and its own sounds are the same in every take of a plan. A skin for the played
+player is not built. **Out of scope:** fake players with
 network connections, pathfinding (paths are given in the script), mob AI direction beyond vanilla commands, multiplayer
 servers, other dimensions mid-take, recording sound from the game (audio is mixed in the edit).
 
@@ -181,11 +189,18 @@ runs/<script name>/
       shots/<name>/frames.csv    frame,seconds,cam_x,cam_y,cam_z,cam_yaw,cam_pitch,fov,player_x,…,on_ground
       shots/<name>/marks.json    [{label, frame, value?}] in frames of this shot
       shots/<name>/ffmpeg.log
-      shots/<name>/text.json     every text item: frame range, box in pixels, cap height, words   (c, planned)
+      shots/<name>/text.json     every text item: frame range, box in pixels, cap height, words        (c)
+      shots/<name>/actors.csv    frame,actor,x,y,z,yaw,head_yaw,head_pitch,state, per puppet             (b)
+      shots/<name>/sounds.csv    every sound the client played, on its frame                            (audio)
+    voice.json               every resolved say line: file, words with times, shot, start            (voice)
     cut/master.mp4  cut/<export>.mp4  cut/poster.png  cut/graph.txt  cut/cut.json                    (c)
+    cut/timeline.json        the edit resolved to frames; cut/verify.json what `edit verify` proved     (c)
+    cut/audio.wav  cut/audio.json   the mix, and every placed and skipped sound with the loudness       (audio)
     measure/metrics.json     format checks; motion, text and safe-area metrics                         (d)
-    measure/contact.png      a contact sheet of the cut for reviewers                                  (d)
+    measure/report.md  measure/signals.csv   the same for people, and per-frame signals                (d)
     lint.json                script lint before the take                                               (d)
+    review/packet/           strips, contact sheets, prompts for reviewers                             (d)
+    clips/                   moments.json and vertical shorts cut from this iteration                  (clips)
     review/<reviewer>.json   {reviewer, model, scores: {criterion: 1-10}, notes: [{t, text}], verdict}  (d)
     score.json               the aggregate the hill-climb compares                                     (d)
     notes.md                 what changed from the parent and why (written by the agent)
@@ -205,8 +220,8 @@ From the prototype, enforced by `lint`/`measure` (d) and honoured by the text ac
 - The GUI scale is clamped to 4 at a 1920×1080 framebuffer, so UI text can only be enlarged by an edit push-in;
   the held part of a push-in is an exact crop scaled with nearest neighbour, so the pixel font stays crisp.
 - A mouse pointer at rest is frozen to the pixel and clicks only after it has stopped.
-- Music is read from the local game asset cache (`~/.gradle/caches/fabric-loom/assets`) at export time, levelled to
-  about −16 LUFS. Mojang audio is never committed.
+- Game sounds and music are read from the local game asset cache (`~/.gradle/caches/fabric-loom/assets`) at export
+  time; the master is −14 LUFS integrated, −1 dBTP. Mojang audio is never committed.
 
 ## 6. Extension point
 
@@ -249,8 +264,9 @@ references those downloads and carries only videocraft's jar in `overrides/`.
 
 - **The integrated server runs in real time.** The client is fixed-step, the server is not: when capture runs faster
   or slower than real time, server-side motion (NPCs moved on the server, mobs, block updates) drifts against the
-  video. Workstream (a) locks the server to the frame clock (freeze the tick-rate manager and step one server tick per
-  `fps/20` captured frames). Until then, move NPCs client-side.
+  video. Not fixed yet (the plan: freeze the tick-rate manager and step one server tick per `fps/20` captured
+  frames). Actors are client-side puppets on the frame clock for this reason; staging commands run before recording.
+  Clouds still move with server time, so pixels can differ there between takes.
 - **Window scale.** The CLI asks for 960×540 points on a Mac (2× displays) and 1920×1080 elsewhere; the mod checks the
   framebuffer and resizes once (`WorldBoot.frameSize`). Verified on a 2× Mac only.
 - **Platforms.** Verified on macOS (Apple silicon, OpenGL backend). Linux needs `xvfb-run`; Windows is untested.
@@ -277,6 +293,11 @@ change request to its owner (or a one-line hook you add and tell them about). Sh
   byte-identical `frames.csv` and frame-for-frame identical video (compare `framemd5` of `video.mp4`); a plan with a
   bogus rig fails in under 20 s with a message naming the shot. A 10 s `chase` shot of a player walking has camera
   vertical jerk below a threshold (d measures) while the player jumps.
+- **Status (2026-11-12).** Built: every rig above plus `lead` and `face`, with `fov` (eased), seeded `drift`, block
+  avoidance and positions on actors; `preroll`; per-shot `time` and `weather`; `world.preset` and `world.save`;
+  `hud`, `bob`; batched, checked staging commands; `stand_in`/`glide`; the whole plan checked before the world loads;
+  determinism (two takes of `examples/rigs.toml` match by framemd5 and `frames.csv`). Not built: server tick
+  lockstep, `until`, the warm client (`POST /take`).
 
 ### (b) Actors: the human input model, movement and actions, NPCs
 
@@ -295,6 +316,11 @@ change request to its owner (or a one-line hook you add and tell them about). Sh
   NPC that waves) passes; `frames.csv` shows the turn as one primary movement plus at most two corrections, peak speed
   in the first half; key times for typing are reproducible per seed (`HandChecks`); the walk never stalls (horizontal
   speed > 3 blocks/s except at the start and the end).
+- **Status (2026-11-12).** Built: `PlayerActor` (`walk`, `run`, `stop`, `turn`, `look`, `hop`, `crouch`, `swing`;
+  `examples/walk.toml`); mob and mannequin **puppets** in place of server-side Mannequins (any living entity, its
+  variants and states, `tint`, `scale`, skins from a local PNG), eased poses, capped turns, gestures, their own
+  sounds; `actors.csv`; `examples/animals.toml`, `examples/mannequins.toml`; `ActorChecks`. Not built: `use`,
+  `break`, `select`, `type`, `open`, `close`, `click`, the drawn pointer, the played player's skin.
 
 ### (c) Text and edit: overlay text, the cut and export pipeline, music and sound
 
@@ -311,6 +337,10 @@ change request to its owner (or a one-line hook you add and tell them about). Sh
 - **Acceptance.** `examples/text.toml` passes and its `text.json` satisfies every layout rule in section 5; a push-in
   hold is pixel-exact against the source crop; exports meet their size limits; music loudness measures −16 ± 1 LUFS;
   with no game assets present the edit names the file it looked for and stops (or `--silent`).
+- **Status (2026-11-12).** Built: every text action plus `card`, `text.json`, the whole cut (in/out on marks, slow
+  pushes, exact push-in holds, speed ramps, fades, black gaps, `[[edit.look]]` frames and grades), `edit verify`,
+  all four exports, `--silent`; `examples/text.toml`, `examples/edit.toml`. Music and sound moved to the audio
+  workstream (below).
 
 ### (d) CLI, run store, measure and lint, reviewer prompts, the hill-climb
 
@@ -328,13 +358,36 @@ change request to its owner (or a one-line hook you add and tell them about). Sh
 - **Acceptance.** `python3 -m unittest discover -s cli/tests` passes; `videocraft lint` catches each rule on a fixture
   script; `videocraft climb examples/hello.toml --budget 3` runs three iterations, writes `score.json` for each and
   `index.json` shows the parent chain; `videocraft modpack` writes an `.mrpack` that the Modrinth app imports.
+- **Status (2026-11-12).** Built: `lint` (also `lint.json` before every take), `measure` on a run or any video,
+  review packets, `review run` (`claude -p` or the Anthropic API), `score`, `compare`, `notes`, `climb` (run on
+  `examples/hello.toml`), `modpack`, `runs`, `index.json`. Not checked: importing the `.mrpack` into the Modrinth
+  app.
+
+### Workstreams added during the build
+
+Built on top of (a)-(d) in the same night, each with its own doc and command group:
+
+- **Audio** (`sound/`, `mixin/sound/`, `cli/videocraft/audio/`): the sound log (`sounds.csv`), `sound`, `tune`,
+  `ambience`, `particles`, the mix (distance and pan from the camera, voice, ducking), an original synth bed with
+  stems and cues, mastering to −14 LUFS; `[edit] audio = "original"`. [SCRIPT.md](SCRIPT.md#audio)
+- **Voice** (`cli/videocraft/voice/`, `cast/`): local TTS per character, word timings, the `say` resolver.
+  [VOICE.md](VOICE.md)
+- **Sets** (`cli/videocraft/sets/`, `sets/`): sets as data with marks; `market-lane`, `barn-stage`, `black-stage`,
+  `keynote-stage`, `office`; skin specs. [SETS.md](SETS.md)
+- **Story** (`cli/videocraft/story/`, `series/`, `stories/`): premise to shot script, series, `make`.
+  [STORY.md](STORY.md)
+- **Clips** (`cli/videocraft/clips/`): `assemble`, `clips find/cut/pack`, vertical re-shoots and re-frames.
+  [CLIPS.md](CLIPS.md)
 
 ## 10. Milestones
 
-1. **Foundation** (this commit): hidden window, fixed clock, capture, director, orbit/fixed/first rigs, plan format,
-   CLI `doctor`/`compile`/`run`/`cut`/`measure`, `examples/hello.toml` → a real 1080p60 mp4.
-2. **One person on camera** (a + b): a player walks, jumps and looks, filmed by `chase` and `track`; server lockstep.
+1. **Foundation**: hidden window, fixed clock, capture, director, orbit/fixed/first rigs, plan format, CLI
+   `doctor`/`compile`/`run`/`cut`/`measure`, `examples/hello.toml` → a real 1080p60 mp4. **Done.**
+2. **One person on camera** (a + b): a player walks, jumps and looks, filmed by `chase` and `track`. **Done**, with
+   puppets for every other actor; server lockstep is **not done**.
 3. **Words and a cut** (c + d): captions and a title with measured layout; cut with push-ins and music; lint and
-   measure.
-4. **Judged** (d): reviewers, scores, the hill-climb loop on `examples/`.
-5. **First customer**: T3 Craft's launch video re-made as a videocraft script plus a T3 Craft plugin.
+   measure. **Done**, with voice, sound and a synth bed.
+4. **Judged** (d): reviewers, scores, the hill-climb loop on `examples/`. **Done** (climbed on `examples/hello.toml`).
+5. **The benchmark**: "Nibs vs Duke" ([benchmarks/pinksheep-style.md](benchmarks/pinksheep-style.md)), 30 shots
+   in about 72 s, scored on its rubric and hill-climbed. **In progress** (2026-11-12).
+6. **First customer**: T3 Craft's launch video re-made as a videocraft script plus a T3 Craft plugin. Not started.
