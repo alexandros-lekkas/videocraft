@@ -29,6 +29,7 @@ SHORT_CAPTION = 77          # caption capital height in a vertical re-shoot (the
 HOOK_SECONDS = 1.4
 OUT_W, OUT_H = 1080, 1920
 SIZE_KEYS = ('radius', 'distance')
+TEXT_ACTIONS = ('caption', 'title', 'card', 'lower_third', 'keycap')
 
 
 # ---- The range ----
@@ -109,6 +110,10 @@ def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0
         for cue in shot.get('cue', []) or []:
             if cue.get('do') == 'caption' and 'size' not in cue:
                 cue['size'] = SHORT_CAPTION
+            if cue.get('do') in TEXT_ACTIONS:   # screen positions (layout pixels) keep their place in the frame
+                for key, a, b in (('x', width, OUT_W), ('y', height, OUT_H)):
+                    if isinstance(cue.get(key), (int, float)):
+                        cue[key] = round(cue[key] / (a / min(width, height) * 1080) * (b / min(OUT_W, OUT_H) * 1080), 1)
         shots.append(shot)
     clips, raw_clips = [], edit.get('clip') or []
     tl_clips = {c['index']: c for c in timeline.get('clips', [])}
