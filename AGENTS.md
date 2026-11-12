@@ -185,6 +185,17 @@ They protect the owner's machine and game. They are not preferences.
   ASR ignores them. Speech must reach −25 dB to count, and a word the aligner puts deep into a burst starts after
   its last dip (`voice/worker/align.py`). Cut on onsets after pauses; word ends are 80-160 ms off at p90.
 
+- **Staging and preparation take different frame counts per take.** The stage pseudo-shot runs until the server has
+  done its commands, and shot preparation until the sections are drawn (65 vs 99 frames seen for one shot); puppets
+  that ticked through staging, and a sound seed counted from preparation, made two takes differ. Puppets now start
+  their clock with the first shot and `SoundLog.random` seeds by the shot's frame index.
+- **Flying mobs animate from `onGround`.** A bee beats its wings and bobs (`BeeRenderState.isOnGround` is `onGround`
+  and no movement), a parrot takes its FLYING pose, a chicken flaps, all when the entity is not on the ground; puppets
+  keep `deltaMovement` zero, so `setOnGround(false)` is the whole switch. Vanilla has no roll for a mob: banking is
+  a pose-stack rotation at the tail of `LivingEntityRenderer.setupRotations` (there the model faces -Z, +X its right).
+  The bee loop samples are 4.2-5.9 s and logged with `attenuation_distance` 6, so a bee more than 6 blocks from the
+  camera is silent in the mix.
+
 ## Working with agents
 
 - **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git

@@ -1,0 +1,205 @@
+# Flying actors: bees and a parrot as puppets that fly, hover, swarm and land, deterministic from the plan and seed.
+#   bin/videocraft run examples/bees.toml
+# A bee crosses a meadow on a curving line, banking into the turns, and hovers over the flowers. A small bee lands on
+# Ben's shoulder as he walks and rides along; he notices it. Five bees come down and circle him, then turn angry and
+# close in, never touching him or each other. A parrot hops off one fence post, flies over and lands on another.
+name = "bees"
+seed = 3
+description = "Flying puppets: fly with banking, hover, land on a shoulder and ride, a swarm that keeps clear, a parrot landing."
+
+[world]
+seed = "videocraft"
+time = 9000
+settle = 3.0
+
+# A floating meadow high above the spawn: grass, a stone path, flowers, a hive, a honey block and two fence posts.
+[[world.stage]]
+do = "command"
+commands = [
+  "fill -18 99 -18 18 99 18 grass_block",
+  "fill -1 99 -16 1 99 16 dirt_path",
+  "fill -9 100 -6 -4 100 -1 short_grass",
+  "setblock -7 100 -4 poppy",
+  "setblock -5 100 -3 dandelion",
+  "setblock -6 100 -2 cornflower",
+  "setblock -8 100 -2 oxeye_daisy",
+  "setblock -4 100 -5 allium",
+  "setblock -6 100 -5 azure_bluet",
+  "setblock 7 100 -7 beehive[facing=south,honey_level=5]",
+  "setblock 5 100 -7 honey_block",
+  "setblock 9 100 2 oak_fence",
+  "setblock 3 100 6 oak_fence",
+  "setblock -12 100 6 lantern",
+]
+
+[[actor]]
+id = "ben"
+kind = "mannequin"
+skin = "skins/ben.png"
+at = [-1.0, 100, 1.0]
+facing = -90                    # east, along the path he will walk
+
+[[actor]]
+id = "bea"
+kind = "mob"
+entity = "bee"
+at = [9.0, 102.6, -6.0]         # in the air by the hive: a bee starts hovering where it is put
+facing = 60
+
+[[actor]]
+id = "tiny"
+kind = "mob"
+entity = "bee"
+scale = 0.5
+at = [4.0, 102.4, 3.5]
+
+# Five bees waiting behind the cameras (south of the meadow), out of frame until they fly in past the lens.
+[[actor]]
+id = "b1"
+kind = "mob"
+entity = "bee"
+at = [-2.0, 102.6, 13.0]
+
+[[actor]]
+id = "b2"
+kind = "mob"
+entity = "bee"
+at = [1.0, 103.1, 14.5]
+
+[[actor]]
+id = "b3"
+kind = "mob"
+entity = "bee"
+at = [4.0, 102.4, 13.5]
+
+[[actor]]
+id = "b4"
+kind = "mob"
+entity = "bee"
+at = [-4.5, 102.8, 15.0]
+
+[[actor]]
+id = "b5"
+kind = "mob"
+entity = "bee"
+at = [6.5, 103.0, 14.0]
+
+[[actor]]
+id = "polly"
+kind = "mob"
+entity = "parrot"
+at = [9.0, 101, 2.0]            # on top of a fence post
+facing = 90
+
+# ---- A flight across the meadow ----
+[[shot]]
+name = "flight"
+duration = 8.0
+camera = { rig = "locked", eye = [2.5, 101.8, 6.5], subject = "bea", look = 0.3, lag = 0.45, fov = 52 }
+
+[[shot.cue]]
+at = 0.5
+do = "fly"
+actor = "bea"
+# Out from the hive, a sweep toward the lens, a turn back over the path and down to the flowers.
+path = [[6.0, 102.2, -3.5], [2.5, 101.6, 0.5], [-1.5, 102.1, -1.0], [-4.5, 101.4, -3.8], [-6.2, 100.9, -3.4]]
+mark = "over-the-flowers"
+
+[[shot.cue]]
+at = 6.3
+do = "hover"
+actor = "bea"
+to = [-6.2, 100.95, -3.4]
+radius = 0.35
+face = "camera"
+
+# ---- A bee lands on Ben's shoulder and rides ----
+[[shot]]
+name = "perch"
+duration = 9.0
+camera = { rig = "track", subject = "ben", side = "right", distance = 3.6, height = 1.5, look = 1.3, fov = 55 }
+
+[[shot.cue]]
+at = 0.2
+do = "walk"
+actor = "ben"
+path = [[1.0, 100, 1.0], [5.0, 100, 1.2]]
+speed = 0.9
+
+[[shot.cue]]
+at = 0.6
+do = "land"
+actor = "tiny"
+on = "ben"
+mark = "landed"
+
+[[shot.cue]]
+at = 6.4
+do = "look"
+actor = "ben"
+target = "tiny"
+hold = 1.6
+
+# ---- The swarm ----
+[[shot]]
+name = "swarm"
+duration = 10.0
+camera = { rig = "fixed", eye = [5.0, 101.4, 6.2], at = [5.0, 101.0, 1.2], fov = 62 }
+
+[[shot.cue]]
+at = 0.0
+do = "turn"
+actor = "ben"
+to = 0                          # to face the lens
+
+[[shot.cue]]
+at = 0.3
+do = "swarm"
+bees = ["b1", "b2", "b3", "b4", "b5"]
+around = "ben"
+speed = 2.2
+
+[[shot.cue]]
+at = 3.4
+do = "look"
+actor = "ben"
+target = "b3"
+hold = 1.5
+
+[[shot.cue]]
+at = 5.6
+do = "swarm"
+bees = ["b1", "b2", "b3", "b4", "b5"]
+around = "ben"
+speed = 3.4
+angry = true                    # red eyes, the aggressive buzz, and faster
+
+[[shot.cue]]
+at = 6.2
+do = "pose"
+actor = "ben"
+pose = "facepalm"
+
+# ---- A parrot changes posts ----
+[[shot]]
+name = "parrot"
+duration = 7.0
+camera = { rig = "fixed", eye = [9.6, 102.0, 9.6], at = [6.0, 101.6, 3.6], fov = 60 }
+
+[[shot.cue]]
+at = 0.8
+do = "fly"
+actor = "polly"
+path = [[8.0, 102.6, 3.6], [5.5, 103.2, 5.6]]
+
+[[shot.cue]]
+at = 2.6
+do = "land"
+actor = "polly"
+on = [3.0, 101.2, 6.0]          # on the other fence post
+mark = "perched"
+
+[[shot.cue]]
+at = 5.6
+do = "voice"
+actor = "polly"

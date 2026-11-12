@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),
+  `swarm` (bees on concentric tilting orbits that never touch each other or the body they circle), `land` (on a block,
+  or on an actor's shoulder and ride along); `[[actor]]` keys `flying`, `angry`, `buzz_volume`; wings beat by vanilla's
+  own animation and fold through the pose blend; buzz through the sound log; `FlightChecks`, `examples/bees.toml`.
+  Puppets no longer tick during staging and the sound log seeds by the shot's frame, so two takes with different
+  preparation lengths give identical `actors.csv` and `sounds.csv`.
 - Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
   CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
   snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that

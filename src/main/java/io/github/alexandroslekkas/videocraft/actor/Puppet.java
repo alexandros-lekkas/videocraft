@@ -91,6 +91,13 @@ public final class Puppet implements Actor {
 	private final List<Prop> props = new ArrayList<>();
 	private int tint = -1;
 
+	// In the air (fly, hover, swarm, land): where the flight puts it, and how its body banks and pitches.
+	private Flight flight;
+	private float prevBank, curBank, prevAirPitch, curAirPitch;
+	private double perchTurn = Double.NaN, buzzNext = Double.NaN;
+	// The actor a swarm circles or a landing sits on, ticked first so the flyer never trails it by a tick.
+	private Flights.ActorAnchor follow;
+
 	Puppet(Spec spec) {
 		this.id = spec.id;
 		this.kind = spec.kind;
@@ -152,6 +159,9 @@ public final class Puppet implements Actor {
 		if (!spawned) spawn(shot);
 		if (entity == null) return;
 		if (entity.isRemoved() || entity.level() != shot.minecraft().level) respawn(shot.minecraft());
+		// Staging runs for as many frames as the server needs for its commands, which differs from take to take: the
+		// puppet's clock starts with the first shot, so its idle life and flight are the same in every take.
+		if ("stage".equals(shot.shot())) return;
 		frames++;
 		now = frames / (double) fps;
 		double t = frames * 20.0 / fps;
@@ -184,7 +194,15 @@ public final class Puppet implements Actor {
 		// A person turns their head at most about 400 degrees a second, an animal a little quicker; a bird snaps.
 		if (breed == Breed.HUMAN) heading.limits(380, 260);
 		else if (breed.temper() != Life.Temper.BUSY) heading.limits(520, 360);
-		foot.place(orElse(groundAt(x, z, at.y, true), at.y));
+		if (spec.bool("flying", Flights.airborne(entityId))) {
+			// A flyer starts in the air exactly where it is put, hovering, never dropped onto the ground under it.
+			flight = new Flight(at.x, at.y, at.z, entity.getBbWidth(), new Random(random.nextLong()));
+			foot.place(at.y);
+			pristine = false;
+			buzzNext = Flights.firstBuzz(random);
+		} else {
+			foot.place(orElse(groundAt(x, z, at.y, true), at.y));
+		}
 		snapshot();
 		snapshot();
 		apply(true);
@@ -215,6 +233,7 @@ public final class Puppet implements Actor {
 		}
 		tint = Looks.tint(spec);
 		Looks.after(this, living, spec);
+		if (living instanceof net.minecraft.world.entity.animal.bee.Bee bee && spec.bool("angry", false)) bee.setPersistentAngerEndTime(Long.MAX_VALUE / 4);
 		entity = living;
 		Puppets.own(living, this);
 		level.addEntity(living);
@@ -229,6 +248,7 @@ public final class Puppet implements Actor {
 	// ---- One tick ----
 
 	private void tick(ShotContext shot) {
+		if (flight != null) { flyTick(shot); return; }
 		double tNow = ticks * TICK;
 		boolean walking = stride != null && !stride.done();
 		double travelYaw = Double.NaN;
@@ -266,6 +286,58 @@ public final class Puppet implements Actor {
 		gestures.removeIf(g -> g.over(now));
 	}
 
+	/** A tick in the air (or perched): the flight moves it; the head still glances and gestures as on the ground. */
+	private void flyTick(ShotContext shot) {
+		if (follow != null) follow.catchUp(shot, ticks);
+		Flight.Anchor perch = flight.perchedOn();
+		boolean wasUp = flight.airborne();
+		flight.step(TICK);
+		if (wasUp && !flight.airborne()) {
+			Flight.Anchor on = flight.perchedOn();
+			if (on == null) {
+				// On a block: from here on it stands like any puppet, where the landing put it.
+				x = flight.x();
+				z = flight.z();
+				touchedDown(true);
+				snapshot();
+				apply(false);
+				return;
+			}
+			touchedDown(false);
+			perch = on;
+		}
+		x = flight.x();
+		z = flight.z();
+		double goal = flight.yawGoal();
+		if (perch != null) {
+			// Riding on an actor: keep the turn it landed with, relative to the actor, as the actor turns.
+			if (Double.isNaN(perchTurn)) perchTurn = Path.wrap(heading.body() - perch.yaw());
+			heading.travel(perch.yaw() + perchTurn, 18);
+		} else {
+			perchTurn = Double.NaN;
+			if (!Double.isNaN(goal)) heading.travel(goal, breed == Breed.HUMAN ? 8 : 14);
+		}
+		boolean scripted = heading.looking() || heading.turning() || activeHeadGesture();
+		life.step(TICK, !scripted, false);
+		double chin = !Double.isNaN(chinOverride) ? chinOverride : breed.chin() * 0.3;
+		heading.headSpeed(breed.headSpeed() * (temperOf() == Life.Temper.BUSY ? 1.4 : 1));
+		heading.step(TICK, life.yaw(), life.pitch(), chin);
+		snapshot();
+		apply(false);
+		if (flight.airborne() && !Double.isNaN(buzzNext) && ticks * TICK >= buzzNext) {
+			Flights.Buzz b = Flights.buzz(entityId, isAngry());
+			if (b != null) {
+				float pitch = (float) (b.pitch() * (0.96 + random.nextDouble() * 0.08));
+				voice(() -> play(b.sound(), (float) (b.volume() * spec.number("buzz_volume", 1)), pitch));
+				buzzNext = ticks * TICK + b.every() * (0.85 + random.nextDouble() * 0.3);
+			} else buzzNext = Double.NaN;
+		}
+		for (Prop p : props) p.tick(this);
+		gestures.removeIf(g -> g.over(now));
+	}
+
+	private boolean isAngry() { return entity instanceof net.minecraft.world.entity.animal.bee.Bee bee && bee.isAngry(); }
+
 	private Life.Temper temperOf() {
 		Life.Temper t = temper(spec);
 		return t == null ? breed.temper() : t;
@@ -285,12 +357,22 @@ public final class Puppet implements Actor {
 	private void snapshot() {
 		prevX = curX; prevY = curY; prevZ = curZ; prevG = curG;
 		prevBody = curBody; prevHead = curHead; prevPitch = curPitch;
+		prevBank = curBank; prevAirPitch = curAirPitch;
 		double[] g = gestureHead();
 		curX = x; curY = foot.y(); curZ = z; curG = foot.ground();
+		if (flight != null) {
+			curY = flight.y();
+			curG = flight.groundY();
+			curBank = (float) flight.bank();
+			curAirPitch = (float) flight.pitch();
+		} else {
+			curBank = 0;
+			curAirPitch = 0;
+		}
 		curBody = (float) heading.body();
 		curHead = (float) (heading.head() + g[0]);
 		curPitch = (float) (heading.pitch() + g[1]);
-		if (!spawnedOnce) { prevX = curX; prevY = curY; prevZ = curZ; prevG = curG; prevBody = curBody; prevHead = curHead; prevPitch = curPitch; spawnedOnce = true; }
+		if (!spawnedOnce) { prevX = curX; prevY = curY; prevZ = curZ; prevG = curG; prevBody = curBody; prevHead = curHead; prevPitch = curPitch; prevBank = curBank; prevAirPitch = curAirPitch; spawnedOnce = true; }
 	}
 
 	private boolean spawnedOnce;
@@ -315,7 +397,7 @@ public final class Puppet implements Actor {
 			e.setPos(curX, curY, curZ);
 			e.setYRot(curBody);
 			e.setXRot(curPitch);
-			e.setOnGround(!foot.air() && !(flapUntil > now));
+			e.setOnGround(grounded());
 			e.setDeltaMovement(Vec3.ZERO);
 			if (placed) {
 				e.setOldPosAndRot();
@@ -331,12 +413,18 @@ public final class Puppet implements Actor {
 			e.yBodyRot = curBody;
 			e.yHeadRot = curHead;
 			if (placed) { e.yBodyRotO = curBody; e.yHeadRotO = curHead; e.setOldPosAndRot(); }
-			e.setOnGround(!foot.air() && !(flapUntil > now));
+			e.setOnGround(grounded());
 			e.setDeltaMovement(Vec3.ZERO);
 			e.hurtTime = 0;
 		} finally {
 			Puppets.ticking = false;
 		}
+	}
+
+	/** Whether the entity stands on something this tick: not in a hop or a fall, not flapping, not flying. */
+	private boolean grounded() {
+		if (flight != null) return !flight.airborne();
+		return !foot.air() && !(flapUntil > now);
 	}
 
 	/** Footsteps: the entity's own step sound on the block under it, every 1/0.6 blocks as vanilla counts them. */
@@ -423,6 +511,8 @@ public final class Puppet implements Actor {
 
 	/** Walk along {@code points} ({x, z}), starting from where it is. */
 	void walk(List<double[]> points, double speed, String gait, double accel, double arrive) {
+		// Told to walk while perched on an actor: it steps off (and drops to the ground under it).
+		if (flight != null) land();
 		pristine = false;
 		List<double[]> all = new ArrayList<>();
 		all.add(new double[] {x, z});
@@ -441,7 +531,10 @@ public final class Puppet implements Actor {
 		x = at.x;
 		z = at.z;
 		stride = null;
-		foot.place(orElse(groundAt(x, z, at.y, true), at.y));
+		if (flight != null && (flight.airborne() || flight.perchedOn() != null)) {
+			flight.place(new double[] {at.x, at.y, at.z}, new Random(random.nextLong()));
+			foot.place(at.y);
+		} else foot.place(orElse(groundAt(x, z, at.y, true), at.y));
 		heading.place(yaw);
 		spawnedOnce = false;
 		snapshot();
@@ -471,6 +564,69 @@ public final class Puppet implements Actor {
 	LivingEntity living() { return entity; }
 
 	Vec3 feet() { return new Vec3(curX, curY, curZ); }
+
+	/** The body yaw at the end of the last tick (what an actor riding on it turns with). */
+	float bodyYaw() { return curBody; }
+
+	long ticks() { return ticks; }
+
+	/** Runs this puppet's ticks up to {@code tick} now, so a flyer riding on it this tick sees it where it is. */
+	void catchUp(ShotContext shot, long tick) {
+		if (entity == null) return;
+		while (ticks < tick) {
+			ticks++;
+			tick(shot);
+		}
+	}
+
+	// ---- Flight ----
+
+	/** The flight, made on the spot when a grounded puppet takes off. */
+	Flight flight() {
+		if (flight == null) {
+			pristine = false;
+			stride = null;
+			flight = new Flight(curX, curY, curZ, entity.getBbWidth(), new Random(random.nextLong()));
+			shiftTo("ground", 0.25);
+		} else if (!flight.airborne()) shiftTo("ground", 0.25);
+		if (Double.isNaN(buzzNext)) buzzNext = ticks * TICK + 0.05;
+		return flight;
+	}
+
+	boolean flying() { return flight != null && flight.airborne(); }
+
+	/** A bee's anger: red eyes, its aggressive buzz, no bob. Other bodies have none to show. */
+	void angry(boolean on) {
+		if (entity instanceof net.minecraft.world.entity.animal.bee.Bee bee) bee.setPersistentAngerEndTime(on ? Long.MAX_VALUE / 4 : -1);
+	}
+
+	/** The actor the flight now circles or sits on (null: none). */
+	void follow(Flights.ActorAnchor anchor) { follow = anchor; }
+
+	boolean hasFlight() { return flight != null; }
+
+	/** Back on its feet where it is (a landed flyer that is told to walk). */
+	void land() {
+		if (flight == null) return;
+		foot.place(flight.y());
+		flight = null;
+		follow = null;
+		buzzNext = Double.NaN;
+	}
+
+	/** Called when a landing touches down: the wings fold over a quarter of a second instead of in one frame. */
+	void touchedDown(boolean onBlock) {
+		shiftTo("ground", 0.25);
+		buzzNext = Double.NaN;
+		if (onBlock) land();
+	}
+
+	/** Degrees of bank this frame (right wing down positive), and of pitch (nose up positive), for the renderer. */
+	public float bank() { return prevBank + (curBank - prevBank) * phase; }
+
+	public float airPitch() { return prevAirPitch + (curAirPitch - prevAirPitch) * phase; }
+
+	public boolean airborne() { return flying(); }
 
 	public int tintColor() { return tint; }
 
@@ -539,6 +695,13 @@ public final class Puppet implements Actor {
 	private String shiftFlag;
 	private double shiftStart, shiftSeconds;
 
+	/** Starts easing a change of a model flag ({@link PoseBlend}) over about {@code seconds}. */
+	void shiftTo(String flag, double seconds) {
+		shiftFlag = flag;
+		shiftStart = now;
+		shiftSeconds = seconds * (0.9 + random.nextDouble() * 0.2);
+	}
+
 	/** The last change of an on/off pose (sit, sleep, crouch) while it is still easing in, else null. */
 	public Shift shift() {
 		if (shiftFlag == null || now - shiftStart >= shiftSeconds) return null;
@@ -591,7 +754,8 @@ public final class Puppet implements Actor {
 
 	/** The state column of actors.csv: the gait while walking (or idle), then any scripted states, joined with '+'. */
 	String stateLabel() {
-		StringBuilder b = new StringBuilder(walking() ? gait : foot.air() ? "air" : "idle");
+		StringBuilder b = new StringBuilder(flight != null ? (flight.airborne() ? (flight.arrived() ? "hover" : "fly") : "perch")
+			: walking() ? gait : foot.air() ? "air" : "idle");
 		for (String s : states) b.append('+').append(s);
 		for (Gesture g : gestures) {
 			String name = g.kind.name().toLowerCase(Locale.ROOT);

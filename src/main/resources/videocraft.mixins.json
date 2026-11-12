@@ -31,6 +31,7 @@
     "actor.ClientMannequinAccess",
     "actor.PoseBlendMixin",
     "actor.PoseBlendSubmitMixin",
+    "actor.PuppetFlightMixin",
     "sound.SoundEngineMixin",
     "sound.SoundInstanceAccessor"
   ],

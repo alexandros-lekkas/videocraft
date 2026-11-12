@@ -1,10 +1,13 @@
 package io.github.alexandroslekkas.videocraft.actor;
 
 import net.minecraft.client.model.Model;
+import net.minecraft.client.model.animal.parrot.ParrotModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.state.BeeRenderState;
 import net.minecraft.client.renderer.entity.state.FelineRenderState;
 import net.minecraft.client.renderer.entity.state.FoxRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.entity.state.ParrotRenderState;
 import net.minecraft.client.renderer.entity.state.WolfRenderState;
 
 import java.util.List;
@@ -12,7 +15,7 @@ import java.util.function.Consumer;
 
 /**
  * Eases a puppet's model between two of vanilla's on/off poses. A fox sits, a fox lies down to sleep, a wolf or a cat
- * sits, a mannequin sits or crouches: vanilla switches each in a single frame (its model reads a boolean), which on
+ * sits, a mannequin sits or crouches, a bee or a parrot lands or takes off: vanilla switches each in a single frame (its model reads a boolean), which on
  * screen is a pop. While such a state has just changed ({@link Puppet#shift()}), the model is posed twice, once with
  * the old value and once with the new, and every part is drawn in between by the eased progress of the change. Poses
  * vanilla already eases (a fox's crouch, a goat lowering its head, a cat lying down) are left alone. Render thread.
@@ -47,6 +50,9 @@ public final class PoseBlend {
 				: s instanceof WolfRenderState w ? w.isSitting : s instanceof HumanoidRenderState h ? h.isPassenger : null;
 			case "sleep" -> s instanceof FoxRenderState f ? f.isSleeping : null;
 			case "crouch" -> s instanceof HumanoidRenderState h ? h.isCrouching : null;
+			// A flyer landing or taking off: a bee's wings stop beating and its legs fold; a parrot folds its wings.
+			case "ground" -> s instanceof BeeRenderState b ? b.isOnGround
+				: s instanceof ParrotRenderState pr && (pr.pose == ParrotModel.Pose.FLYING || pr.pose == ParrotModel.Pose.STANDING) ? pr.pose == ParrotModel.Pose.STANDING : null;
 			default -> null;
 		};
 	}
@@ -61,6 +67,10 @@ public final class PoseBlend {
 			}
 			case "sleep" -> { if (s instanceof FoxRenderState f) f.isSleeping = on; }
 			case "crouch" -> { if (s instanceof HumanoidRenderState h) h.isCrouching = on; }
+			case "ground" -> {
+				if (s instanceof BeeRenderState b) b.isOnGround = on;
+				else if (s instanceof ParrotRenderState pr) pr.pose = on ? ParrotModel.Pose.STANDING : ParrotModel.Pose.FLYING;
+			}
 			default -> {}
 		}
 	}
