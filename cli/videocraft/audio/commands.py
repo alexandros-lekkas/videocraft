@@ -133,12 +133,15 @@ def cmd_events(args):
         say(f'{p.time:9.4f} {onset if onset is not None else float("nan"):9.4f} {err if err is not None else float("nan"):9.2f}  '
             f'{"ok  " if ok else "MISS"} {p.event}')
     # The master against the mix it was made from: the limiter must not move anything in time.
-    out = mix.build(it, original=args.original or None, keep_raw=True)
-    raw = it.cut / '.audio-mix.f32'
+    # Into a scratch name: the check must not overwrite the cut's own audio.wav (the game mix) or audio-original.wav.
+    out = mix.build(it, original=args.original or None, keep_raw=True, name='.onsets-check')
+    raw = it.cut / '..onsets-check-mix.f32'
     if out is not None and raw.exists():
         rl, rr = dsp.read_f32(raw, 2)
         raw.unlink()
         ml, mr = dsp.read_wav16(out)
+        out.unlink()
+        (it.cut / '.onsets-check.json').unlink(missing_ok=True)
         shift = onsets.lag([0.5 * (a + b) for a, b in zip(rl, rr)], [0.5 * (a + b) for a, b in zip(ml, mr)])
         say(f'MASTER   delay against the unmastered mix: {shift} samples ({shift / dsp.SR * 1000:.2f} ms)')
         bad += abs(shift) > dsp.SR / timeline.fps
