@@ -5,15 +5,16 @@ parts in one repo: a Fabric mod that plays the script in a hidden client and cap
 inert unless the CLI starts it), and a Python CLI that drives everything. Java 25, Fabric Loader 0.19.5, Fabric API
 0.161.0+26.3, Loom 1.17, Gradle 9.8 (wrapper checked in), Python 3.11+ standard library only, ffmpeg.
 
-This is the five-minute brief. The architecture and the four workstreams are in [docs/DESIGN.md](docs/DESIGN.md);
-the script format is [docs/SCRIPT.md](docs/SCRIPT.md).
+This is the five-minute brief. The architecture, the workstreams and their status are in
+[docs/DESIGN.md](docs/DESIGN.md); the script format is [docs/SCRIPT.md](docs/SCRIPT.md); people start at
+[README.md](README.md).
 
 ## Commands
 
 ```sh
 export JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home   # for raw Gradle; bin/videocraft finds it itself
 bin/videocraft doctor                      # JDK 25, ffmpeg/ffprobe/libx264, folders, the three slots, running client
-./gradlew build                           # mod jar (build/libs/videocraft-<v>.jar) + plain-JVM checks (PlanChecks, RigChecks)
+./gradlew build                           # mod jar (build/libs/videocraft-<v>.jar) + plain-JVM *Checks (src/smoke/java)
 python3 -m unittest discover -s cli/tests # CLI checks (script compiling); also refreshes cli/tests/plans/hello.plan.json
 bin/videocraft compile examples/hello.toml # check a script, print the plan
 bin/videocraft run examples/hello.toml     # take → cut → measure as runs/hello/<n>/; about 30 s
@@ -22,6 +23,11 @@ bin/videocraft cut hello · measure hello   # re-cut / re-measure the latest ite
 bin/videocraft status · stop               # this checkout's client, over its control port
 bin/videocraft lint x.toml · measure --video f.mp4 --from 0 --to 82.2 --out /tmp/m   # before a take; any video
 bin/videocraft review packet x · review run x · score x · compare x/1 x/2 · climb x.toml --budget 3   # docs/REVIEW.md
+bin/videocraft edit cut|timeline|verify x · audio mix|events|synth   # the picture edit; the sound track (SCRIPT.md)
+bin/videocraft voice setup|doctor|say|script|check   # docs/VOICE.md
+bin/videocraft sets list|ops|build|preview|new|skin  # docs/SETS.md
+bin/videocraft story new|draft|revise|build|… · series new|status · make "<prompt>"   # docs/STORY.md
+bin/videocraft assemble … · clips find|cut|pack x    # docs/CLIPS.md
 ```
 
 Every run ends like this, so a script or an agent can act on it (exit 0 PASS, 1 FAIL, 2 no verdict):
@@ -43,20 +49,25 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | Where | What | Owner |
 |:--|:--|:--|
 | `src/main/java/io/github/alexandroslekkas/videocraft/api/` | The plugin contract: `VideocraftPlugin`, `Registry`, `Action(Type)`, `CameraRig`/`RigType`, `Pose`, `View`, `Actor`, `ShotContext`, `Params` | a |
-| `…/director/` | `Director` (the take's state machine and frame clock), `ShotRun` (one shot, implements `ShotContext`), `Capture` (framebuffer → ffmpeg), `FrameLog`, `Take` (paths, result.json), `WorldBoot`, `Hud`, `ControlServer`, `Registries`, `CoreActions` | a |
+| `…/director/` | `Director` (the take's state machine and frame clock), `ShotRun` (one shot, implements `ShotContext`), `Capture` (framebuffer → ffmpeg), `FrameLog`, `Take` (paths, result.json), `WorldBoot`, `Film` (clean, repeatable client state per shot), `PlanCheck` (the whole plan before the world loads), `Commands` (batched staging, forceload), `StandIn`, `Hud`, `ControlServer`, `Registries`, `CoreActions` | a |
 | `…/plan/Plan.java` | plan.json, the compiled script | a (+ d for the CLI side) |
-| `…/camera/` | `Rigs` (orbit, fixed, first), `Operator` (critically damped follow) | a |
-| `…/mixin/` | `ClockMixin` (fixed step), `CameraMixin` (rig moves the camera), `ParkedPlayerMixin` (hide the parked player) | a |
+| `…/camera/` | `Rigs` (every rig), `Operator` (critically damped follow), `Follow`, `Moves`, `Lens` (fov, drift), `Probe` (pull in front of blocks) | a |
+| `…/mixin/` | `ClockMixin` (fixed step), `CameraMixin` (rig moves the camera), `ParkedPlayerMixin` (hide the parked player), `FilmTimeMixin`/`FilmRandomMixin` (repeatable time and randoms), `NoNaturalsMixin` (no natural spawns), accessors | a |
 | `…/devmixin/`, `HiddenWindow.java` | Hidden SDL window, no focus, no Dock icon; only with `-Dvideocraft.hidden=true` | a |
-| `…/actor/` | `Hand` (human input model), `Cast`, `Puppet` (mob and mannequin actors), `Path`/`Stride`/`Footing`/`Heading`/`Life`/`Gesture` (motion, no Minecraft classes), `Looks`, `Skins`, `ActorLog` (actors.csv), `PlayerActor`, `Actions`; mixins in `mixin/actor/` | b |
-| `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
+| `…/actor/` | `Hand` (human input model), `Cast`, `Puppet`/`Puppets`/`PuppetState` (mob and mannequin actors), `Breed` (per-entity bodies and states), `Path`/`Stride`/`Footing`/`Heading`/`Life`/`Gesture` (motion, no Minecraft classes), `PoseBlend`, `Looks`, `Skins`, `ActorLog` (actors.csv), `PlayerActor`, `Actions`; mixins in `mixin/actor/` | b |
+| `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions`, `Caption`, `Title`, `LowerThird`, `Keycap`, `Message`, `TextLayout` (sizes, safe area), `Ink`, `TextLog` (text.json) | c |
+| `…/sound/`, `mixin/sound/` | `SoundLog` (sounds.csv), `SoundActions` (`sound`, `tune`, `ambience`, `particles`), `Notes`, `Synth`; `SoundEngineMixin` (log and seed every sound) | audio |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
 | `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `tools.py`, `paths.py`, `measure/` (picture, loudness, camera, text rules), `lint.py`, `timeline.py`, `compare.py`, `climb.py`, `modpack.py`, `agents.py` (the one model call: `ask`), `review/` (packets, rubrics, prompts, reviews) | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
+| `cli/videocraft/audio/` | The mix (`mix.py`), the synth bed (`synth.py`), game sounds from the local assets (`assets.py`), loudness, onsets | audio |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
 | `cli/videocraft/story/`, `cli/videocraft/series/`, `stories/` | The story pipeline (premise → shots.toml), series, `make`; prompts in `story/prompts/` ([docs/STORY.md](docs/STORY.md)) | story |
 | `modpack/pack.toml` | The distributable pack definition | d |
+| `cli/videocraft/sets/`, `sets/` | Sets as data (`sets/*.toml`, skin specs in `sets/skins/`), the builder, `[[world.set]]` expansion ([docs/SETS.md](docs/SETS.md)) | sets |
+| `cli/videocraft/clips/` | `assemble`, `clips find/cut/pack`: long form and vertical shorts ([docs/CLIPS.md](docs/CLIPS.md)) | clips |
+| `README.md`, `CONTRIBUTING.md`, `CREDITS.md`, `SECURITY.md`, `assets/` (code-drawn art), `docs/issues/`, `.github/` (CI, templates) | For people: the front page, how to help, credits and trademarks, good first issues | docs |
 | `cli/videocraft/voice/`, `cast/` | Local TTS per character (`worker/` runs in `cache/voice/venv`), word timings, the `say` resolver called by `script.py`, `voice check` ([docs/VOICE.md](docs/VOICE.md)) | voice |
 
 A new CLI command lives in its own subpackage's `commands.py` with `register(subparsers)`; do not add commands to
@@ -114,10 +125,11 @@ They protect the owner's machine and game. They are not preferences.
 - **Exact push-in holds** need the crop at even offsets and sizes (yuv420p chroma); ffmpeg's `scale=flags=neighbor`
   then equals source index `floor((2x+1)·cw / 2W)` on every plane (`videocraft edit verify` checks it). Sub-pixel
   zooms use `perspective=…:eval=frame` with `in` (ffmpeg 9 has no `n` there).
-- **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype, not yet re-checked here** (no
-  third-person or actor shots exist yet): view bobbing must be off for third-person cameras, and the camera must
-  follow a ground reference, not the player's head, or it bobs with steps and jumps; auto-jump must be off (it is, in
-  `options.txt` and on arrival); a mouse pointer at rest is frozen to the pixel and clicks only after it has stopped.
+- **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype:** view bobbing must be off for
+  third-person cameras (it is, for every rig) and the camera must follow a ground reference, not the head, or it
+  bobs with steps and jumps (every subject rig does); auto-jump must be off (it is, in `options.txt` and on arrival).
+  Not re-checked here, because no pointer is built yet: a mouse pointer at rest is frozen to the pixel and clicks
+  only after it has stopped.
 - **Layout rules** (DESIGN.md section 5): safe area x 96–1824, y 54–918; one message at a time; text complete on screen
   for `max(1.2 s, 0.5 s + 0.3 s per word)`; capital height under 44 px at 1920 wide does not count as shown at phone
   width.
@@ -128,8 +140,8 @@ They protect the owner's machine and game. They are not preferences.
   entities and the camera to the render thread. Actions and rigs run on the render thread.
 - **Model calls are slow and big.** One `claude -p` draft of a 30-shot shot script took about 10 minutes and came
   back as about 1000 lines of TOML; the story pipeline allows 30 minutes a call (`VIDEOCRAFT_ASK_TIMEOUT`). A
-  not-yet placeholder command (`lint`) takes no arguments, so calling it with a file is an argparse usage error
-  (exit 2), not a verdict.
+  not-yet placeholder command (`NOT_YET` in `cli.py`) takes no arguments, so calling it with a file is an argparse
+  usage error (exit 2), not a verdict.
 - **Uploaded 60 fps video repeats frames.** The benchmark's reference is lower-rate footage in a 60 fps file: about
   one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
   difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
@@ -146,7 +158,6 @@ They protect the owner's machine and game. They are not preferences.
   on hello 0001). A climb step that gains one point on one criterion is noise; `climb` keeps ties with the parent.
 - **The proposer must see the frames.** The first hello climb spent three takes moving a subject behind the same
   ice spikes, because it read the reviewers' words without the strips; it now gets the contact sheets and strips.
-
 - **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
   drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or
   pitch) comes from the instance's own `RandomSource`, which vanilla seeds from the level's or an entity's unseeded
@@ -175,8 +186,6 @@ They protect the owner's machine and game. They are not preferences.
 - **`ClientMannequin` takes its finished skin lookup only in its own tick**, so an unticked mannequin shows the default
   skin; puppets settle it when drawn. A profile `{texture = "videocraft:skins/x"}` is the texture
   `videocraft:textures/skins/x.png` (a `DynamicTexture` from the PNG), no network.
-- **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
-  `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
 - **Voice is compiled.** `say` lines are synthesized when the script compiles (and when lint runs), cached in
   `cache/voice/lines/` by a hash of what shapes the audio; the test suite pins `VIDEOCRAFT_VOICE=estimate`, so no test
   starts the voice worker. The worker runs with `python -I`, which leaves its own folder off `sys.path`.
