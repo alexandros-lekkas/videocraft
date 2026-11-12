@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `compare --side-by-side --video <ref> --run <it> -o <out.mp4>` films a reference video and an iteration side by
+  side, shot N against shot N (or in real time with `--align time`), each follower shot stretched or held to the lead
+  shot's length, with labels, a shared timecode and per-shot length deltas; it writes `side-by-side.md`/`.json` and a
+  contact sheet beside it. `docs/benchmarks/pinksheep-style.shots.toml` holds the benchmark reference's published
+  shot timings for it.
 - The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
   tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
 - `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and

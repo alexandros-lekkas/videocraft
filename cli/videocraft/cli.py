@@ -10,6 +10,7 @@
   videocraft measure --video <file>         measure any video (--from s --to s --out dir)
   videocraft review packet|add|run <it>     review packets, reviews, reviewer agents (docs/REVIEW.md)
   videocraft score <it> · compare <a> <b>   aggregate the reviews; what changed between two iterations
+  videocraft compare --side-by-side --video <ref> --run <it> -o <out.mp4>   a reference film against an iteration
   videocraft climb <script.toml> --budget N propose, run with --parent, review, keep if better
   videocraft modpack                        modpack/pack.toml → build/modpack/*.mrpack
   videocraft status | stop                  this checkout's client, over its control port
@@ -192,6 +193,21 @@ def cmd_lint(args):
 
 
 def cmd_compare(args):
+    if args.side_by_side:
+        if not (args.video and args.run_ref and args.output):
+            say('compare --side-by-side needs --video <reference.mp4>, --run <iteration> and -o <out.mp4>')
+            return 2
+        from videocraft.sidebyside import side_by_side
+        out, table = side_by_side(args.video, args.start, args.end, store.open_iteration(args.run_ref), args.output,
+                                  align=args.align, shots=args.shots, lead=args.lead, mode=args.fit, audio=args.audio,
+                                  layout=args.layout, say=say)
+        say((out.parent / 'side-by-side.md').read_text())
+        say(f'VIDEO    {out.resolve()}')
+        say(f'TABLE    {(out.parent / "side-by-side.md").resolve()}')
+        return 0
+    if not (args.a and args.b):
+        say('compare needs two iterations (`compare <a> <b>`), or --side-by-side with --video and --run')
+        return 2
     from videocraft.compare import compare
     out, data = compare(store.open_iteration(args.a), store.open_iteration(args.b))
     say((out / 'compare.md').read_text())
@@ -351,9 +367,22 @@ def build_parser():
     p.add_argument('--rubric', help='also check the rubric\'s limits (e.g. pinksheep-style: shots at most 7.5 s)')
     p.add_argument('--all', action='store_true', help='also print notes (info)')
     p.set_defaults(run=cmd_lint)
-    p = sub.add_parser('compare', help='scores, measured deltas and the same shots side by side, into <b>/compare/')
-    p.add_argument('a')
-    p.add_argument('b')
+    p = sub.add_parser('compare', help='scores, measured deltas and the same shots side by side, into <b>/compare/; '
+                       'or --side-by-side: a reference video against an iteration, in one film')
+    p.add_argument('a', nargs='?')
+    p.add_argument('b', nargs='?')
+    p.add_argument('--side-by-side', action='store_true', help='film a reference video (--video) and an iteration (--run) side by side (docs/REVIEW.md)')
+    p.add_argument('--video', help='with --side-by-side: the reference video')
+    p.add_argument('--from', dest='start', type=float, help='with --side-by-side: start of the reference section, seconds')
+    p.add_argument('--to', dest='end', type=float, help='with --side-by-side: end of the reference section, seconds')
+    p.add_argument('--run', dest='run_ref', metavar='run', help='with --side-by-side: our iteration (`<name>`, `<name>/<n>` or a path)')
+    p.add_argument('-o', '--output', help='with --side-by-side: the .mp4 to write; side-by-side.md/.json/-sheet.jpg go beside it')
+    p.add_argument('--align', choices=('shots', 'time'), default='shots', help='pair shot N with shot N (default), or play both in real time')
+    p.add_argument('--shots', help="the reference's shot list (TOML, e.g. docs/benchmarks/pinksheep-style.shots.toml); default: measure's cut detection")
+    p.add_argument('--lead', choices=('ours', 'ref'), default='ours', help='whose shot lengths the film keeps (default ours)')
+    p.add_argument('--fit', choices=('auto', 'stretch', 'hold'), default='auto', help='how a follower shot fills the lead shot (default auto: stretch 0.5x-2x, then hold or cut)')
+    p.add_argument('--audio', choices=('ours', 'ref', 'none'), default='ours')
+    p.add_argument('--layout', choices=('lr', 'tb'), default='lr', help='reference left and ours right (default), or reference above ours')
     p.set_defaults(run=cmd_compare)
     p = sub.add_parser('notes', help='show (or append to) an iteration\'s notes.md')
     p.add_argument('iteration')

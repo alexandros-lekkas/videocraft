@@ -14,8 +14,45 @@ bin/videocraft review run x                       # each role reviews through `c
 bin/videocraft review add x review.json           # … or store a review written elsewhere (validated)
 bin/videocraft score x                            # review/*.json → score.json (pass rule from the rubric)
 bin/videocraft compare x/3 x/4                    # scores, metric deltas, the same shots side by side
+bin/videocraft compare --side-by-side --video ref.mp4 --run x --shots list.toml -o out.mp4   # against a reference film
 bin/videocraft climb x.toml --budget 3            # propose → run --parent → keep if better
 ```
+
+## Side by side with a reference film
+
+A benchmark is judged against the form of a reference video; reviewers see stills, the owner wants to *watch* both.
+`compare --side-by-side` makes one 1920x1080 film of the reference (left, or top with `--layout tb`) and an
+iteration (right), each a 960x540 pane:
+
+```sh
+bin/videocraft compare --side-by-side --video reference/5nksTeAYa8Y.mp4 --from 0 --to 82.2 \
+    --run nibs-vs-duke/12 --shots docs/benchmarks/pinksheep-style.shots.toml \
+    -o reference/compare/nibs-vs-duke-vs-reference.mp4 [--align shots|time] [--lead ours|ref] \
+    [--fit auto|stretch|hold] [--audio ours|ref|none]
+```
+
+- **`--align shots`** (default) pairs reference shot N with our shot N, and a dip to black with the dip after the
+  same shot. Our shot numbers come from the clip names (`s07-saw` is 7, `s16b-trophy` joins 16, so one reference shot
+  can be two of ours); without numbers, shots pair in order and the extras of the longer list go unpaired. The
+  reference's shots come from a shot-list TOML (`[section] from/to`, `[[shot]] n, start, seconds, camera`), or from
+  `measure`'s cut detection when there is none. A follower never plays backwards: a pair out of order stays unpaired.
+- **The lead** (`--lead`, default ours) plays at its own speed and sets the film's clock; each follower shot is fitted
+  to the lead shot: `stretch` changes its speed to fill it, `hold` plays it at its own speed and holds its last frame
+  (or cuts it short), `auto` stretches within 0.5x-2x and then holds or cuts. A shot with no partner is a black pane
+  saying so. **`--align time`** plays both from their start at their own speed instead.
+- **Labels** (the built-in bitmap font): the shared timecode, `SHOT n / N`, the pair's length delta (green within
+  15 %, yellow within 40 %, red past it), two lanes of each film's shots at its own pace with a cursor each, and under
+  each pane its side, shot, camera type, length, play speed, hold or cut, and its own source timecode; for ours also
+  the clip, lens and measured subject centre and height.
+- **Audio** is ours by default (`--audio ref` fits the reference's sound with `atempo`; `none` for silence).
+- **Beside the video:** `side-by-side.md` and `.json` (per pair: both lengths and the delta, the reference's camera
+  type, our clip, rig, lens and measured framing, and whether the camera family matches: a lead track or follow
+  against a still) and `side-by-side-sheet.jpg`, one row per pair with the middle frame of each. The sheet is the
+  quickest read of where the form differs; the video shows the pacing.
+
+A third-party reference stays where it is: write the output into a git-ignored folder (`reference/compare/`), never
+commit or upload it. The shot list for the benchmark holds only the timing numbers already published in
+[benchmarks/pinksheep-style.md](benchmarks/pinksheep-style.md).
 
 ## What a packet holds (`review/packet/`)
 
