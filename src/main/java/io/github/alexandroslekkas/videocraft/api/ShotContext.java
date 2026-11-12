@@ -53,6 +53,9 @@ public interface ShotContext {
 	/** Seeded per take and shot: the same script and seed give the same take. */
 	Random random();
 
+	/** The camera pose of the frame being rendered, or of the last one. */
+	Pose camera();
+
 	/** Ends the take as FAIL with this reason; nothing is cut from a broken take. */
 	void fail(String reason);
 }

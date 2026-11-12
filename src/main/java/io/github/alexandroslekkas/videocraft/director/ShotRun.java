@@ -151,6 +151,11 @@ final class ShotRun implements ShotContext {
 	@Override public Actor actor(String id) { return director.actor(id); }
 	@Override public void command(String command) { director.command(command); }
 	@Override public Random random() { return random; }
+	@Override public Pose camera() {
+		if (pose != null) return pose;
+		var c = minecraft().gameRenderer.mainCamera();
+		return new Pose(c.position().x, c.position().y, c.position().z, c.yRot(), c.xRot());
+	}
 	@Override public void fail(String reason) { director.fail(name + ": " + reason); }
 
 	@Override
