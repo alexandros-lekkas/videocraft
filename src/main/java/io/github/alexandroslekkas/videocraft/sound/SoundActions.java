@@ -80,6 +80,7 @@ public final class SoundActions {
 		NoteBlockInstrument fixed = p.has("instrument") ? instrument(p.string("instrument"), p) : null;
 		float volume = (float) p.number("volume", 3);
 		boolean particles = p.bool("particles", true);
+		String mark = p.string("mark", null);
 		double start = shot.seconds(), seconds = 60.0 / bpm * step;
 		List<Notes.Note> notes = melody.notes();
 		return new Action() {
@@ -98,6 +99,7 @@ public final class SoundActions {
 					Identifier event = instrument.getSoundEvent().value().location();
 					float pitch = instrument.isTunable() ? Notes.pitch(n.value()) : 1f;
 					play(s, event, SoundSource.RECORDS, volume, pitch, Vec3.atCenterOf(pos), false);
+					if (mark != null && (next == 1 || notes.get(next - 2).step() != n.step())) s.mark(mark);
 					// The block's own note particle, coloured by the note, as vanilla's NoteBlock.triggerEvent.
 					if (particles && mc.level != null && instrument.isTunable())
 						mc.level.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, n.value() / 24.0, 0, 0);

@@ -36,6 +36,7 @@ do = "tune"
 blocks = [{ anchor = "spawn", offset = [-2, 1, 4] }, { anchor = "spawn", offset = [-1, 1, 4] }, { anchor = "spawn", offset = [0, 1, 4] },
           { anchor = "spawn", offset = [1, 1, 4] }, { anchor = "spawn", offset = [2, 1, 4] }]
 notes = "c4 e4 g4 c5 - g4 e4 c4*2 d4 f4 a4 d5*2"
+mark = "note"                 # each note's frame in marks.json, for cuts on the beat
 bpm = 140
 
 [[shot.cue]]
