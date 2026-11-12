@@ -179,6 +179,7 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
         if carry:
             new.append(carry['caption'])
             need_end = max(need_end, carry['end'] + carry['tail'])
+            prev_end = carry['end'] + carry['pause_after']   # a line without `at` waits for the carried words
             carry['entry']['carried_to'] = sname
             carry = None
         n = 0
@@ -222,7 +223,8 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                     else:
                         carry = {'caption': _caption(line, 0.0, [(d, at + s - t0) for d, s in rest],
                                                      c['actor'] if c.get('actor') in actors else 'player', c, ch, False),
-                                 'end': end - t0, 'tail': tail, 'entry': entry}
+                                 'end': end - t0, 'tail': tail, 'entry': entry,
+                                 'pause_after': float(c.get('pause_after', PAUSE_AFTER))}
                         carry['caption']['words'][0]['at'] = 0.0
             elif fit == 'extend':
                 need_end = max(need_end, end + tail)
