@@ -29,7 +29,7 @@ VENV_PY = Path(os.environ.get('VIDEOCRAFT_VOICE_PY') or VENV / 'bin' / 'python')
 LINES = VOICE_DIR / 'lines'
 # Bump when the worker's output for the same job changes (synthesis, levelling, alignment, snapping): old cache
 # entries are then simply not found.
-WORKER_VERSION = 2
+WORKER_VERSION = 3
 WEIGHTS = ('hexgrad/Kokoro-82M', 'facebook/wav2vec2-base-960h', 'mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit')
 QWEN_WEIGHTS = WEIGHTS[2]
 KOKORO_WEIGHTS = WEIGHTS[0]

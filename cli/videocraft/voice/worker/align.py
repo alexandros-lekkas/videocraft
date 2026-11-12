@@ -24,6 +24,8 @@ SR = 16000
 THR_DB = -40.0          # speech: 10 ms RMS above this, re the file's 99th-percentile frame
 MIN_GAP = 0.08          # a pause is at least this long
 CORE_DB = -25.0         # a run of speech reaches this somewhere (pause murmur does not)
+SEG_GAP = 0.005         # a dip inside a burst: at least this long below THR_DB (8 ms seen before "That")
+LEAD_MIN = 0.25         # sound before a dip that the aligner puts the first word after: a vocalization
 _model = {}
 
 
@@ -176,12 +178,25 @@ def bursts(path_or_wav, min_gap=MIN_GAP, min_len=0.03, fill=True):
     return [[round(a, 4), round(b, 4)] for a, b in merged if b - a >= min_len]
 
 
-def snap(words, path, bs=None):
-    """Each word goes to the burst holding most of its aligned span; the first word of a burst starts at its onset,
-    the last ends at its offset. Words inside a burst keep the aligner's times (kept in order)."""
+def lead_in(on, start, segs, min_lead=LEAD_MIN):
+    """Where a burst's first word really starts when the aligner puts it well after the burst onset: at the last
+    dip (a gap in `segs`, segments split by 5 ms below THR_DB) at or before the aligned start, if at least min_lead of sound comes
+    before that dip. That sound is a vocalization the text does not have (Qwen3 'deadpan' scoffed before "That"; ASR
+    skips it). A stretched first word ("Heyyy", 0.5 s late in CTC) has no dip, so it keeps the burst onset."""
+    if start - on < min_lead:
+        return on
+    cands = [s[0] for s in segs if on + min_lead <= s[0] <= start + 0.03]
+    return max(cands) if cands else on
+
+
+def snap(words, path, bs=None, segs=None):
+    """Each word goes to the burst holding most of its aligned span; the first word of a burst starts at its onset
+    (or after a lead-in, see lead_in), the last ends at its offset. Words inside a burst keep the aligner's times
+    (kept in order)."""
     if not words:
         return words
     bs = bursts(path) if bs is None else bs
+    segs = bursts(path, min_gap=SEG_GAP, min_len=0.01) if segs is None else segs
     if not bs:
         return [dict(w) for w in words]
     out = [dict(w) for w in words]
@@ -200,7 +215,7 @@ def snap(words, path, bs=None):
     for k, (on, off) in enumerate(bs):
         idx = [i for i, o in enumerate(owner) if o == k]
         if idx:
-            out[idx[0]]['start'] = round(on, 3)
+            out[idx[0]]['start'] = round(lead_in(on, words[idx[0]]['start'], segs), 3)
             out[idx[-1]]['end'] = round(off, 3)
     for i in range(len(out)):
         if i:

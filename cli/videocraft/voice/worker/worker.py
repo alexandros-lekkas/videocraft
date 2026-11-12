@@ -12,7 +12,8 @@ Per job: synthesize (one model load per process) -> speed/pitch (ffmpeg) -> one 
 LUFS, sample peak <= -1 dBFS) -> 48 kHz mono PCM16 `<out>.wav` -> wav2vec2 CTC alignment of the known tokens ->
 phrase onsets and ends snapped to the waveform (align.py) -> `<out>.words.json`. A line whose audio has speech no
 word covers (an orphan: the autoregressive TTS said something that is not in the text, or the aligner lost a word)
-is re-rolled with seed + 1, up to `retries` (2) times; the best take is kept and flagged if it is still suspect.
+or with an unscripted sound before a word (a scoff before a deadpan line) is re-rolled with seed + 1, up to
+`retries` (2) times; the best take is kept and flagged if it is still suspect.
 """
 import json
 import re
@@ -124,6 +125,10 @@ def take(job, seed):
     orphans = align.orphans(ctc, tmp, bs)
     problems = ([f'unaligned {lost}'] if lost else []) + ([f'speech no word covers at {orphans}'] if orphans else [])
     words = [{k: w[k] for k in ('word', 'start', 'end')} for w in align.snap(ctc, tmp, bs)]
+    lead = [[on, w['start']] for on, off in bs for w in words[:1] + [x for x in words if on <= x['start'] < off][:1]
+            if on <= w['start'] < off and w['start'] - on >= align.LEAD_MIN]
+    if lead:   # a vocalization the text does not have, before a word (snap starts the word after it)
+        problems.append(f'unscripted sound before a word at {lead[:1]}')
     seconds = len(wav) / OUT_SR
     return {'tmp': tmp, 'words': words, 'ctc': ctc, 'seconds': round(seconds, 3), 'gain_db': gain, 'seed': seed,
             'problems': problems, 'wall': time.time() - t0}
