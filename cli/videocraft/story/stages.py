@@ -22,6 +22,7 @@ PROMPTS = Path(__file__).resolve().parent / 'prompts'
 REPAIRS = 3
 KINDS = {'mob', 'mannequin', 'narrator', 'player'}
 MAX_SHOT = 7.5  # seconds: the comedy-short rule (docs/benchmarks/pinksheep-style.md)
+LENGTH = 'the shots add up to'
 
 
 def prompt_file(name):
@@ -55,11 +56,13 @@ def upstream(stage):
 
 # Checks ---------------------------------------------------------------------------------------------------------
 
-def check(stage, text, story, store=None, path=None):
-    """Problems with a draft, each phrased as a fix. Empty: it passes."""
+def check(stage, text, story, store=None, path=None, drafted=True):
+    """Problems with a draft, each phrased as a fix. Empty: it passes. A hand-written file (`drafted` false) is
+    trusted on its total length (a teaser or a test fixture may be short on purpose); a model draft is not."""
     if not text.strip():
         return [f'{FILES[stage]} is empty']
-    return CHECKS[stage](text, story, store, path)
+    problems = CHECKS[stage](text, story, store, path)
+    return problems if drafted else [p for p in problems if not p.startswith(LENGTH)]
 
 
 def _check_premise(text, story, store, path):
@@ -304,7 +307,7 @@ def run_stage(store, sid, stage, ask=None, note=None, from_file=None, lock=True,
     if from_file is not None:
         text = Path(from_file).read_text(encoding='utf-8')
         rev = store.add(sid, stage, text, parent=parent, note=note or f'from {Path(from_file).name}', source='file', inputs=inputs)
-        problems = check(stage, text, story, store, _check_path(store, sid, stage, rev))
+        problems = check(stage, text, story, store, _check_path(store, sid, stage, rev), drafted=False)
         if not problems:
             _after(store, sid, stage, rev)
             if lock:

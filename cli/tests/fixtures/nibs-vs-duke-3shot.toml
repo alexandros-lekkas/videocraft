@@ -1,0 +1,76 @@
+# A tiny, hand-written 3-shot shot script for the story pipeline's tests: shots 1-3 of Nibs vs Duke
+# (stories/nibs-vs-duke/script.md). Not the production script; it only has to compile.
+name = "nibs-vs-duke"
+seed = 7
+description = "Nibs vs Duke, shots 1-3 (test fixture for story build)"
+
+[world]
+seed = "videocraft"
+time = 10500
+settle = 4.0
+
+[[world.stage]]
+do = "command"
+commands = ["fill ~-3 ~-1 ~-2 ~3 ~-1 ~40 dirt_path", "fill ~0 ~-1 ~-2 ~0 ~-1 ~40 smooth_stone"]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "minecraft:goat"
+at = { anchor = "spawn", offset = [0, 0, 30] }
+left_horn = false
+
+# 1: "Hey. It's me. *Nibs." / "Best jumper in the whole valley."
+[[shot]]
+name = "strut"
+duration = 6.2
+camera = { rig = "lead", subject = "nibs", distance = 4.5, height = 1.0, pitch = 5, fov = 105 }
+
+[[shot.cue]]
+at = 0.0
+do = "walk"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [0, 0, 30] }, { anchor = "spawn", offset = [0, 0, 18] }]
+gait = "strut"
+
+[[shot.cue]]
+at = 0.4
+do = "say"
+actor = "nibs"
+text = "Hey. It's me. *Nibs."
+
+[[shot.cue]]
+at = 3.2
+do = "say"
+actor = "nibs"
+text = "Best jumper in the whole valley."
+
+# 2: "This *horn."
+[[shot]]
+name = "horn"
+duration = 1.2
+camera = { rig = "face", subject = "nibs", distance = 1.2, fov = 30 }
+
+[[shot.cue]]
+at = 0.1
+do = "say"
+actor = "nibs"
+text = "This *horn."
+
+# 3: "One's plenty."
+[[shot]]
+name = "bridge"
+duration = 1.7
+camera = { rig = "lead", subject = "nibs", distance = 4.5, height = 1.0, pitch = 5, fov = 105 }
+
+[[shot.cue]]
+at = 0.0
+do = "walk"
+actor = "nibs"
+path = [{ anchor = "spawn", offset = [0, 0, 18] }, { anchor = "spawn", offset = [0, 0, 14] }]
+
+[[shot.cue]]
+at = 0.2
+do = "say"
+actor = "nibs"
+text = "One's plenty."

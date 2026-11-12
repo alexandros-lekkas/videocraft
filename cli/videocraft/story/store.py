@@ -201,11 +201,13 @@ class Store:
         return self.story_dir(owner) / FILES[stage]
 
     def shas(self, sid, stages):
+        """{stage: sha} of this story's current stages; a key `<story>:<stage>` names another story's stage."""
         out = {}
-        for stage in stages:
-            t = self.text(sid, stage)
+        for key in stages:
+            owner, _, stage = key.rpartition(':')
+            t = self.text(owner or sid, stage)
             if t is not None:
-                out[stage] = sha(t)
+                out[key] = sha(t)
         return out
 
     def stale(self, sid, stage):

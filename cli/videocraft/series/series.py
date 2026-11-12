@@ -109,7 +109,7 @@ def new(store, sid, episodes, ask=None, from_file=None, fmt=None, say=print):
                      request=f'Episode {n} of {episodes} of {sid}: {ep["title"]}')
         text = premise_text(meta, title, ep, n, episodes, fmt, meta.get('vertical', False))
         rev = store.add(eid, 'premise', text, note=f'split from {sid}', source='series',
-                        inputs=store.shas(sid, ['premise', 'bible', 'outline']))
+                        inputs=store.shas(sid, [f'{sid}:premise', f'{sid}:bible', f'{sid}:outline']))
         store.lock(eid, 'premise', rev)
     meta = store.meta(sid)
     meta['episodes'] = ids
