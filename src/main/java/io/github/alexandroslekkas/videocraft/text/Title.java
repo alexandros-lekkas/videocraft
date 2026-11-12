@@ -165,7 +165,7 @@ final class Title extends Message {
 		for (int l = 0; l < fit.lineCount(); l++) {
 			List<Integer> line = fit.lines().get(l);
 			float w = TextLayout.lineWidth(words, line, Ink::width, space) * k;
-			float x = Math.round((layout.width() - w) / 2), y = Math.round(top + l * TextLayout.LINE * k);
+			float x = Math.round((float) layout.centreX() - w / 2), y = Math.round(top + l * TextLayout.LINE * k);
 			boxX0 = Math.min(boxX0, x);
 			boxX1 = Math.max(boxX1, x + w - k);
 			for (int i : line) {

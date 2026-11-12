@@ -11,7 +11,9 @@ import java.util.function.ToIntFunction;
  * 1920x1080 layout pixels; a 1080x1920 vertical frame is 1080x1920; a 1280x720 frame is also 1920x1080 (each layout
  * pixel two thirds of a frame pixel). So a size written in the script means the same on every frame, and the safe area
  * (DESIGN.md section 5: x 96-1824, y 54-918 at 1920x1080, that is 5% at the sides and top, 15% at the bottom) scales
- * with the frame's own width and height.
+ * with the frame's own width and height. A frame taller than wide is a vertical short, and TikTok, Shorts and Reels
+ * draw their buttons over its right edge and their caption and username over its bottom: there the safe area is x 5-88 %,
+ * y 5-75 % (54-950, 96-1440 at 1080x1920), clear of the right 12 % and the bottom 25 %.
  *
  * <p>The game's font is a bitmap: capitals are 7 font pixels tall, a line 9 (with descenders), and glyphs are drawn
  * with nearest-neighbour sampling. A whole number of frame pixels per font pixel keeps the letters crisp, so a cap
@@ -45,7 +47,14 @@ public final class TextLayout {
 	/** The safe area in layout pixels: {x0, y0, x1, y1}. */
 	public double[] safe() {
 		double w = width(), h = height();
+		if (h > w) return new double[] {w * 0.05, h * 0.05, w * 0.88, h * 0.75};
 		return new double[] {w * 0.05, h * 0.05, w * 0.95, h * 0.85};
+	}
+
+	/** Where centred text is centred: the middle of the safe area (the frame's middle, except on a vertical frame). */
+	public double centreX() {
+		double[] s = safe();
+		return (s[0] + s[2]) / 2;
 	}
 
 	/** The safe area in frame pixels, rounded: {x0, y0, x1, y1}. */

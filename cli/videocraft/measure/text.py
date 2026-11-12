@@ -6,7 +6,8 @@ words_count, words [{w, frame, key}]}; a simpler {start, end (exclusive), box [x
 is read too (tests and hand-made fixtures).
 
 Frames are the shot's own. Rules, all at the frame's own size (the 1920x1080 numbers scale with the frame):
-safe area x 5-95 %, y 5-85 % (96-1824, 54-918); one message at a time; complete on screen (from its last word)
+safe area x 5-95 %, y 5-85 % (96-1824, 54-918), and on a frame taller than wide x 5-88 %, y 5-75 % (54-950, 96-1440 at
+1080x1920: clear of the short-video apps' buttons on the right and caption at the bottom); one message at a time; complete on screen (from its last word)
 for at least max(1.2 s, 0.5 s + 0.3 s a word); capital height at least 44 px at 1920 wide; at most 2.5 words a
 second over the time it is on screen. One-word items under the reading time are listed apart (montage words).
 """
@@ -14,6 +15,7 @@ import json
 from pathlib import Path
 
 SAFE = (96 / 1920, 54 / 1080, 1824 / 1920, 918 / 1080)
+SAFE_VERTICAL = (0.05, 0.05, 0.88, 0.75)   # text/TextLayout.safe() for a frame taller than wide
 CAP_MIN = 44
 WPS_MAX = 2.5
 
@@ -76,7 +78,8 @@ def load(path, fps):
 def check(items, fps, width=1920, height=1080, shot=None):
     """Violations of every rule, and a per-item table. Each violation names the shot, the frame and the text."""
     scale = width / 1920
-    safe = (SAFE[0] * width, SAFE[1] * height, SAFE[2] * width, SAFE[3] * height)
+    area = SAFE_VERTICAL if height > width else SAFE
+    safe = (area[0] * width, area[1] * height, area[2] * width, area[3] * height)
     table, problems = [], []
 
     def problem(rule, item, detail):

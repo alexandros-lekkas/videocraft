@@ -129,7 +129,7 @@ final class Caption extends Message {
 			List<Integer> line = lines.get(l);
 			float width = TextLayout.lineWidth(texts, line, Ink::width, space) * k;
 			// Whole layout pixels keep the font's pixels on whole frame pixels at a 1080-line frame.
-			float x = Math.round((layout.width() - width) / 2);
+			float x = Math.round((float) layout.centreX() - width / 2);
 			float y = Math.round(top + l * lineHeight);
 			boxX0 = Math.min(boxX0, x);
 			boxX1 = Math.max(boxX1, x + width - k);
@@ -144,8 +144,8 @@ final class Caption extends Message {
 		if (speaker != null) {
 			tagK = Math.max(5, Math.min(k - 2, TextLayout.fontScale(TAG_CAP)));
 			float w = (Ink.width(speaker) - 1) * tagK, pad = 1.5f * tagK;
-			tagX1 = Math.round(layout.width() / 2 + w / 2 + pad);
-			tagX0 = Math.round(layout.width() / 2 - w / 2 - pad);
+			tagX1 = Math.round((float) layout.centreX() + w / 2 + pad);
+			tagX0 = Math.round((float) layout.centreX() - w / 2 - pad);
 			tagY1 = Math.round(boxY0 - 0.9f * k);
 			tagY0 = Math.round(tagY1 - TextLayout.CAP * tagK - 2 * 1.1f * tagK);
 		}
