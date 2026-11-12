@@ -61,12 +61,14 @@ class TranscriptTests(unittest.TestCase):
     def test_on_screen_text_and_sounds_are_listed(self):
         raw = {'name': 'x', 'shot': [{'name': 'a', 'duration': 2, 'note': 'A goat stares at a poster.', 'cue': [
             {'at': 0, 'do': 'card', 'text': 'THREE YEARS LATER'}, {'at': 0.5, 'do': 'sound', 'id': 'minecraft:entity.goat.screaming.ambient'},
-            {'at': 1, 'do': 'say', 'actor': 'nibs', 'text': 'Again?', 'style': 'shout'}]}]}
+            {'at': 1, 'do': 'say', 'actor': 'nibs', 'text': 'Again?', 'style': 'shout'},
+            {'at': 1.5, 'do': 'say', 'actor': 'nibs', 'text': 'Next slide. Next slide!', 'cut_on': 3}]}]}
         out = read.text(read.transcript(raw))
         self.assertIn('picture: A goat stares at a poster.', out)
         self.assertIn('on screen: card: THREE YEARS LATER', out)
         self.assertIn('sound: entity.goat.screaming.ambient', out)
         self.assertIn('Nibs [nibs]: Again?  (shout)', out)
+        self.assertIn('(cut to the next shot on "slide!")', out)     # cut_on as a word index names the word
 
 
 class ReadTests(unittest.TestCase):

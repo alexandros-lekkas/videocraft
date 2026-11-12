@@ -147,8 +147,12 @@ def transcript(raw, source=None):
                 line = {'character': cid, 'speaker': who, 'text': _clean(c.get('text', ''))}
                 if c.get('style'):
                     line['style'] = c['style']
-                if c.get('cut_on'):
-                    line['cut_on'] = _clean(c['cut_on'])
+                cut = c.get('cut_on')
+                if isinstance(cut, int) and not isinstance(cut, bool):   # a word index of the line
+                    words = line['text'].split()
+                    cut = words[cut] if 0 <= cut < len(words) else None
+                if cut:
+                    line['cut_on'] = _clean(cut)
                 entry['lines'].append(line)
             elif do in TEXT_ACTIONS:
                 words = c.get('text') or c.get('title') or ''
