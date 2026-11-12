@@ -158,6 +158,14 @@ They protect the owner's machine and game. They are not preferences.
   `examples/rigs.toml` match frame for frame (framemd5) and byte for byte (`frames.csv`).
 - **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
   `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
+- **Vertical takes.** A hidden 540x960 window gives a 1080x1920 framebuffer on a 2x Mac and the text layer lays every
+  caption out for it; `clips cut` passes the window itself. A 9:16 crop of a 16:9 master loses any text outside the
+  crop, so re-framing falls back to the whole frame over a blurred fill; re-shooting is the way to keep text.
+- **A moving ffmpeg crop:** `sendcmd=f=<file>,crop=…` with one `<t> crop x <px>;` line per change moves the crop
+  per frame. The re-frame operator needs about 0.3 s of look-ahead: at 0.15 s a fast-drifting subject left the crop's
+  centre 60 % in a fifth of its frames, at 0.3 s in none.
+- **argparse:** a positional named `run` in a command group overwrites `set_defaults(run=…)` (TypeError: 'str'
+  object is not callable); give it another `dest` and `metavar='run'`.
 
 ## Working with agents
 
