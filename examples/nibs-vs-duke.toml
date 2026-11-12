@@ -1390,6 +1390,7 @@ at = 0.75
 do = "caption"
 style = "whole"
 text = "*zzz"
+position = "top"
 speaker = { name = "Duke", color = "#e8eef5" }
 
 # The end card.
