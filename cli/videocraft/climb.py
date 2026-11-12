@@ -45,7 +45,9 @@ def proposal_prompt(script_text, score, report, lint_lines, history, errors=None
          'You are the director in a hill-climb. The script below was filmed in Minecraft, cut, measured and scored by '
          'reviewers. Write the next version: the changes most likely to raise the score, above all the reviewers\' fixes '
          'and the criteria that scored lowest. Keep what works. Change several things at once only if they serve the same '
-         'fix. Use only keys and actions documented in the script reference below; the take is filmed for real.', '',
+         'fix. Use only keys and actions documented in the script reference below; the take is filmed for real. The '
+         'attached images are the current cut\'s contact sheets and frame strips: look at what is actually in front of '
+         'the lens before you move the camera or the subject.', '',
          '## The script now', '', '```toml', script_text.strip(), '```', '',
          '## Its score', '', '```json', json.dumps({k: score.get(k) for k in ('rubric', 'criteria', 'average', 'minimum', 'gates', 'pass', 'reasons')}, indent=1), '```', '',
          '### The reviewers\' fixes', '']
@@ -127,7 +129,7 @@ def climb(script_path, budget, rubric_ref=None, reviewers=None, model=None, run_
         errors, proposal, notes = None, None, ''
         for attempt in range(2):
             try:
-                reply = agents.ask(proposal_prompt(script_text, s_best, report, lint_lines, history, errors), model=model)
+                reply = agents.ask(proposal_prompt(script_text, s_best, report, lint_lines, history, errors), images=_frames(it_best), model=model)
                 proposal, notes = parse_proposal(reply)
             except (agents.AgentError, ValueError) as e:
                 errors, proposal = str(e), None
@@ -172,9 +174,18 @@ def climb(script_path, budget, rubric_ref=None, reviewers=None, model=None, run_
     return _save(log, log_path)
 
 
+def _frames(it, limit=16):
+    """The best iteration's contact sheets and strips, so the proposer sees what the reviewers saw (what is in front of
+    the lens, where the subject is), not only their words."""
+    packet = it.review / 'packet'
+    files = sorted(packet.glob('contact/*.jpg')) + sorted(packet.glob('strips/*.jpg'))
+    files = files or sorted(packet.glob('contact/*.png')) + sorted(packet.glob('strips/*.png'))
+    return files[:limit]
+
+
 def _first_line(notes):
     for line in notes.splitlines():
-        line = line.strip(' -*#')
+        line = line.strip(' -#').replace('**', '')
         if line:
             return line[:160]
     return ''

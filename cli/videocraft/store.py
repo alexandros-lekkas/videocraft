@@ -155,8 +155,10 @@ def update_index(project: Path):
             seen.add(cur)
             cur = _parent_name(rows[cur]['parent'])
         row['chain'] = chain
-    scored = [r for r in rows.values() if r['score'] is not None and r['verdict'] == 'PASS']
-    best = max(scored, key=lambda r: (r['score'], r['iteration']))['iteration'] if scored else None
+    best, best_score = None, None
+    for r in rows.values():   # the climb's rule: a later iteration must score strictly higher (ties stay earlier)
+        if r['score'] is not None and r['verdict'] == 'PASS' and (best_score is None or r['score'] > best_score):
+            best, best_score = r['iteration'], r['score']
     index = {'name': project.name, 'best': best, 'iterations': list(rows.values())}
     (project / 'index.json').write_text(json.dumps(index, indent=2) + '\n')
     return index
