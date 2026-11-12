@@ -14,6 +14,11 @@ Rules (each problem: severity error | warn | info, rule, where, message):
   anchor            `{ anchor = "set:mark" }` naming a set that [[world.set]] does not place; an anchor that is
                     not built in (info: actions may define it during the take)
   mark              `until` or an edit clip's `in`/`out` naming a mark no cue in that shot makes (warn)
+  unvoiced_text     in a script with a cast or say lines: a caption, title or lower_third of 3 or more words no
+                    voice speaks (warn: voice it with `say`; on-screen text is for signs, cards and posts)
+  slow_line         a voiced line of 3 or more words under 2.6 words a second (warn; info for a slow style)
+  dead_air          more than 0.8 s without a voice between two lines inside a run of dialogue shots (warn; not over
+                    black, not across a shot without lines, not before a `beat = true` line)
 Owned by workstream (d).
 """
 import json
@@ -74,7 +79,7 @@ def lint(raw, rubric=None):
             resolved = dialogue.resolve(raw, log=lambda line: None)
         except script.ScriptError as e:
             return [{'severity': 'error', 'rule': 'say', 'where': 'dialogue', 'message': str(e)}]
-        return dialogue.lint_spoken(lint(resolved, rubric), resolved)
+        return dialogue.lint_spoken(lint(resolved, rubric), resolved) + voice_rules(resolved)
     problems = []
 
     def add(severity, rule, where, message):
@@ -169,7 +174,41 @@ def lint(raw, rubric=None):
             label = clip.get(key)
             if isinstance(label, str) and label not in marks_by_shot.get(clip.get('shot'), set()):
                 add('warn', 'mark', f'edit.clip[{i}].{key}', f'mark "{label}" is not made by a mark cue in shot {clip.get("shot")}')
+    if raw.get('cast') and 'dialogue' not in (raw.get('edit') or {}):
+        problems += voice_rules(raw)   # a cast but no say line yet (with say lines, the resolved branch adds them)
     return problems
+
+
+UNVOICED_MIN = 3
+
+
+def voice_rules(resolved):
+    """Voiced and fast is the default (the owner: voiced lines are "significantly better" than captions, and the
+    first films' lines were too slow): unvoiced text, slow lines and dead air, on the resolved script."""
+    from videocraft.measure import dialogue as pace
+    out = []
+    fps = int((resolved.get('output') or {}).get('fps', 60))
+    for shot in resolved.get('shot') or []:
+        for k, c in enumerate(shot.get('cue') or []):
+            if not isinstance(c, dict) or c.get('do') not in ('caption', 'title', 'lower_third') or c.get('voiced'):
+                continue
+            n = _words(c)[0] + len(str(c.get('subtitle') or '').split())
+            if n >= UNVOICED_MIN:
+                out.append({'severity': 'warn', 'rule': 'unvoiced_text', 'where': f'shot {shot.get("name")}.cue[{k}]',
+                            'message': f'{c["do"]} of {n} words that no voice speaks: voice it with `say` (the caption '
+                                       'comes with it); keep silent on-screen text for signs, cards and posts'})
+    lines, segments, shots, _ = pace.script_lines(resolved, fps)
+    for l in pace.slow(lines):
+        out.append({'severity': 'info' if l['slow_style'] else 'warn', 'rule': 'slow_line', 'where': f'line {l["id"]}',
+                    'message': f'{l["words"]} words at {l["wps"]:.2f} words a second (under {pace.SLOW_WPS}; the default '
+                               'pace is 3.2): shorten it, drop a slow style, or raise the character\'s pace'
+                               + (f' ({l["style"]}: slow on purpose)' if l['slow_style'] else '')})
+    for g in pace.dead_air(lines, segments, shots):
+        out.append({'severity': 'warn', 'rule': 'dead_air', 'where': f'line {g["before"]}',
+                    'message': f'{g["seconds"]:.2f} s without a voice after {g["after"]} (at {g["start"]:.2f}-{g["end"]:.2f} s '
+                               f'of the cut; over {pace.DEAD_AIR} s): drop the at so the line packs, shorten the shot, '
+                               'or mark the line beat = true if the pause is the joke'})
+    return out
 
 
 def _plugin_namespace(name):
