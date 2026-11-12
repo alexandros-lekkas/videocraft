@@ -1,0 +1,61 @@
+name: A shot that looks wrong
+description: The run passed (or nearly did), but the video does not look right.
+labels: [visual]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Visual bugs are fixed by looking at the same frames you looked at. Pull one or two frames out of the video:
+
+        ```sh
+        mkdir -p /tmp/vc && ffmpeg -i <VIDEO> -vf "select='eq(n\,90)'" -fps_mode passthrough /tmp/vc/f90.png
+        ```
+
+        and attach the PNGs here. Attach frames, not the whole run folder, and nothing from your real Minecraft
+        folder or the game's own assets.
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What looks wrong
+      description: What you see, at which frame or time, and what you expected to see instead.
+      placeholder: "Frames 40-55 of shot `walk-in`: the camera jumps about one block to the left, then settles."
+    validations:
+      required: true
+  - type: textarea
+    id: frames
+    attributes:
+      label: Frames
+      description: Drag the PNGs in. Two frames (one good, one wrong) are ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: The end of the run
+      description: The `RESULT` ... `TIME` lines.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: folder
+    attributes:
+      label: The run folder (runs/<script>/<n>/)
+      description: Tick what you checked; paste anything that looks off below.
+      options:
+        - label: "`take/result.json`: the verdict and the shot that failed, if any"
+        - label: "`take/shots/<name>/frames.csv`: the frame, time and camera columns around the bad frame"
+        - label: "`take/shots/<name>/` other logs (actors.csv, sounds.csv, text.json) if the shot uses them"
+        - label: "`take/game.log`: warnings near the shot"
+        - label: "`take/shots/<name>/video.mp4`: the problem is in the captured shot too, not only in `cut/master.mp4`"
+        - label: "`measure/metrics.json` and `measure/contact.png`: what measure reported"
+        - label: "It happens again on a second `bin/videocraft run` of the same script"
+  - type: textarea
+    id: rows
+    attributes:
+      label: Anything from those files
+      render: text
+  - type: textarea
+    id: script
+    attributes:
+      label: The shot's script
+      render: toml
