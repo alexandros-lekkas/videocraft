@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The mix is mastered to -2 dBTP (was -1): the AAC encode of the master overshoots the mix by 0.8-0.9 dB, so a
+  -1.0 mix measured -0.5 dBTP in `master.mp4`.
 - `clips cut --method reshoot` keeps actors' skins: a relative `skin` path is taken as the take resolved it, not
   relative to the run's copy of the script (the vertical take failed with "no skin PNG").
 - Text never shrinks under 44 px: the smallest font scale for titles, cards, captions and lower thirds rounds up (7, 49 px), not
