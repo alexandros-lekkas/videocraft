@@ -448,6 +448,8 @@ voice it with `say`), `slow_line` (a voiced line of 3 or more words under 2.6 wo
 `sleepy`, `sad`) and `dead_air` (more than 0.8 s without a voice between two lines inside a run of dialogue shots;
 not over a black gap, not across a shot without lines, not before a `beat = true` line); `mix_balance` (`[edit.mix]`
 settings that let the music under a line come within 12 LU of the voice, or the bed between lines within 6 LU of
-it). Notes: one-word montage
+it); `cast_voice` (two speaking characters with one voice: an error for the same engine, preset and instruction; a
+warning for a shared preset, a generic voice, one display name for two, or lines measured under 3 semitones apart;
+[VOICE.md](VOICE.md#different-people-different-voices)). Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
 are in `measure/report.md` (docs/REVIEW.md).

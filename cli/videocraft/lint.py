@@ -19,6 +19,8 @@ Rules (each problem: severity error | warn | info, rule, where, message):
   slow_line         a voiced line of 3 or more words under 2.6 words a second (warn; info for a slow style)
   dead_air          more than 0.8 s without a voice between two lines inside a run of dialogue shots (warn; not over
                     black, not across a shot without lines, not before a `beat = true` line)
+  cast_voice        two speaking characters with the same voice (engine, preset and instruction: error), or sharing a
+                    preset, a generic voice, one display name, colliding draft voices (warn); voice/cast.py lint
   mix_balance       [edit.mix] settings that put the music under a line less than 12 LU below the voice
                     (music_under_voice), or the bed between lines within 6 LU of the voice (music_level) (warn); the
                     measured balance of a cut is measure's (metrics.json `balance`)
@@ -83,7 +85,7 @@ def lint(raw, rubric=None):
             resolved = dialogue.resolve(raw, log=lambda line: None)
         except script.ScriptError as e:
             return [{'severity': 'error', 'rule': 'say', 'where': 'dialogue', 'message': str(e)}]
-        return dialogue.lint_spoken(lint(resolved, rubric), resolved) + voice_rules(resolved)
+        return dialogue.lint_spoken(lint(resolved, rubric), resolved) + voice_rules(resolved) + cast_rules(raw, resolved)
     problems = []
 
     def add(severity, rule, where, message):
@@ -212,6 +214,24 @@ def mix_rules(raw):
 
 
 UNVOICED_MIN = 3
+
+
+def cast_rules(raw, resolved=None):
+    """Different people, different voices (voice/cast.py lint): the speaking characters of the say lines; with
+    synthesized lines (the resolved script's edit.dialogue), also their measured pitch (voice/pitch.py)."""
+    from videocraft.voice import cast as castmod, pitch
+    speakers = [c.get('character') or c.get('actor') for s in (raw.get('shot') or []) if isinstance(s, dict)
+                for c in (s.get('cue') or []) if isinstance(c, dict) and c.get('do') == 'say']
+    speakers = [s for s in speakers if isinstance(s, str) and s]
+    if not speakers:
+        return []
+    actors = {a['id']: a for a in (raw.get('actor') or []) if isinstance(a, dict) and isinstance(a.get('id'), str)}
+    try:
+        cast = castmod.load(raw.get('cast'), None, actors)
+    except castmod.CastError as e:
+        return [{'severity': 'error', 'rule': 'cast_voice', 'where': 'cast', 'message': str(e)}]
+    pitches = pitch.character_pitches(((resolved or {}).get('edit') or {}).get('dialogue'))
+    return castmod.lint(cast, speakers, pitches=pitches)
 
 
 def voice_rules(resolved):
