@@ -198,7 +198,7 @@ name = "s04-market"
 duration = 3.1
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, yaw_drift = -3, drift = 0.6 }
+camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, side = 1.2, yaw_drift = -3, drift = 0.6 }
 
 [[shot.cue]]
 at = -1.0
@@ -269,7 +269,7 @@ name = "s06-notice"
 duration = 4.7
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, yaw_drift = 3, drift = 0.6 }
+camera = { rig = "lead", subject = "nibs", distance = 3.4, height = 1.0, pitch = 5, fov = 100, side = -1.0, yaw_drift = 6, drift = 0.6 }
 
 [[shot.cue]]
 at = -1.0
@@ -301,7 +301,7 @@ hold = 1.1
 # 7. A jump cut: Nibs slows, its head turning as the notice board edges into frame on the right.
 [[shot]]
 name = "s07-saw"
-duration = 2.8
+duration = 2.2
 preroll = 1.0
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, side = -0.6, drift = 0.5 }
@@ -322,14 +322,14 @@ speed = 1.2
 arrive = 0.9
 
 [[shot.cue]]
-at = 0.2
+at = 0.05
 do = "say"
 actor = "nibs"
 style = "deadpan"
-text = "And I *saw it."
+text = "I *saw it."
 
 [[shot.cue]]
-at = 1.0
+at = 0.6
 do = "look"
 actor = "nibs"
 target = { anchor = "market-lane:poster.look" }
@@ -355,6 +355,7 @@ at = 0.08
 do = "sound"
 id = "videocraft:dun"
 relative = true
+volume = 0.6
 
 # 9. Nibs stares at the board; the picture dips to black.
 [[shot]]
@@ -393,24 +394,32 @@ style = "sad"
 text = "I remember last *year."
 speed = 1.2
 
+[[shot.cue]]
+at = 0.9
+do = "state"
+actor = "nibs"
+state = "lower"
+seconds = 1.6
+
 # ================================================================ scene 2: the barn stage, night (the flashback)
 
 # 10. Fading up from black: Duke sits centre stage, chin up.
 [[shot]]
 name = "s10-duke"
-duration = 0.6
+duration = 1.1
+preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-duke" }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:stage-center" }
 facing = -90
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "state"
 actor = "duke"
 state = "sit"
@@ -432,7 +441,7 @@ volume = 0.8
 [[shot]]
 name = "s11-trot"
 duration = 1.1
-preroll = 0.4
+preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-high-wide" }
 
@@ -469,11 +478,12 @@ volume = 0.8
 [[shot]]
 name = "s12-note"
 duration = 1.2
+preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-note-close" }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:note-1", offset = [-1.2, 0, 0] }
@@ -497,18 +507,19 @@ instrument = "harp"
 [[shot]]
 name = "s13-hit"
 duration = 2.7
+preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-trophy" }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:trophy", offset = [-0.3, -1, -1.5] }
 facing = { anchor = "barn-stage:cam-trophy" }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "state"
 actor = "duke"
 state = "sit"
@@ -519,6 +530,13 @@ do = "say"
 actor = "duke"
 style = "smug"
 text = "Hit *it."
+
+[[shot.cue]]
+at = 0.85
+do = "sound"
+id = "videocraft:crash"
+relative = true
+volume = 0.8
 
 [[shot.cue]]
 at = 1.2
@@ -537,19 +555,20 @@ bpm = 120
 # 14. The note-block row plays on its own, notes rising from each block in time.
 [[shot]]
 name = "s14-notes"
-duration = 4.0
+duration = 2.8
+preroll = 1.0
 time = 18000
 camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [6.8, 0.95, 1.9] }, at = { anchor = "barn-stage:stage-center", offset = [2.4, 0.1, 0.0] }, fov = 50 }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:stage-center", offset = [1.7, 0, 0] }
 facing = -90
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "state"
 actor = "duke"
 state = "sit"
@@ -558,25 +577,26 @@ state = "sit"
 at = 0.0
 do = "tune"
 blocks = [{ anchor = "barn-stage:note-1" }, { anchor = "barn-stage:note-2" }, { anchor = "barn-stage:note-3" }, { anchor = "barn-stage:note-4" }, { anchor = "barn-stage:note-5" }, { anchor = "barn-stage:note-6" }, { anchor = "barn-stage:note-7" }]
-notes = "e4 g4 a4 g4 e4 c4 d4 e4 c4 - g3 c4 e4 g4 a4*2"
+notes = "e4 g4 a4 g4 e4 c4 d4 e4 g4 c5*2"
 bpm = 120
 
 [[shot.cue]]
 at = 0.2
 do = "talk"
 actor = "duke"
-seconds = 3.6
+seconds = 2.5
 size = 1.0
 
 # 15. Insert with a slow push-in: one note block as its notes rise.
 [[shot]]
 name = "s15-note-one"
-duration = 3.9
+duration = 2.4
+preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [2.3, 0.45, 0.8] }, at = { anchor = "barn-stage:note-4", offset = [-0.4, 0.35, 0.1] }, fov = 40 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [1.1, 0.45, 2.6] }, at = { anchor = "barn-stage:note-4", offset = [-0.5, 0.2, -0.8] }, fov = 42 }
 
 [[shot.cue]]
-at = 1.8
+at = 1.1
 do = "nod"
 actor = "duke"
 size = 0.5
@@ -585,26 +605,27 @@ seconds = 0.6
 [[shot.cue]]
 at = 0.0
 do = "tune"
-block = { anchor = "barn-stage:note-4" }
-notes = "c5 b4 a4 g4 a4 b4 c5 d5 e5*2 d5 c5 a4 g4 c5*3"
+blocks = [{ anchor = "barn-stage:note-1" }, { anchor = "barn-stage:note-2" }, { anchor = "barn-stage:note-3" }, { anchor = "barn-stage:note-4" }, { anchor = "barn-stage:note-5" }, { anchor = "barn-stage:note-6" }, { anchor = "barn-stage:note-7" }]
+notes = "c5 b4 a4 g4 a4 b4 c5 d5 e5*2"
 bpm = 120
 
 # 16. High and wide, the chickens big in front: Duke finishes, bows, takes the trophy in its mouth, waits.
 [[shot]]
 name = "s16-bow"
-duration = 4.9
+duration = 5.9
+preroll = 1.0
 time = 18000
 camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [13.5, 1.6, 0.0] }, at = { anchor = "barn-stage:stage-center", offset = [2.0, 0.45, 1.6] }, fov = 30 }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:stage-center", offset = [1.7, 0, 0] }
 facing = -90
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "state"
 actor = "duke"
 state = "sit"
@@ -637,6 +658,7 @@ actor = "duke"
 style = "smug"
 text = "Thank you. Thank *you."
 fit = "none"
+caption = { position = "top" }
 
 [[shot.cue]]
 at = 2.2
@@ -672,9 +694,16 @@ target = { actor = "hen-2" }
 hold = 1.0
 
 [[shot.cue]]
-at = 3.0
+at = 3.9
 do = "look"
 actor = "hen-3"
+target = "camera"
+hold = 1.8
+
+[[shot.cue]]
+at = 4.5
+do = "look"
+actor = "hen-1"
 target = "camera"
 hold = 1.2
 
@@ -682,6 +711,7 @@ hold = 1.2
 [[shot]]
 name = "s17-egg"
 duration = 2.7
+preroll = 1.0
 time = 18000
 camera = { view = "barn-stage:cam-chicken", fov = 30 }
 
@@ -714,21 +744,22 @@ volume = 0.8
 [[shot]]
 name = "s18-ovation"
 duration = 2.6
+preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [5.6, 0.8, 1.7] }, at = { anchor = "barn-stage:stage-center", offset = [2.0, 0.3, 0.4] }, fov = 42 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:stage-center", offset = [-0.6, 1.0, -1.6] }, at = { anchor = "barn-stage:stage-center", offset = [10.5, 0.5, 0.6] }, fov = 50 }
 
 [[shot.cue]]
-at = 0.0
+at = -1.0
 do = "place"
 actor = "duke"
-to = { anchor = "barn-stage:stage-center", offset = [2.0, 0, 0.4] }
-facing = { anchor = "barn-stage:stage-center", offset = [5.6, 0.8, 1.7] }
+to = { anchor = "barn-stage:stage-center", offset = [1.7, 0, 0] }
+facing = -90
 
 [[shot.cue]]
-at = 0.9
-do = "state"
+at = 1.3
+do = "look"
 actor = "duke"
-state = "sit"
+target = "camera"
 
 [[shot.cue]]
 at = 0.05
@@ -753,7 +784,7 @@ name = "s19-jump"
 duration = 4.5
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, yaw_drift = -3, drift = 0.6 }
+camera = { rig = "lead", subject = "nibs", distance = 4.0, height = 1.3, pitch = 9, fov = 92, yaw_drift = -3, drift = 0.6 }
 
 [[shot.cue]]
 at = -1.0
@@ -788,7 +819,7 @@ name = "s20-least"
 duration = 1.4
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, swing = true }
+camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, lag = 0.45 }
 
 [[shot.cue]]
 at = -1.0
@@ -846,7 +877,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.0
@@ -854,7 +885,14 @@ do = "caption"
 text = "*SIX"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
+
+[[shot.cue]]
+at = 0.0
+do = "nod"
+actor = "nibs"
+size = -0.45
+seconds = 0.35
 
 [[shot]]
 name = "s22-times"
@@ -882,7 +920,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.0
@@ -890,7 +928,13 @@ do = "caption"
 text = "*TIMES"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
+
+[[shot.cue]]
+at = -0.3
+do = "look"
+actor = "nibs"
+target = "camera"
 
 [[shot]]
 name = "s23-more"
@@ -918,7 +962,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.0
@@ -926,7 +970,14 @@ do = "caption"
 text = "*MORE"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
+
+[[shot.cue]]
+at = 0.0
+do = "nod"
+actor = "nibs"
+size = 0.45
+seconds = 0.3
 
 [[shot]]
 name = "s24-goat"
@@ -954,7 +1005,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.0
@@ -962,7 +1013,14 @@ do = "caption"
 text = "*GOAT"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
+
+[[shot.cue]]
+at = 0.0
+do = "shake"
+actor = "nibs"
+size = 0.5
+seconds = 0.35
 
 [[shot]]
 name = "s25-than"
@@ -990,7 +1048,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.05
@@ -1011,7 +1069,7 @@ do = "caption"
 text = "*THAN"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
 
 [[shot]]
 name = "s26-him"
@@ -1039,7 +1097,7 @@ at = 0.0
 do = "sound"
 id = "videocraft:kick"
 relative = true
-volume = 0.6
+volume = 0.4
 
 [[shot.cue]]
 at = 0.0
@@ -1047,7 +1105,14 @@ do = "caption"
 text = "*HIM"
 style = "whole"
 size = 112
-position = "top"
+position = "bottom"
+
+[[shot.cue]]
+at = -0.1
+do = "state"
+actor = "nibs"
+state = "lower"
+seconds = 0.5
 
 # 27. Wide: Nibs walks on through the orchard, very pleased.
 [[shot]]
@@ -1055,7 +1120,7 @@ name = "s27-today"
 duration = 1.6
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, drift = 0.6 }
+camera = { rig = "lead", subject = "nibs", distance = 3.6, height = 1.7, pitch = 14, fov = 96, drift = 0.6 }
 
 [[shot.cue]]
 at = -1.0
@@ -1116,27 +1181,27 @@ text = "I *challenge Duke to a jump-off!"
 caption = { position = "top" }
 
 [[shot.cue]]
-at = 1.4
+at = 0.9
 do = "turn"
 actor = "nibs"
 to = "camera"
 
 [[shot.cue]]
-at = 2.0
+at = 2.2
 do = "state"
 actor = "nibs"
 state = "lower"
 seconds = 1.1
 
 [[shot.cue]]
-at = 3.3
+at = 3.6
 do = "voice"
 actor = "nibs"
 sound = "scream"
 volume = 1.0
 
 [[shot.cue]]
-at = 3.3
+at = 3.6
 do = "nod"
 actor = "nibs"
 size = -0.7
@@ -1243,7 +1308,6 @@ at = 0.0
 do = "card"
 title = "NIBS vs DUKE"
 subtitle = "The Jump-Off"
-fade_in = 0.25
 
 # ================================================================ the edit
 [edit]
@@ -1313,7 +1377,7 @@ shot = "s27-today"
 [[edit.clip]]
 shot = "s28-challenge"
 fade_out = 12
-push = [{ at = 196, zoom = 1.4, x = 960, y = 660, ramp = 4 }]
+push = [{ at = 214, zoom = 1.4, x = 960, y = 660, ramp = 4 }]
 [[edit.clip]]
 black = 0.6
 [[edit.clip]]
@@ -1337,7 +1401,7 @@ grade = { saturation = 0.8, contrast = 1.12, brightness = 0.04, gamma = 1.25, ti
 source = "synth"
 style = "upbeat"
 bpm = 120
-key = "f major"
+key = "c major"
 gain = -3
 fade_in = 0.0
 fade_out = 0.6
@@ -1364,6 +1428,23 @@ fade = 1.0
 
 # The barn's music is Duke's own note-block solo, in the world.
 [[edit.music.cue]]
+shot = "s10-duke"
+at = 0.0
+do = "thin"
+fade = 0.6
+
+[[edit.music.cue]]
+shot = "s13-hit"
+at = 0.85
+do = "hit"
+
+[[edit.music.cue]]
+shot = "s16-bow"
+at = 1.4
+do = "out"
+fade = 0.8
+
+[[edit.music.cue]]
 shot = "s19-jump"
 at = 0.0
 do = "full"
@@ -1378,7 +1459,7 @@ do = "hit"
 # Cut to silence on the scream's dip to black; the sting on Duke's card; the button.
 [[edit.music.cue]]
 shot = "s28-challenge"
-at = 3.2
+at = 3.5
 do = "out"
 fade = 0.3
 
