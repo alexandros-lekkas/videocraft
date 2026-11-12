@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `review packet` writes a sound sheet for the sound reviewer: `sound.md` (every placed effect, voice word and music
+  cue on its master frame, the dips' loudness, per shot the visible actions beside what is heard) and loudness charts
+  `sound/loudness-<k>.png`; the sound prompt now judges sync, ducking and silence at the dips from them.
 - The benchmark film `examples/nibs-vs-duke.toml` (docs/benchmarks/pinksheep-style.md): thirty shots and an end
   card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
   flashback, dips to black and the six-shot montage cut on the spoken words; production log in

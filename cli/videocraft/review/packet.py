@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 from videocraft import timeline, tools
-from videocraft.review import prompts, rubric as rubrics
+from videocraft.review import prompts, rubric as rubrics, sound
 from videocraft.review.image import Canvas
 
 BIG = (640, 360)
@@ -193,6 +193,7 @@ def build(it, rubric_ref=None, reviewers=None, every=None, say=print):
         files['cuts'].append(str(path.relative_to(out)))
 
     (out / 'captions.md').write_text(_captions(it, plan, clips, fps))
+    files['sound'] = sound.build(it, plan, clips, fps, total, out)
     for name in ('report.md', 'metrics.json'):
         if (it.measure / name).exists():
             shutil.copyfile(it.measure / name, out / name)

@@ -6,7 +6,7 @@ whose first ```toml fenced block is the rubric (docs/REVIEW.md is both the gener
     [pass]   average = 7.0, minimum = 5, max_shot_seconds = 7.5 (optional, lint uses it)
     [[gate]]       id, name, measures                          pass/fail; one fail fails the review
     [[criterion]]  id, name, measures, anchor_5, anchor_9, numbers = ["picture.shot_stats", …] (metrics to read)
-    [[role]]       id, name, focus, criteria = [ids], images = ["strips", "contact", "cuts"]
+    [[role]]       id, name, focus, criteria = [ids], images = ["strips", "contact", "cuts", "sound"]
 
 Every criterion must be scored by at least one role. Owned by workstream (d).
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 from videocraft.paths import ROOT
 
 DEFAULT = ROOT / 'docs/REVIEW.md'
-IMAGE_SETS = {'strips', 'contact', 'cuts'}
+IMAGE_SETS = {'strips', 'contact', 'cuts', 'sound'}
 ID = re.compile(r'^[a-z][a-z0-9_]{0,31}$')
 
 

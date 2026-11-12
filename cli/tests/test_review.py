@@ -191,3 +191,38 @@ class Packet(unittest.TestCase):
         self.assertIn('cuts/cut-01.jpg', pacing)
         self.assertIn('exactly three', pacing)
         self.assertEqual(sorted(p.name for p in (out / 'prompts').iterdir()), ['pacing.md', 'sound.md'])
+
+    def test_sound_sheet(self):
+        it = self.it
+        master = it.cut / 'master.mp4'
+        silent = it.cut / 'silent.mp4'
+        master.rename(silent)
+        subprocess.run([tools.ffmpeg(), '-v', 'error', '-i', str(silent), '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1.8333',
+                        '-c:v', 'copy', '-c:a', 'aac', '-shortest', str(master)], check=True)
+        (it.path / 'voice.json').write_text(json.dumps([{'id': 'a-1', 'character': 'nibs', 'shot': 'a', 'file': 'v1.wav', 'text': 'Hi *there.',
+                                                         'seconds': 0.6, 'words': [{'word': 'Hi', 'start': 0.1, 'end': 0.3}, {'word': '*there.', 'start': 0.35, 'end': 0.6}]}]))
+        (it.cut / 'audio.json').write_text(json.dumps({
+            'mode': 'game', 'seconds': 1.83, 'sample_rate': 48000, 'channels': 2, 'loudness': {'integrated': -14.0, 'true_peak': -1.6},
+            'music': {'source': 'synth', 'style': 'upbeat', 'at': 0.0, 'cues': [{'time': 1.0, 'do': 'hit'}]},
+            'events': [{'source': 'game', 'event': 'minecraft:entity.goat.step', 'file': 'mob/goat/step1', 'shot': 'b', 'frame': 12,
+                        'time': 1.2, 'gain_db': -9.0}],
+            'voice': [{'file': 'v1.wav', 'shot': 'a', 'frame': 6, 'time': 0.1}],
+            'skipped': [{'shot': 'a', 'frame': -3, 'event': 'minecraft:entity.goat.step', 'reason': 'started before the cut-in and short'}]}))
+        plan = it.plan()
+        plan['shots'][1]['timeline'].append({'at': 0.2, 'do': 'jump', 'actor': 'nibs'})
+        (it.path / 'plan.json').write_text(json.dumps(plan))
+        manifest = packet.build(it, 'pinksheep-style', 'sound', say=lambda *_: None)
+        out = it.review / 'packet'
+        self.assertEqual(manifest['files']['sound'], ['sound/loudness-1.png'])
+        self.assertEqual((out / 'sound/loudness-1.png').read_bytes()[:4], b'\x89PNG')
+        sheet = (out / 'sound.md').read_text()
+        self.assertIn('| 0:01.20 | 72 | b | 12 | game | entity.goat.step | mob/goat/step1 | -9.0 |', sheet)
+        self.assertIn('Hi@M12 *there.@M27', sheet)                 # 0.1 s + word start, in master frames
+        self.assertIn('| 0:01.00 | 60 | hit |', sheet)
+        self.assertIn('jump nibs @72', sheet)                        # shot b's frame 12 is master frame 72
+        self.assertIn('entity.goat.step @72', sheet)
+        self.assertIn('started before the cut-in and short | 1 |', sheet)
+        prompt = (out / 'prompts/sound.md').read_text()
+        self.assertIn('sound/loudness-1.png', prompt)
+        self.assertIn('Judging sound without hearing it', prompt)
+        self.assertIn('strips/01-a.jpg', prompt)
