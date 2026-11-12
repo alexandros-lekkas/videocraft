@@ -18,6 +18,7 @@ import importlib
 import json
 import sys
 import time
+from pathlib import Path
 
 from videocraft import __version__, game, script, store
 from videocraft.paths import PORT_OVERRIDE, SLOT_PORTS
@@ -114,9 +115,20 @@ def cmd_cut(args):
 
 
 def cmd_measure(args):
-    from videocraft.measure import measure
-    metrics = measure(store.open_iteration(args.iteration))
-    say(json.dumps(metrics, indent=2))
+    from videocraft import measure
+    if args.video:
+        out = args.out or 'measure'
+        metrics = measure.measure_video(args.video, args.start, args.end, out)
+        say((Path(out) / 'report.md').read_text())
+        say(f'METRICS  {Path(out).resolve() / "metrics.json"}')
+        return 0
+    if not args.iteration:
+        say('measure needs an iteration (`<name>`, `<name>/<n>` or a path) or --video <file>')
+        return 2
+    it = store.open_iteration(args.iteration)
+    metrics = measure.measure(it)
+    say((it.measure / 'report.md').read_text())
+    say(f'METRICS  {it.measure / "metrics.json"}')
     return 0 if metrics['pass'] else 1
 
 
@@ -220,10 +232,16 @@ def build_parser():
     p.add_argument('--no-cut', action='store_true', help='take only')
     p.add_argument('--keep-world', action='store_true', help='keep the world a seed created (in run-game/saves)')
     p.set_defaults(run=cmd_run)
-    for name, fn in (('cut', cmd_cut), ('measure', cmd_measure)):
-        p = sub.add_parser(name)
-        p.add_argument('iteration')
-        p.set_defaults(run=fn)
+    p = sub.add_parser('cut')
+    p.add_argument('iteration')
+    p.set_defaults(run=cmd_cut)
+    p = sub.add_parser('measure', help='measure an iteration, or any video file with --video')
+    p.add_argument('iteration', nargs='?')
+    p.add_argument('--video', help='measure this video file instead of an iteration')
+    p.add_argument('--from', dest='start', type=float, help='with --video: start of the stretch, seconds')
+    p.add_argument('--to', dest='end', type=float, help='with --video: end of the stretch, seconds')
+    p.add_argument('--out', help='with --video: folder for metrics.json and report.md (default ./measure)')
+    p.set_defaults(run=cmd_measure)
     p = sub.add_parser('runs')
     p.add_argument('name')
     p.set_defaults(run=cmd_runs)
