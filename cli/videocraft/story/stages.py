@@ -198,7 +198,10 @@ def lint(path, text):
         if tmp:
             Path(tmp.name).unlink(missing_ok=True)
     out = (done.stdout + done.stderr).strip()
-    if done.returncode == 0 or 'not implemented yet' in out or 'invalid choice' in out:
+    # Not there yet: the placeholder (exit 2, "not implemented yet"; it takes no file, so argparse's usage error comes
+    # first) or no such command. A usage error is our call being wrong, not the script: never sent to the model.
+    if done.returncode == 0 or 'not implemented yet' in out or 'invalid choice' in out or \
+            done.returncode == 2 and out.startswith('usage:'):
         return []
     return [f'videocraft lint: {line}' for line in out.splitlines() if line.strip()][:30]
 

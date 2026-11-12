@@ -152,6 +152,15 @@ def cmd_show(args, store):
 
 @_guarded
 def cmd_lock(args, store):
+    path = store.revision_path(args.story, args.stage, args.rev)
+    problems = stages.check(args.stage, path.read_text(encoding='utf-8'), store.meta(args.story), store,
+                            path if args.stage == 'shots' else None, drafted=False)
+    if problems and not args.force:
+        for p in problems:
+            say(f'  - {p}')
+        raise StoryError(f'{args.story} {args.stage} r{args.rev} does not pass its checks (--force locks it anyway)')
+    if not problems:
+        stages._after(store, args.story, args.stage, args.rev)
     store.lock(args.story, args.stage, args.rev)
     say(f'LOCKED   {args.story} {args.stage} r{args.rev} → {store.path(args.story, args.stage)}')
     return 0
@@ -232,6 +241,7 @@ def register(sub):
     q.add_argument('story')
     q.add_argument('stage', choices=STAGES)
     q.add_argument('rev', type=int)
+    q.add_argument('--force', action='store_true', help='lock a revision that fails its checks')
     q.set_defaults(run=cmd_lock)
     s.add_parser('list', help='every story in stories/').set_defaults(run=cmd_list)
 

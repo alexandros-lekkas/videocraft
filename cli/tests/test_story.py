@@ -255,8 +255,31 @@ class MakeTests(StoryCase):
         self.assertTrue(commands)
 
 
+class LockCommandTests(StoryCase):
+    def test_lock_checks_the_revision_first(self):
+        self.nvd('script')
+        bad = self.tmp / 'bad.toml'
+        bad.write_text(FIXTURE.read_text().replace('rig = "face"', 'rig = "drone"'))
+        stages.run_stage(self.store, 'nibs-vs-duke', 'shots', from_file=bad, say=quiet)
+        stages.run_stage(self.store, 'nibs-vs-duke', 'shots', from_file=FIXTURE, lock=False, say=quiet)
+        env = {'VIDEOCRAFT_STORIES': str(self.tmp / 'stories'), 'VIDEOCRAFT_STORY_RUNS': str(self.tmp / 'runs/story')}
+        from videocraft import cli
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, env), redirect_stdout(out):
+            refused = cli.main(['story', 'lock', 'nibs-vs-duke', 'shots', '1'])
+            locked = cli.main(['story', 'lock', 'nibs-vs-duke', 'shots', '2'])
+        self.assertEqual((refused, locked), (2, 0), out.getvalue())
+        self.assertIn('rig "drone"', out.getvalue())
+        self.assertEqual(self.store.locked('nibs-vs-duke', 'shots'), 2)
+        self.assertTrue(self.store.revision_path('nibs-vs-duke', 'shots', 2).with_suffix('.plan.json').exists())
+
+
 class LintHookTests(unittest.TestCase):
     def test_lint_is_skipped_while_it_is_a_placeholder_and_reported_when_it_fails(self):
+        # The placeholder takes no file argument, so argparse refuses the call first: skipped, not sent to the model.
+        done = mock.Mock(returncode=2, stdout='', stderr='usage: videocraft [-h] [--version]\nvideocraft: error: unrecognized arguments: x.toml')
+        with mock.patch.object(stages.subprocess, 'run', return_value=done):
+            self.assertEqual(stages.lint(None, 'name = "x"'), [])
         done = mock.Mock(returncode=2, stdout='`videocraft lint` is not implemented yet (workstream d)', stderr='')
         with mock.patch.object(stages.subprocess, 'run', return_value=done):
             self.assertEqual(stages.lint(None, 'name = "x"'), [])
