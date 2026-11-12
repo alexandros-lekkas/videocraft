@@ -1,6 +1,7 @@
-# The sound track: game sounds logged on their frames, a note-block tune, an ambience bed, a synth music bed with
-# cues, a black gap. The muted game logs every sound to shots/<name>/sounds.csv; the mix rebuilds them from your own
-# game assets (or synthesizes stand-ins with [edit] audio = "original").
+# The sound track: game sounds logged on their frames, a note-block tune, an ambience bed, sounds by meaning (tags and
+# the comedy palette), music picked by mood with cues, a black gap. The muted game logs every sound to
+# shots/<name>/sounds.csv; the mix rebuilds them from your own game assets, and the original-audio export swaps each
+# one for its original library stand-in (docs/SOUNDS.md).
 #   bin/videocraft run examples/sound.toml
 #   bin/videocraft audio events sound --onsets        each event's onset in the mix against its frame
 name = "sound"
@@ -67,9 +68,15 @@ id = "minecraft:entity.chicken.ambient"
 pos = { anchor = "spawn", offset = [3.5, 0.4, 1.5] }
 
 [[shot.cue]]
+at = 1.2
+do = "sound"
+palette = "boing"             # the slime's hop, pitched up; the original export plays the library boing
+pos = { anchor = "spawn", offset = [3.5, 0.4, 1.5] }
+
+[[shot.cue]]
 at = 2.0
 do = "sound"
-id = "minecraft:entity.chicken.egg"
+palette = "plop"              # the chicken laying an egg
 pos = { anchor = "spawn", offset = [3.5, 0.2, 1.5] }
 
 [[shot.cue]]
@@ -87,6 +94,44 @@ id = "minecraft:entity.chicken.ambient"
 pos = { anchor = "spawn", offset = [3.5, 0.4, 1.5] }
 pitch = 1.2
 
+[[shot.cue]]
+at = 3.5
+do = "sound"
+tag = "pop"                   # the best Minecraft sound tagged pop (the item pickup)
+pos = { anchor = "spawn", offset = [3.5, 0.6, 1.5] }
+
+# The reveal: a note-block drumroll, a villager cheer just after its last hit (not on it: it would be masked), a rimshot.
+[[shot]]
+name = "reveal"
+duration = 4.5
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [5.5, 1.6, -1.0] }, at = { anchor = "spawn", offset = [3.5, 0.6, 1.5] }, fov = 55 }
+
+[[shot.cue]]
+at = 0.1
+do = "sound"
+palette = "drumroll"
+relative = true
+
+[[shot.cue]]
+at = 1.95
+do = "particles"
+id = "minecraft:happy_villager"
+pos = { anchor = "spawn", offset = [3.5, 0.8, 1.5] }
+count = 12
+spread = 0.5
+
+[[shot.cue]]
+at = 1.95
+do = "sound"
+palette = "cheer"
+relative = true
+
+[[shot.cue]]
+at = 3.3
+do = "sound"
+palette = "rimshot"
+relative = true
+
 [edit]
 audio = "game"
 
@@ -99,10 +144,13 @@ black = 0.8
 [[edit.clip]]
 shot = "yard"
 
+[[edit.clip]]
+shot = "reveal"
+
+# A game track picked by mood (source = "auto", the default): the music map's playful tracks, started at the track's
+# measured entry; the original-audio export plays the synth bed in the playful style (comedy-chase) instead.
 [edit.music]
-source = "synth"
-style = "upbeat"
-bpm = 128
+mood = "playful"
 gain = -2
 
 # The bed thins to drums under the tune, comes back full, drops out for the egg and lands a hit at the end.
@@ -127,5 +175,17 @@ shot = "yard"
 at = 3.5
 do = "hit"
 
+# A whoosh placed by the edit on the cut into the reveal (not logged by the take).
+[[edit.sfx]]
+shot = "reveal"
+at = 0.0
+palette = "whoosh"
+gain = -4
+
 [edit.mix]
-duck = ["entity.chicken.egg"]
+duck = ["tag:plop", "tag:cheer"]
+
+# Both sound tracks from one script: cut/x-1080p60.mp4 (game audio) and cut/x-1080p60-original-audio.mp4.
+[[edit.export]]
+preset = "x-1080p60"
+audio = "original"

@@ -1,0 +1,189 @@
+# The benchmark reference's shot list, 0:00-1:22.2: only the start times, lengths and camera types already
+# published in docs/benchmarks/pinksheep-style.md (shot-by-shot breakdown; shots 21-26 start one after another from
+# 1:06.1). Nothing else from the video. Read by `videocraft compare --side-by-side --shots <this file>`.
+# Where a start plus its length runs past the next start (shots 1 and 29), or stops short of it by 0.25 s or less, the next start wins; a longer gap
+# is black (after 9, 28 and 30).
+
+[section]
+from = 0.0
+to = 82.2
+
+[[shot]]
+n = 1
+start = 0.0
+seconds = 7.04
+camera = "lead track"
+
+[[shot]]
+n = 2
+start = 7.0
+seconds = 1.35
+camera = "ecu cut-in"
+
+[[shot]]
+n = 3
+start = 8.4
+seconds = 1.9
+camera = "lead track"
+
+[[shot]]
+n = 4
+start = 10.3
+seconds = 3.54
+camera = "lead track"
+
+[[shot]]
+n = 5
+start = 13.8
+seconds = 2.69
+camera = "lead track"
+
+[[shot]]
+n = 6
+start = 16.5
+seconds = 5.38
+camera = "lead track"
+
+[[shot]]
+n = 7
+start = 21.9
+seconds = 3.14
+camera = "lead track"
+
+[[shot]]
+n = 8
+start = 25.0
+seconds = 2.49
+camera = "graphic"
+
+[[shot]]
+n = 9
+start = 27.5
+seconds = 2.97
+camera = "lead track"
+
+[[shot]]
+n = 10
+start = 31.4
+seconds = 0.65
+camera = "static"
+
+[[shot]]
+n = 11
+start = 32.1
+seconds = 1.28
+camera = "static"
+
+[[shot]]
+n = 12
+start = 33.3
+seconds = 1.37
+camera = "insert"
+
+[[shot]]
+n = 13
+start = 34.7
+seconds = 3.07
+camera = "static"
+
+[[shot]]
+n = 14
+start = 37.8
+seconds = 5.01
+camera = "static"
+
+[[shot]]
+n = 15
+start = 42.8
+seconds = 4.88
+camera = "insert"
+
+[[shot]]
+n = 16
+start = 47.7
+seconds = 5.98
+camera = "static"
+
+[[shot]]
+n = 17
+start = 53.6
+seconds = 3.03
+camera = "static"
+
+[[shot]]
+n = 18
+start = 56.7
+seconds = 2.9
+camera = "static"
+
+[[shot]]
+n = 19
+start = 59.6
+seconds = 5.1
+camera = "lead track"
+
+[[shot]]
+n = 20
+start = 64.7
+seconds = 1.46
+camera = "lead track"
+
+[[shot]]
+n = 21
+start = 66.1
+seconds = 0.53
+camera = "lead track"
+
+[[shot]]
+n = 22
+start = 66.63
+seconds = 0.2
+camera = "lead track"
+
+[[shot]]
+n = 23
+start = 66.83
+seconds = 0.55
+camera = "lead track"
+
+[[shot]]
+n = 24
+start = 67.38
+seconds = 0.37
+camera = "lead track"
+
+[[shot]]
+n = 25
+start = 67.75
+seconds = 0.55
+camera = "lead track"
+
+[[shot]]
+n = 26
+start = 68.3
+seconds = 0.18
+camera = "lead track"
+
+[[shot]]
+n = 27
+start = 68.5
+seconds = 1.87
+camera = "lead track"
+
+[[shot]]
+n = 28
+start = 70.4
+seconds = 5.2
+camera = "lead track"
+
+[[shot]]
+n = 29
+start = 76.6
+seconds = 3.4
+camera = "graphic"
+
+[[shot]]
+n = 30
+start = 79.7
+seconds = 1.2
+camera = "graphic"
