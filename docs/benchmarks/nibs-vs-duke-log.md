@@ -26,6 +26,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 4 | 0010 | 8.0 | 7.0 | 7.0 | 5.0 | 6.0 | 7.0 | 6.0 | 7.0 | 6.5 | **6.61** | 5 | pass |
 | 5 | 0011 | 8.0 | 7.5 | 7.0 | 5.0 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | **6.56** | 5 | pass |
 | 6 | 0012 | 8.0 | 7.0 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
+| 7 | 0003 (second climb) | 8.0 | 7.0 | 6.5 | 5.5 | 6.0 | 6.0 | **7.0** | 6.5 | 6.0 | **6.50** | 5.5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -88,6 +89,26 @@ Round 6 (0012) is again 6.61, minimum 5.5: four rounds inside ±0.05 of the same
 there. **Best iteration: 0012** (tied for the best average with 0007, 0009 and 0010; the highest minimum; the only one
 with every multi-word caption up for its reading time). 0013 is the script as committed (Duke's "zzz" moved above
 him) and passes; its frames.csv and actors.csv match 0012's byte for byte where nothing changed.
+
+## The second climb (night build, after round 6)
+
+Rounds 3-6 sat inside ±0.05 of 6.61, so small tweaks were exhausted; this climb makes bigger moves on the weakest
+criteria (acting, comedic timing, sound, energy, text). Iterations restart at 0001 in the production worktree; changed
+shots were first checked in short test takes of only those shots (about a minute each) before a full take.
+
+| Run | What changed | Measured | Seen |
+|--:|:--|:--|:--|
+| 0001 | Acting: a crouch before each jump; Nibs sniffs and bites at the produce stall (s04), skips and glances to the lens (s06), a dead stop and a glance-away-snap-back double take at the board with a whoosh (s07), a look to the lens on "plenty" and "snacks", head away to the valley then snapped to the lens on "Duke", a ram wind-up with the goat's prepare-ram sound, a stamp and the scream (s28, no swing). Duke: a fade-up wide of the hall, a panning trot (`locked`), steps onto note 1, trots along the tops of the seven note blocks (flush with the stage) as each plays under him, hops on one block for the big phrase, a crouch-and-climb onto the trophy's pedestal, a tilt-yawn-stretch-sleep button. The hens look four ways and snap to the lens together on "standing". Edit: the montage at the reference's exact lengths (0.5/0.25/0.5/0.35/0.5/0.25 s), a gesture per word, 140 px words at the top; punch-ins on "Nibs", "plenty", "jump" and the scream; one-frame head trims at the four joins that repeated a frame. Sound: a music drop on the look to the lens, full silence for the double take, the bed out with the picture at the dip, a sting and hit on Duke's card, a 1.8 s fade at the end, whooshes, boings, the fox's bite on the trophy | PASS 73.58 s | s14's walk along the note row reads at once; the hens' snap reads; s02 framed the chest, s15 too close to see the block, s16 from behind the rail made the hens white blobs, s16b's hop left the frame, the montage's last pushes put the lens on the goat |
+| 0002 | Test takes: s02 head-on (`face`), s15 back and low in profile, s16 a medium, s16b up onto the pedestal on purpose (the anchor is the block centre; `face = "camera"` on the climb), gentler montage pushes | PASS; 29 shots (s14-s16 merge: three frames on the same red curtain, 9.7 s); silence between crickets in the bow | Every new beat reads |
+| 0003 | s16 over Duke's shoulder to the hens (a new background for the detector; the bow plays to the unmoved audience); crickets every 0.35 s through s16-s17 | PASS 73.58 s; **30 shots**, median 2.39 s, longest 6.2 s; six under 0.6 s; black 0:26.15-0:27.03 and 1:05.37-1:06.03; silence only at the dips; −14.2 LUFS, −1.5 dBTP | Reviewed: round 7 |
+| 0004 | Round 7's fixes: the montage cut on the voice's word onsets (23/28/22/21/17 frames after SIX, HIM held 0.5 s), words in the lower band and Nibs to the lens on each; s16 the bow in profile along the note row (barn windows behind, not the curtain); s11 pan lag 0.7; no punch-in on the s19 jump (it cropped the head) and a wider lead; Nibs stops and looks to the lens on "Nibs." then struts on; the stamp on "jump-off!"; one hen's lone flap-hop is the whole ovation; the goat's own eat and long-jump sounds; crickets under s12 | PASS 73.58 s; 29 shots (s14/s15 and s17/s18 joins not seen), median 2.40 s; six under 0.6 s; −14.2 LUFS | Stop on "Nibs.", the flap, the stamp read in the frames |
+
+Round 7 (0003 of the second climb, the first with the sound sheet in the packet): sound 7 for the first time
+(the reviewer could check every effect against its frame: "sharp hits on jumps, hops, the egg and the trophy"),
+pacing 8, camera 7; staging, timing and energy 6-6.5, so the average is flat (6.50). What they agreed on: the
+montage words cut 7-15 frames off their spoken words and covered Nibs' head; the bow read from behind as a cropped
+back; Nibs' first act is still one walk to the lens; the trophy climb, the egg, the jump and the sleep read without
+text. Applied in 0004 and 0005 (table above).
 
 ## Where it stands
 
