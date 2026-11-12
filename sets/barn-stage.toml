@@ -143,6 +143,18 @@ from = [-11, 1, -7]
 to = [-11, 6, 7]
 block = "red_wool"
 
+# Pleats: every other column a shade darker, so the curtain reads as cloth hanging in folds.
+[[build]]
+do = "blocks"
+list = [
+  [-11, 1, -5, "red_concrete"], [-11, 2, -5, "red_concrete"], [-11, 3, -5, "red_concrete"], [-11, 4, -5, "red_concrete"], [-11, 5, -5, "red_concrete"], [-11, 6, -5, "red_concrete"],
+  [-11, 1, -3, "red_concrete"], [-11, 2, -3, "red_concrete"], [-11, 3, -3, "red_concrete"], [-11, 4, -3, "red_concrete"], [-11, 5, -3, "red_concrete"], [-11, 6, -3, "red_concrete"],
+  [-11, 1, -1, "red_concrete"], [-11, 2, -1, "red_concrete"], [-11, 3, -1, "red_concrete"],
+  [-11, 1, 1, "red_concrete"], [-11, 2, 1, "red_concrete"], [-11, 3, 1, "red_concrete"],
+  [-11, 1, 3, "red_concrete"], [-11, 2, 3, "red_concrete"], [-11, 3, 3, "red_concrete"], [-11, 4, 3, "red_concrete"], [-11, 5, 3, "red_concrete"], [-11, 6, 3, "red_concrete"],
+  [-11, 1, 5, "red_concrete"], [-11, 2, 5, "red_concrete"], [-11, 3, 5, "red_concrete"], [-11, 4, 5, "red_concrete"], [-11, 5, 5, "red_concrete"], [-11, 6, 5, "red_concrete"],
+]
+
 [[build]]
 do = "box"
 from = [-11, 1, -7]
@@ -256,19 +268,36 @@ list = [
   [6, 0, -8, "crafting_table"], [6, 1, -8, "lantern[hanging=false]"],
 ]
 
-# Soft fill so no corner goes black, low enough to keep the night.
+# Bunting under the tie beams, over the audience and the stage front.
+[[build]]
+do = "bunting"
+strings = [[[-6, 6.6, -8.4], [-6, 6.6, 8.4]], [[-1, 6.6, -8.4], [-1, 6.6, 8.4]], [[4, 6.6, -8.4], [4, 6.6, 8.4]]]
+sag = 1.0
+colors = ["red_wool", "yellow_wool", "white_wool", "orange_wool"]
+
+# Candles along the hay and the stage lip: warm points of light in every wide.
+[[build]]
+do = "blocks"
+list = [
+  [-6, 1, -5, "candle[candles=3,lit=true]"], [-6, 1, 5, "candle[candles=2,lit=true]"],
+  [-6, 1, -2, "candle[candles=1,lit=true]"], [-6, 1, 2, "candle[candles=1,lit=true]"],
+  [10, 1, 7, "candle[candles=3,lit=true]"],
+  [-10, 1, -3, "lantern[hanging=false]"], [-10, 1, 3, "lantern[hanging=false]"],
+]
+
+# Fill: warm enough to read every face, still night (the windows stay dark, the corners stay dim).
 [[build]]
 do = "light"
 from = [-10, -7]
 to = [11, 7]
 y = 3
-step = 5
-level = 8
+step = 4
+level = 11
 
 [[build]]
 do = "light"
-at = [[-8, 2, 0], [-8, 2, -3], [-8, 2, 3], [-3, 1, 0], [1, 2, 0]]
-level = 13
+at = [[-8, 2, 0], [-8, 2, -3], [-8, 2, 3], [-8, 3, -6], [-8, 3, 6], [-3, 1, 0], [-3, 1, -3], [-3, 1, 3], [1, 2, 0], [2, 2, -2], [2, 2, 2]]
+level = 15
 
 # ---------------------------------------------------------------- marks
 

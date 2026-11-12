@@ -1728,10 +1728,9 @@ def op_bunting(b, spec):
     poles `side` blocks either side of the centre line (4.5), `height` (5) at the poles, sagging `sag` (0.8) in the
     middle, flags of `colors` (wool) every `spacing` (0.6). Flags are block displays facing along the lane, so a lens
     looking down the lane sees them face on. Poles are `pole` (spruce_fence) on a `base` (cobblestone_wall), and are
-    skipped where something already stands (a lamp post or a stall post can hold the string)."""
-    op = Op(spec, b.where, {'along', 'd', 'side', 'height', 'sag', 'colors', 'spacing', 'pole', 'base', 'string'})
-    lane = op.get('along', 'lane')
-    spine = b.spine(lane, b.where)
+    skipped where something already stands (a lamp post or a stall post can hold the string). Or, anywhere (indoors),
+    `strings = [[[x, y, z], [x, y, z]], …]`: each string between two points, no poles."""
+    op = Op(spec, b.where, {'along', 'd', 'side', 'height', 'sag', 'colors', 'spacing', 'pole', 'base', 'string', 'strings'})
     side = float(op.get('side', 4.5))
     h = int(op.get('height', 5))
     sag = float(op.get('sag', 0.8))
@@ -1740,6 +1739,12 @@ def op_bunting(b, spec):
     pole = op.get('pole', 'spruce_fence')
     base = op.get('base', 'cobblestone_wall')
     string = op.get('string', 'brown_wool')
+    if op.has('strings'):
+        # Indoors or anywhere: `strings = [[[x, y, z], [x, y, z]], …]`, each string's two ends (continuous points).
+        for n, (a, c) in enumerate(op.get('strings')):
+            _flags(b, tuple(a), tuple(c), n, sag, colours, spacing, string)
+        return
+    lane = op.get('along', 'lane')
     for n, d in enumerate(op.req('d')):
         ends = []
         for sg in (-1, 1):
@@ -1754,25 +1759,29 @@ def op_bunting(b, spec):
                     if not b.grid.has(cx, y, cz):
                         b.put(cx, y, cz, pole)
             ends.append((cx + 0.5, h + 0.75, cz + 0.5))
-        (x1, y1, z1), (x2, y2, z2) = ends
-        span = math.dist((x1, z1), (x2, z2))
-        steps = max(2, int(span / spacing))
-        thin_x = abs(x2 - x1) < abs(z2 - z1)  # the string runs mostly along z: flags are thin in x
-        for k in range(1, steps):
-            t = k / steps
-            px, pz = x1 + (x2 - x1) * t, z1 + (z2 - z1) * t
-            py = y1 - sag * 4 * t * (1 - t)
-            c = colours[(k + n) % len(colours)]
-            if string:
-                # The string: a thin piece from this flag halfway to the last one.
-                qx, qz = x1 + (x2 - x1) * (k - 0.5) / steps, z1 + (z2 - z1) * (k - 0.5) / steps
-                b.display_box(string, [min(px, qx) - (0.015 if thin_x else 0), py, min(pz, qz) - (0 if thin_x else 0.015)],
-                              [max(px, qx) + (0.015 if thin_x else 0), py + 0.03, max(pz, qz) + (0 if thin_x else 0.015)],
-                              {'brightness': {'sky': 15, 'block': 12}})
-            for w, hh, dy in ((0.36, 0.2, 0.0), (0.2, 0.18, 0.2)):
-                lo = [px - (0.02 if thin_x else w / 2), py - dy - hh, pz - (w / 2 if thin_x else 0.02)]
-                hi = [px + (0.02 if thin_x else w / 2), py - dy, pz + (w / 2 if thin_x else 0.02)]
-                b.display_box(c, lo, hi, {'brightness': {'sky': 15, 'block': 12}})
+        _flags(b, ends[0], ends[1], n, sag, colours, spacing, string)
+
+
+def _flags(b, a, c, n, sag, colours, spacing, string):
+    """One string of flags from point `a` to point `c` (block displays lit by the world where they hang)."""
+    (x1, y1, z1), (x2, y2, z2) = a, c
+    span = math.dist((x1, z1), (x2, z2))
+    steps = max(2, int(span / spacing))
+    thin_x = abs(x2 - x1) < abs(z2 - z1)  # the string runs mostly along z: flags are thin in x
+    for k in range(1, steps):
+        t = k / steps
+        px, pz = x1 + (x2 - x1) * t, z1 + (z2 - z1) * t
+        py = y1 + (y2 - y1) * t - sag * 4 * t * (1 - t)
+        flag = colours[(k + n) % len(colours)]
+        if string:
+            # The string: a thin piece from this flag halfway to the last one.
+            qx, qz = x1 + (x2 - x1) * (k - 0.5) / steps, z1 + (z2 - z1) * (k - 0.5) / steps
+            b.display_box(string, [min(px, qx) - (0.015 if thin_x else 0), py, min(pz, qz) - (0 if thin_x else 0.015)],
+                          [max(px, qx) + (0.015 if thin_x else 0), py + 0.03, max(pz, qz) + (0 if thin_x else 0.015)])
+        for w, hh, dy in ((0.36, 0.2, 0.0), (0.2, 0.18, 0.2)):
+            lo = [px - (0.02 if thin_x else w / 2), py - dy - hh, pz - (w / 2 if thin_x else 0.02)]
+            hi = [px + (0.02 if thin_x else w / 2), py - dy, pz + (w / 2 if thin_x else 0.02)]
+            b.display_box(flag, lo, hi)
 
 
 OPS = {
