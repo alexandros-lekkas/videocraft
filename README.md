@@ -1,11 +1,11 @@
-# blockreel
+# videocraft
 
 Agent-directed video for Minecraft Java. Write a shot list, run one command, get a cut video: a hidden game, a camera
 crew, a player that moves like a person, and reviewers that score the result.
 
 ```sh
-bin/blockreel doctor
-bin/blockreel run examples/hello.toml      # → runs/hello/<n>/cut/master.mp4, 1920x1080 at 60 fps
+bin/videocraft doctor
+bin/videocraft run examples/hello.toml      # → runs/hello/<n>/cut/master.mp4, 1920x1080 at 60 fps
 ```
 
 The game never shows a window, takes focus or plays sound, and runs in its own folder (`run-game/`). Needs JDK 25,

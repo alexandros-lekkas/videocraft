@@ -1,5 +1,5 @@
-# The smallest blockreel script: one slow orbit around the spawn point of a new world.
-#   bin/blockreel run examples/hello.toml
+# The smallest videocraft script: one slow orbit around the spawn point of a new world.
+#   bin/videocraft run examples/hello.toml
 name = "hello"
 seed = 1                       # the take's random seed (the hand, NPC choices); same seed, same take
 
@@ -9,7 +9,7 @@ height = 1080
 fps = 60
 
 [world]
-seed = "blockreel"             # a new world from this seed (or save = "<folder>" for a copy of a saved world)
+seed = "videocraft"             # a new world from this seed (or save = "<folder>" for a copy of a saved world)
 time = 1000                    # morning; the daylight cycle is stopped for the take
 weather = "clear"
 gamemode = "creative"

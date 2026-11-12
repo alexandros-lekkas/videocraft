@@ -1,6 +1,6 @@
 # The shot script
 
-A shot script is a TOML file (or JSON with the same shape). `bin/blockreel compile <file>` checks it and prints the
+A shot script is a TOML file (or JSON with the same shape). `bin/videocraft compile <file>` checks it and prints the
 plan the mod will play; every error names where it is and what is allowed. The design behind it is in
 [DESIGN.md](DESIGN.md#2-the-shot-script). **Implemented** marks what works today; the rest is planned and owned by the
 workstream in brackets.

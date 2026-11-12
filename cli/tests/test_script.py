@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'cli'))
-from blockreel import script  # noqa: E402
+from videocraft import script  # noqa: E402
 
 
 class ScriptTests(unittest.TestCase):

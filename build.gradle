@@ -3,7 +3,7 @@ plugins {
 }
 
 base {
-	archivesName = 'blockreel'
+	archivesName = 'videocraft'
 }
 
 sourceSets {
@@ -25,20 +25,20 @@ loom {
 		client {
 			// The offline name picks the default skin; "Playtest" gives Steve.
 			programArgs "--username", (project.findProperty('username') ?: 'Playtest')
-			// The game directory: never a real Minecraft folder. bin/blockreel passes run-game/.
+			// The game directory: never a real Minecraft folder. bin/videocraft passes run-game/.
 			runDir (project.findProperty('gameDir') ?: 'run-game')
 			// -Ptake=<dir>: play <dir>/plan.json, write the take into <dir>, quit (see docs/DESIGN.md).
-			if (project.hasProperty('take')) vmArg "-Dblockreel.take=${project.property('take')}"
-			if (project.hasProperty('ffmpeg')) vmArg "-Dblockreel.ffmpeg=${project.property('ffmpeg')}"
+			if (project.hasProperty('take')) vmArg "-Dvideocraft.take=${project.property('take')}"
+			if (project.hasProperty('ffmpeg')) vmArg "-Dvideocraft.ffmpeg=${project.property('ffmpeg')}"
 			// Loopback control port; never 25590 (the Minecraft MCP port of a real game).
-			vmArg "-Dblockreel.port=${project.findProperty('controlPort') ?: '25750'}"
-			if (hiddenRun()) vmArg "-Dblockreel.hidden=true"
+			vmArg "-Dvideocraft.port=${project.findProperty('controlPort') ?: '25750'}"
+			if (hiddenRun()) vmArg "-Dvideocraft.hidden=true"
 			if (project.hasProperty('width') && project.hasProperty('height')) programArgs "--width", project.property('width'), "--height", project.property('height')
 		}
 	}
 
 	mods {
-		"blockreel" {
+		"videocraft" {
 			sourceSet sourceSets.main
 		}
 	}
@@ -75,7 +75,7 @@ checks.each { name ->
 		description = "Plain-JVM check ${name} (no game window)."
 		group = 'verification'
 		classpath = sourceSets.smoke.runtimeClasspath
-		mainClass = "dev.blockreel.${name}"
+		mainClass = "io.github.alexandroslekkas.videocraft.${name}"
 		workingDir = projectDir
 	}
 }

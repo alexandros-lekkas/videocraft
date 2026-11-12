@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""videocraft's command line, runnable straight from a checkout (no install): bin/videocraft doctor."""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'cli'))
+from videocraft.cli import main  # noqa: E402
+
+raise SystemExit(main())
