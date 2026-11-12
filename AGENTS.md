@@ -51,7 +51,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `…/actor/` | `Hand` (human input model, no Minecraft classes), `Cast`, `PlayerActor`, `Actions` | b |
 | `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
-| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
+| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `tools.py`, `paths.py`, `measure/` (picture, loudness, camera, text rules), `lint.py`, `timeline.py`, `compare.py`, `climb.py`, `modpack.py`, `agents.py` (the one model call: `ask`), `review/` (packets, rubrics, prompts, reviews) | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
