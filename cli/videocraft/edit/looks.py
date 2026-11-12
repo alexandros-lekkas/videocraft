@@ -1,4 +1,5 @@
-"""Looks over a run of clips: a colour grade, and a frame (a border with a soft inner glow, as for a flashback).
+"""Looks over a run of clips: a barrel lens, a colour grade, and a frame (a border with a soft inner glow, as for a
+flashback).
 
 A grade is an ffmpeg filter chain worked in RGB with the BT.709 matrix both ways (the capture and the master are
 BT.709; ffmpeg's automatic conversion would assume BT.601 and shift the colours). A frame is a PNG with alpha made
@@ -29,6 +30,34 @@ def hex_rgb(text, where='colour'):
     if len(h) != 6 or any(c not in '0123456789abcdefABCDEF' for c in h):
         raise ValueError(f'{where}: a colour is "#rrggbb" (got {text!r})')
     return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def lens_zoom(k1, k2=0.0):
+    """The zoom that keeps a barrel-distorted frame full: ffmpeg's lenscorrection samples a target point at radius r
+    (in half diagonals) from r * (1 + k1 r^2 + k2 r^4) in the source, so the corners would reach past the frame; zoomed
+    by z, the corner samples (1/z)(1 + k1/z^2 + k2/z^4), which is 1 at the z found here."""
+    lo, hi = 1.0, 3.0
+    for _ in range(60):
+        z = (lo + hi) / 2
+        if (1 + k1 / z ** 2 + k2 / z ** 4) / z > 1:
+            lo = z
+        else:
+            hi = z
+    return hi
+
+
+def lens_filter(lens, width, height):
+    """The ffmpeg chain for `lens = { barrel = k1, k2 }`: a fisheye-like bow (the centre grows, the edges are squeezed)
+    filled to the frame, so a rectilinear wide render reads as the wide-angle lens of a lead track; '' for none."""
+    if not lens:
+        return ''
+    k1, k2 = float(lens.get('barrel', 0)), float(lens.get('k2', 0))
+    if k1 == 0 and k2 == 0:
+        return ''
+    z = lens_zoom(k1, k2)
+    cw, ch = int(width / z) // 2 * 2, int(height / z) // 2 * 2
+    return (f'lenscorrection=k1={k1:.4f}:k2={k2:.4f}:i=bilinear,crop={cw}:{ch}:{(width - cw) // 2}:{(height - ch) // 2},'
+            f'scale={width}:{height}:flags=lanczos,format=yuv420p')
 
 
 def grade_filter(grade):

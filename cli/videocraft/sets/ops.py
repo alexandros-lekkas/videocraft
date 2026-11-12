@@ -368,6 +368,25 @@ def op_lane(b, spec):
         b.add_mark(name, {'kind': 'path', 'points': [(sx, y + 1, sz) for sx, sz, _ in spine[::4]] + [(spine[-1][0], y + 1, spine[-1][1])]})
 
 
+def op_crossing(b, spec):
+    """A zebra crossing painted across a lane: at `d` blocks along `along` (the lane mark), stripes of `block`
+    (white_concrete) running the way the lane goes, `stripe` wide (1) with `gap` (1) between them, across `width`
+    (9, the road) and `depth` blocks along it (3); `y` is the layer (-1)."""
+    op = Op(spec, b.where, {'along', 'd', 'width', 'depth', 'stripe', 'gap', 'block', 'y'})
+    x0, z0, tx, tz = spine_at(b.spine(op.get('along', 'lane'), b.where), float(op.req('d')))
+    width, depth = float(op.get('width', 9)), float(op.get('depth', 3))
+    stripe, gap = float(op.get('stripe', 1)), float(op.get('gap', 1))
+    y = int(op.get('y', -1))
+    block = b.state(op.get('block', 'white_concrete'))
+    r = math.ceil(math.hypot(width, depth) / 2) + 1
+    for x in range(math.floor(x0 - r), math.floor(x0 + r) + 1):
+        for z in range(math.floor(z0 - r), math.floor(z0 + r) + 1):
+            dx, dz = x + 0.5 - x0, z + 0.5 - z0
+            u, v = dx * tx + dz * tz, dz * tx - dx * tz          # along the lane, and to its right
+            if abs(u) <= depth / 2 and abs(v) <= width / 2 and (v + width / 2) % (stripe + gap) < stripe:
+                b.put(x, y, z, block)
+
+
 def op_stream(b, spec):
     """Water in a channel along a curve: `width`, water `depth` (2), surface one block below the ground, banks of
     `bank` blocks, an optional `bed` mix and `plants` (lily pads on the surface, seagrass below)."""
@@ -1785,7 +1804,7 @@ def _flags(b, a, c, n, sag, colours, spacing, string):
 
 
 OPS = {
-    'ground': op_ground, 'paint': op_paint, 'lane': op_lane, 'stream': op_stream, 'bridge': op_bridge,
+    'ground': op_ground, 'paint': op_paint, 'lane': op_lane, 'crossing': op_crossing, 'stream': op_stream, 'bridge': op_bridge,
     'box': op_box, 'carve': op_carve, 'blocks': op_blocks, 'column': op_column, 'house': op_house, 'roof': op_roof,
     'stall': op_stall, 'fence': op_fence, 'lamp': op_lamp, 'tree': op_tree, 'bush': op_bush, 'scatter': op_scatter,
     'crops': op_crops, 'pile': op_pile, 'well': op_well, 'cart': op_cart, 'pots': op_pots, 'light': op_light,

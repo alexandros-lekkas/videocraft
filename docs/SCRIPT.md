@@ -54,6 +54,7 @@ body after, glance about between beats, and make their own footstep sounds throu
 | `baby` | `false` | A baby (ageable mobs). |
 | `color` | | A sheep's wool (a dye colour). |
 | `tint` | | `"#rrggbb"` multiplied over the model: a slate-blue goat without a texture file. |
+| `texture` | | For `mob`: a PNG (relative to the script, never fetched) drawn instead of the entity's own texture, in the same layout and size (a sheep's is 64x32); layers keep theirs (a sheep's wool still takes `color`). A local copy of a vanilla texture with a painted change is the usual way in. |
 | `scale` | `1` | Body size (0.0625 to 16); paces are not scaled. |
 | `name`, `show_name` | | A custom name; the tag is shown only with `show_name = true`. |
 | `states` | `[]` | States to start in (below), e.g. `["sit"]`. |
@@ -254,12 +255,15 @@ integer is frames and a number with a decimal point is seconds.
 | `speed` | A number (`2.0` double, `0.5` half), or keys `[{ at = <frame, seconds or mark>, speed = 0.4 }, …]`, linear in source frames between keys. Frames are repeated or dropped whole; `src_map` in the timeline lists the source frame of each output frame. |
 | `fade_in`, `fade_out` | Frames from / to black at the clip's ends. |
 | `black` | Instead of `shot`: a gap of black, in seconds. "Dip to black, hold, fade up" is `fade_out` on a clip, `black = 0.8`, `fade_in` on the next. |
-| `frame`, `grade`, `label` | A look on this clip alone (below); a label for people. |
+| `frame`, `grade`, `lens`, `label` | A look on this clip alone (below); a label for people. |
 
 `[[edit.look]]` puts a look over a run of clips: `from`, `to` (shot names: the first clip of `from` to the last of
 `to`; or clip indices from 0), `frame = { color = "#e8a23a", width = 28, glow = 12, opacity = 1.0 }` (a border with a
 soft inner glow, sizes in 1080-line pixels: the flashback frame) and `grade` (`sepia`, `warm`, `cool`, `crush`,
-`mono`, or `{ saturation, contrast, brightness, gamma, tint = "#rrggbb", amount }`). Grades are worked in RGB with
+`mono`, or `{ saturation, contrast, brightness, gamma, tint = "#rrggbb", amount }`). `lens = { barrel = 0.4 }` bows the picture like a
+fisheye-like wide lens (ffmpeg `lenscorrection` with `k1 = barrel`, optional `k2`, 0 to 1), zoomed just enough that the
+corners stay filled (`barrel = 0.4` is a 1.25x zoom): a rectilinear 110° lead track then reads as the low, bowed
+lens of a street lead track. It comes first in the look, so the border and the grade are not bent. Grades are worked in RGB with
 the BT.709 matrix. Fades include the look (a framed flashback fades up from black, frame and all).
 
 `[[edit.export]]` with `preset`; all work for landscape and vertical masters (sizes are on the short side):
@@ -338,7 +342,7 @@ A resolved cue keeps `tag`/`palette` and gains `id`, the palette's `pitch`/`volu
 | `[edit.music]` | none | `source = "auto"` (the default unless only a `style` or a `track` is named): `mood` = `calm`, `upbeat`, `tense`, `sad`, `triumphant`, `mysterious`, `playful` (default `upbeat`) picks a game track from the music map by mood, `bpm` and length when the mix may use game audio and the assets are there, starting at its measured entry (`start` overrides) and looping at its measured loop point when short; `exclude = [files]`, `rank = 1` for the next pick, `vocals = true` to allow sung tracks; otherwise the synth bed in the mood's style. `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`, `comedy-chase`, `suspense`, `keynote`, `lullaby`, `heroic`, or a `mood`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it; an original-only mix plays the synth bed in the track's mood). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
 | `[[edit.music.cue]]` | | `shot` and `at` (seconds in the shot), or `time` (seconds in the cut); `do` = `out` (fade to silence), `in`, `drop` (silent for `length`, default one beat, then back), `thin` (drums only), `full` (all stems; `gain` in dB to come back harder), `hit` (a crash and kick on the beat); `fade` (s). |
 | `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`, or `"tag:scream"`: events the catalog tags so), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else; `{ "tag:footstep wood" = 12 }`). |
-| `[[edit.sfx]]` | | A sound placed by the edit, not logged by the take (a sting on a cut, a whoosh over a transition): `shot` and `at` (seconds in the shot) or `time` (seconds in the cut); `id`, `tag`, `palette` or `library`; `source`; `gain` (dB), `pan`, `pitch`. Game audio first (a seeded variant from your assets), the library sound in an original-only mix. Not silenced over black gaps; the bed ducks under it. |
+| `[[edit.sfx]]` | | A sound placed by the edit, not logged by the take (a sting on a cut, a whoosh over a transition): `shot` and `at` (seconds in the shot) or `time` (seconds in the cut); `id`, `tag`, `palette` or `library`; `source`; `gain` (dB), `pan`, `pitch`; `start` (seconds into the sound), `length` (seconds of it, then a `fade`, 0.25 s, out: a record from a jukebox under one stretch of the cut). Game audio first (a seeded variant from your assets), the library sound in an original-only mix. Not silenced over black gaps; the bed ducks under it. |
 | `voice` | | `[{ file, shot, at, gain }]`, written by the dialogue resolver: each line placed at `at` seconds into the shot (dB `gain`), levelled, never cut at a clip end. |
 
 Each logged sound lands at the output time of its frame (through trims, speed and black gaps), at its pitch, quieter

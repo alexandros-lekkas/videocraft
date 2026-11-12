@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
+  painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
+  filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,
+  `length` and `fade`, so a long sound plays under one stretch of the cut; lint knows a placed set by its `as`.
 - The mix is mastered to -2 dBTP (was -1): the AAC encode of the master overshoots the mix by 0.8-0.9 dB, so a
   -1.0 mix measured -0.5 dBTP in `master.mp4`.
 - `clips cut --method reshoot` keeps actors' skins: a relative `skin` path is taken as the take resolved it, not

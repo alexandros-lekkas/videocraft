@@ -246,6 +246,12 @@ They protect the owner's machine and game. They are not preferences.
 - **A `claude -p` reviewer can hang** past the ask timeout after a network outage (76 min, one role); stop it and
   rerun only the missing roles (`review run x --reviewers camera,pacing`): the score reads every review file.
 
+- **A mob texture may be larger than vanilla's.** The model samples it by UV, so a 256x128 copy of a sheep's 64x32
+  texture (`texture = "x.png"`) draws at four times the detail: a face can carry a curved moustache six pixels cannot.
+  `lens = { barrel }` bows the edit's picture; the lead rig's `pitch` is a fixed tilt, not an aim, so the horizon's
+  place in frame comes from pitch, fov and the lens zoom together (pitch 38 at fov 110 with barrel 0.9 puts it near
+  the top fifth).
+
 ## Working with agents
 
 - **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git
