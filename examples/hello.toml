@@ -1,0 +1,26 @@
+# The smallest blockreel script: one slow orbit around the spawn point of a new world.
+#   bin/blockreel run examples/hello.toml
+name = "hello"
+seed = 1                       # the take's random seed (the hand, NPC choices); same seed, same take
+
+[output]                       # defaults shown: framebuffer pixels and frames per second
+width = 1920
+height = 1080
+fps = 60
+
+[world]
+seed = "blockreel"             # a new world from this seed (or save = "<folder>" for a copy of a saved world)
+time = 1000                    # morning; the daylight cycle is stopped for the take
+weather = "clear"
+gamemode = "creative"
+
+[[shot]]
+name = "orbit"
+duration = 3.0
+# Circle the spawn point 18 blocks out and 9 up, 70 degrees over the shot, looking down at it.
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 18, height = 9, from = 20, sweep = 70, ease = "smooth", fov = 70 }
+
+[[shot.cue]]
+at = 1.5
+do = "mark"
+label = "middle"

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "minimal",
+  "seed": 1,
+  "output": {"width": 1920, "height": 1080, "fps": 60},
+  "world": {"seed": "1", "save": null, "gamemode": "creative", "time": 6000, "weather": "clear", "settle": 4.0, "stage": []},
+  "actors": [],
+  "shots": [
+    {"name": "a", "duration": 1.0, "camera": {"rig": "orbit", "center": {"anchor": "spawn", "offset": [0, 1, 0]}}, "timeline": []}
+  ]
+}

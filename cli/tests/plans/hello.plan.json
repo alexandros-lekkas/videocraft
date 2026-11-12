@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "name": "hello",
+  "seed": 1,
+  "output": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 60
+  },
+  "world": {
+    "seed": "blockreel",
+    "save": null,
+    "gamemode": "creative",
+    "time": 1000,
+    "weather": "clear",
+    "settle": 4.0,
+    "stage": []
+  },
+  "actors": [],
+  "shots": [
+    {
+      "name": "orbit",
+      "duration": 3.0,
+      "camera": {
+        "rig": "orbit",
+        "center": {
+          "anchor": "spawn"
+        },
+        "radius": 18,
+        "height": 9,
+        "from": 20,
+        "sweep": 70,
+        "ease": "smooth",
+        "fov": 70
+      },
+      "timeline": [
+        {
+          "at": 1.5,
+          "do": "mark",
+          "label": "middle",
+          "actor": "player"
+        }
+      ]
+    }
+  ]
+}
