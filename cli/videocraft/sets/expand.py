@@ -8,7 +8,7 @@
 
 The set is built when the script compiles. Its commands become staging cues before the script's own: `forceload`
 first, then (two seconds of staging later, so the chunks are loaded) biome, clearing and blocks as one batched
-`command` cue with a `forceload` box, then the entity summons. The script's own stage cues are moved after them.
+`command` cue with a `forceload` box (the runtime waits for those chunks), entity summons last in it. The script's own stage cues are moved after them.
 
 Anywhere in the script (shots, cues, actors, stage), these are replaced by plain values, so the mod needs nothing
 new to use them:
@@ -55,12 +55,12 @@ def expand(raw, source='script'):
         if prefix in placed:
             raise SetError(f'{where}: "{prefix}" is placed twice; give the second one `as = "<other name>"`')
         placed[prefix] = p
-        box = [p.lo[0], p.lo[2], p.hi[0], p.hi[2]]
         cues.append({'at': 0.0, 'do': 'command', 'commands': p.prepare_commands()})
-        cues.append({'at': LOAD_DELAY, 'do': 'command', 'forceload': box, 'commands': p.build_commands()})
-        ents = p.entity_commands()
-        if ents:
-            cues.append({'at': LOAD_DELAY + ENTITY_GAP, 'do': 'command', 'forceload': box, 'commands': ents})
+        # The `forceload` box makes the runtime wait until every chunk of the set has loaded before the first fill
+        # (stage cues start on their time and run side by side, so the forceload cue at 0 alone cannot hold them).
+        box = [p.lo[0], p.lo[2], p.hi[0], p.hi[2]]
+        # Entities go last in the same cue, so an item frame is summoned after the wall it hangs on.
+        cues.append({'at': LOAD_DELAY, 'do': 'command', 'forceload': box, 'commands': p.build_commands() + p.entity_commands()})
         settle += len(p.cells) / 15000
         anchors.update(p.anchors(prefix))
         for k, m in p.marks.items():
@@ -79,8 +79,10 @@ def expand(raw, source='script'):
     # Until the runtime waits for batched commands itself, give the server time to place them and the client time
     # to draw them before the first shot prepares (staging seconds run faster than real time). One wait for all
     # the sets: two waits at the same moment overlap, and the second set's blocks were still arriving at shot one.
+    # The script's own stage cues start after that wait too (stage cues run side by side, so a summon or a
+    # setblock of the script's must not land while the set's fills are still being placed over it).
     cues.append({'at': LOAD_DELAY + 2 * ENTITY_GAP, 'do': 'wait', 'seconds': round(settle, 1)})
-    shift = LOAD_DELAY + 3 * ENTITY_GAP
+    shift = LOAD_DELAY + 3 * ENTITY_GAP + round(settle, 1)
     own = [dict(c, at=float(c.get('at', 0)) + shift) for c in world.get('stage', [])]
     world['stage'] = cues + own
     world['sets'] = info

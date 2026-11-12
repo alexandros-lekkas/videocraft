@@ -191,6 +191,8 @@ class Sets(unittest.TestCase):
             self.assertEqual(world['time'], 9000)
             self.assertEqual(world['stage'][0]['commands'][0].split(' ')[0], 'forceload')
             self.assertEqual(world['stage'][1]['forceload'][0], world['sets'][0]['box']['from'][0])
+            self.assertTrue(all(c.startswith('forceload add') for c in world['stage'][0]['commands']))
+            self.assertEqual([c['do'] for c in world['stage'] if c['do'] == 'wait'], ['wait'])
             self.assertIn('tiny:door', world['anchors'])
             cam = plan['shots'][0]['camera']
             self.assertEqual((cam['rig'], cam['fov']), ('fixed', 60.0))
