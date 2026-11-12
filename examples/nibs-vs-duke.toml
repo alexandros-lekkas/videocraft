@@ -1351,7 +1351,6 @@ shot = "s15-note-one"
 push = { from = 1.0, to = 1.2 }
 [[edit.clip]]
 shot = "s16-bow"
-push = { from = 1.0, to = 1.12 }
 [[edit.clip]]
 shot = "s17-egg"
 [[edit.clip]]
