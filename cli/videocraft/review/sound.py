@@ -143,6 +143,8 @@ def markdown(it, plan, clips, fps, g, samples, charts):
           f'(mastering gain {loud.get("gain_db")} dB from {loud.get("before")} LUFS).',
           f'- {len(g["events"])} effects placed, {len(g["voice"])} voice lines, {len(g["skipped"])} logged sounds left out (listed at the end).',
           '- Chart' + ('s' if len(charts) > 1 else '') + ': ' + ', '.join(f'`{c}`' for c in charts) + ' (loudness over time, see the legend in each).', '']
+    from videocraft.measure.report import balance_lines
+    L += balance_lines(audio.get('balance'))
     if g['gaps']:
         L += ['## Black gaps (the dips)', '', '| Black | Seconds | Momentary in the gap (median / max) | Mixed integrated |', '|:--|--:|:--|--:|']
         mixed = {round(x['time'] * fps): x for x in audio.get('black_gaps', [])}
@@ -155,7 +157,8 @@ def markdown(it, plan, clips, fps, g, samples, charts):
     L += ['## Music', '']
     if music:
         L.append(f'- Source `{music.get("source")}`' + ''.join(f', {k} `{music[k]}`' for k in ('style', 'track', 'bpm', 'key') if music.get(k))
-                 + f'; starts at {music.get("at", 0)} s in the cut, level {music.get("level_db")} dB; ducks under voice'
+                 + f'; starts at {music.get("at", 0)} s in the cut, level {music.get("level_db")} dB RMS'
+                 + (f' then {music["loudness"]["target"]} LUFS' if music.get('loudness') else '') + '; ducks under voice'
                  + (' and marked effects' if any(e.get('duck') for e in g['events']) else '') + '; silent over black gaps unless `through_black`.')
         if music['cues']:
             L += ['', '| Cut | M | Cue |', '|--:|--:|:--|']

@@ -71,7 +71,7 @@ def check(stage, text, story, store=None, path=None, drafted=True, soft=False):
 
 SOFT = 'voice: '         # problems the model is asked to fix, but that never block a lock
 SOFT_ROUNDS = 1          # repair rounds spent on soft problems alone (a model call takes minutes)
-VOICE_RULES = ('unvoiced_text', 'slow_line', 'dead_air')
+VOICE_RULES = ('unvoiced_text', 'slow_line', 'dead_air', 'cast_voice')
 PRESETS = {'qwen3': ('ryan', 'aiden'), 'kokoro': ('am_fenrir', 'am_onyx', 'am_michael', 'am_puck', 'af_heart', 'af_bella',
                                                 'af_nicole', 'bf_emma', 'bm_george', 'bm_lewis')}
 PACE = (3.0, 3.8)        # words a second for comedy dialogue
@@ -157,7 +157,7 @@ def cast_block(bible_text):
         bible = tomllib.loads(bible_text or '')
     except tomllib.TOMLDecodeError:
         return '(the bible is not valid TOML: write [[cast.character]] tables by hand)'
-    out, ids = ['[cast]'], set()
+    out, ids, used = ['[cast]'], set(), set()
     for c in bible.get('character') or []:
         if not isinstance(c, dict) or not isinstance(c.get('id'), str):
             continue
@@ -167,7 +167,9 @@ def cast_block(bible_text):
         if not isinstance(v, dict):
             v = {'instruct': str(v or '')}
         engine = v.get('engine', 'qwen3') if v.get('engine') in PRESETS else 'qwen3'
-        preset = v.get('preset') if v.get('preset') in PRESETS[engine] else PRESETS[engine][len(ids) % len(PRESETS[engine])]
+        free = [p for p in PRESETS[engine] if (engine, p) not in used]   # different people, different voices
+        preset = v.get('preset') if v.get('preset') in PRESETS[engine] else (free or PRESETS[engine])[0]
+        used.add((engine, preset))
         pace = v.get('pace') if isinstance(v.get('pace'), (int, float)) and not isinstance(v.get('pace'), bool) else 3.4
         lines = ['', '[[cast.character]]', f'id = {json.dumps(c["id"])}', f'name = {json.dumps(c.get("name") or c["id"])}',
                  f'engine = "{engine}"', f'voice = "{preset}"']

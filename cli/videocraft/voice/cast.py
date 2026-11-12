@@ -23,7 +23,13 @@ also gets the project's default delivery (DELIVERY: brisk) unless its style is a
 
 A character the cast does not name is looked up in every committed cast file, then given a generic voice (with a
 warning), so a generated script always compiles.
+
+Different people have different voices (the owner, on the first films): lint() is an error when two speaking
+characters share engine, preset and instruction (the same voice), and a warning when they share a preset (an
+instruction alone does not make a second person), when one is speaking in a generic voice, when two have one
+display name, or when their draft voices collide; each names a free preset of the same kind, by measured pitch.
 """
+import math
 import tomllib
 import zlib
 from dataclasses import dataclass, field
@@ -57,6 +63,132 @@ STYLES = {
 }
 GENERIC = [('qwen3', 'ryan'), ('qwen3', 'aiden')]
 COLORS = ['#ffd166', '#a0e8ff', '#ff9ec7', '#b8f2a0', '#d7b8ff']
+
+
+# Every preset, by engine: (kind, median f0 in Hz) on one neutral line ("Well, I told you the bridge would hold...",
+# seed 7, no pacing; qwen3 with the instruction "Natural, conversational."), measured by autocorrelation on
+# 2026-11-12 (docs/VOICE.md). Nobody listened. A suggestion for another voice is an unused preset of the same kind
+# as far in pitch from the clashing one as there is. Note ryan 130 and aiden 128: alike unless instructions part them.
+PRESETS = {
+    'qwen3': {'ryan': ('male', 130.4), 'aiden': ('male', 127.7), 'eric': ('male', 173.9),
+              'dylan': ('male', 144.6), 'uncle_fu': ('male', 226.4), 'serena': ('female', 230.8),
+              'vivian': ('female', 237.6), 'ono_anna': ('female', 260.9), 'sohee': ('female', 240.0)},
+    'kokoro': {'am_adam': ('male', 121.2), 'am_echo': ('male', 113.2), 'am_eric': ('male', 148.1),
+               'am_fenrir': ('male', 122.4), 'am_liam': ('male', 117.6), 'am_michael': ('male', 115.4),
+               'am_onyx': ('male', 88.2), 'am_puck': ('male', 108.6), 'am_santa': ('male', 162.2),
+               'bm_daniel': ('male', 129.0), 'bm_fable': ('male', 146.3), 'bm_george': ('male', 142.9),
+               'bm_lewis': ('male', 99.2), 'af_alloy': ('female', 139.5), 'af_aoede': ('female', 169.0),
+               'af_bella': ('female', 200.0), 'af_heart': ('female', 193.5), 'af_jessica': ('female', 206.9),
+               'af_kore': ('female', 134.8), 'af_nicole': ('female', 148.1), 'af_nova': ('female', 160.0),
+               'af_river': ('female', 176.5), 'af_sarah': ('female', 181.8), 'af_sky': ('female', 153.8),
+               'bf_alice': ('female', 222.2), 'bf_emma': ('female', 179.1), 'bf_isabella': ('female', 193.5),
+               'bf_lily': ('female', 169.0)},
+}
+
+
+def kind_of(engine, voice):
+    """'male' | 'female' | None for a preset."""
+    row = PRESETS.get(engine, {}).get(voice)
+    if row:
+        return row[0]
+    if engine == 'kokoro' and len(voice) > 2 and voice[1] in 'mf':
+        return 'male' if voice[1] == 'm' else 'female'
+    return None
+
+
+APART = 3.0         # semitones (a minor third): two characters' measured voices closer than this sound alike
+
+
+def semitones(a, b):
+    return abs(12 * math.log2(a / b)) if a and b else None
+
+
+ENGLISH = {'qwen3': ('ryan', 'aiden')}    # the English-native presets (kokoro: all of a* and b*); the others are
+                                           # Chinese, Japanese or Korean voices and read English with an accent
+
+
+def _english(engine, voice):
+    return voice in ENGLISH[engine] if engine in ENGLISH else voice[:1] in 'ab'
+
+
+def suggest(engine, voice, used):
+    """Another voice for a character that sounds like `voice`: an unused English preset of the same kind, the most
+    distinct in measured pitch from `voice` and every voice already `used` ((engine, preset) pairs; counting at most 6
+    semitones), as the TOML to write: 'voice = "x"', or 'engine = "kokoro", voice = "x"' when the engine has none
+    left; None if there is none."""
+    kind = kind_of(engine, voice)
+    taken = [PRESETS[e][v][1] for e, v in set(used) | {(engine, voice)} if v in PRESETS.get(e, {})]
+    for eng in dict.fromkeys((engine, 'kokoro')):
+        presets = PRESETS.get(eng, {})
+        free = [(v, row) for v, row in presets.items() if (eng, v) not in used and v != voice and _english(eng, v)
+                and (kind is None or row[0] == kind)]
+        if not free:
+            continue
+        if taken:
+            v = max(free, key=lambda x: (min(min(semitones(x[1][1], f) for f in taken), 6.0), -abs(semitones(x[1][1], taken[0]) - 5)))[0]
+        else:
+            v = free[0][0]
+        return f'voice = "{v}"' if eng == engine else f'engine = "{eng}", voice = "{v}"'
+    return None
+
+
+def lint(cast, speakers, draft=True, pitches=None):
+    """Problems ({severity, rule, where, message}) with the voices of the speaking characters `speakers` (ids in
+    order): see the module's docstring. `pitches` {id: median f0 of its synthesized lines} adds "sound alike"
+    warnings for characters less than APART semitones apart (voice/pitch.py measures them)."""
+    out = []
+
+    def add(severity, who, message):
+        out.append({'severity': severity, 'rule': 'cast_voice', 'where': f'cast {who}', 'message': message})
+
+    chars = [cast.character(c) for c in dict.fromkeys(list(cast.characters) + list(speakers))]
+    used = {(c.engine, c.voice) for c in chars}
+    for c in chars:
+        if c.generic:
+            add('warn', c.id, f'"{c.id}" is in no cast and speaks in a generic {c.engine} {c.voice} voice: give it its own '
+                              f'voice in [cast] ({suggest(c.engine, c.voice, used) or "see docs/VOICE.md"})')
+    for i, a in enumerate(chars):
+        for b in chars[i + 1:]:
+            if (a.engine, a.voice) != (b.engine, b.voice):
+                continue
+            other = suggest(b.engine, b.voice, used)
+            hint = f'; give {b.id} another preset, e.g. {other}' if other else ''
+            if (a.instruct or '').strip().lower() == (b.instruct or '').strip().lower():
+                add('error', b.id, f'{a.id} and {b.id} speak with the same voice ({a.engine} {a.voice}, the same instruction): '
+                                   f'every speaking character needs its own{hint}')
+            else:
+                add('warn', b.id, f'{a.id} and {b.id} share the {a.engine} preset {a.voice}: an instruction alone does not '
+                                  f'make a second person{hint}')
+    measured = {k: v for k, v in (pitches or {}).items() if v}
+    for i, a in enumerate(chars):
+        for b in chars[i + 1:]:
+            d = semitones(measured.get(a.id), measured.get(b.id))
+            if d is None or d >= APART or (a.engine, a.voice) == (b.engine, b.voice):
+                continue
+            other = suggest(b.engine, b.voice, used)
+            how = (f'pull the instructions apart (one bright and high, one low and gruff), set pitch = '
+                   f'{"-2" if measured[b.id] <= measured[a.id] else "2"} on {b.id}, or give it another voice'
+                   if b.engine == 'qwen3' else f'give {b.id} another voice')
+            add('warn', b.id, f'{a.id} ({a.engine} {a.voice}, {measured[a.id]:.0f} Hz) and {b.id} ({b.engine} {b.voice}, '
+                              f'{measured[b.id]:.0f} Hz) sound alike: their lines measure {d:.2f} semitones apart (under '
+                              f'{APART:g}); {how}' + (f', e.g. {other}' if other else ''))
+    names = {}
+    for c in chars:
+        names.setdefault(c.name.strip().lower(), []).append(c.id)
+    for name, ids in names.items():
+        if len(ids) > 1:
+            add('warn', ids[1], f'{", ".join(ids)} are all called "{cast.character(ids[0]).name}" on screen: one name for two '
+                                'people reads as one person with two voices; give each its own name')
+    if draft:
+        seen = {}
+        for c in chars:
+            d = {**{'engine': c.engine, 'voice': c.voice}, **(c.draft or {})}
+            key = (d.get('engine'), d.get('voice'))
+            if key in seen and (c.engine, c.voice) != (seen[key].engine, seen[key].voice):
+                add('warn', c.id, f'in draft takes (VIDEOCRAFT_VOICE=draft) {seen[key].id} and {c.id} both speak as '
+                                  f'{key[0]} {key[1]}: give one another draft voice')
+            seen.setdefault(key, c)
+    return out
 
 
 class CastError(ValueError):
