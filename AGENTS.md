@@ -46,7 +46,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `…/camera/` | `Rigs` (orbit, fixed, first), `Operator` (critically damped follow) | a |
 | `…/mixin/` | `ClockMixin` (fixed step), `CameraMixin` (rig moves the camera), `ParkedPlayerMixin` (hide the parked player) | a |
 | `…/devmixin/`, `HiddenWindow.java` | Hidden SDL window, no focus, no Dock icon; only with `-Dvideocraft.hidden=true` | a |
-| `…/actor/` | `Hand` (human input model, no Minecraft classes), `Cast`, `PlayerActor`, `Actions` | b |
+| `…/actor/` | `Hand` (human input model), `Cast`, `Puppet` (mob and mannequin actors), `Path`/`Stride`/`Footing`/`Heading`/`Life`/`Gesture` (motion, no Minecraft classes), `Looks`, `Skins`, `ActorLog` (actors.csv), `PlayerActor`, `Actions`; mixins in `mixin/actor/` | b |
 | `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
 | `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
@@ -131,6 +131,18 @@ They protect the owner's machine and game. They are not preferences.
   `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
 - **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
   `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
+- **Puppets are client-side entities the level never ticks.** `ClientLevel.tickNonPassenger` is skipped for them
+  (`PuppetTickMixin`); the puppet runs `commonTick()`, sets the new position, then `tick()` (so vanilla's walk cycle
+  measures the distance really moved), on the frame clock, and `PuppetRenderMixin` draws them at the puppet's own
+  fraction of a tick: the game's partial tick has a real-time phase that differs per take. Two takes then give
+  identical `actors.csv` and `sounds.csv`; video pixels still differ in clouds (server time runs in real time).
+- **A client-side entity's own sounds play nowhere.** `Entity.playSound` goes through `level.playSound(null, …)`, which
+  the client ignores (the server would send it); puppets play through `playLocalSound` (`PuppetSoundMixin`).
+- **Fences and walls collide at 1.5 blocks but are drawn 1 high**: stand feet on `min(collision, outline)` top.
+  A goat's `setYHeadRot` clamps to 15° of its body; write `yHeadRot` directly.
+- **`ClientMannequin` takes its finished skin lookup only in its own tick**, so an unticked mannequin shows the default
+  skin; puppets settle it when drawn. A profile `{texture = "videocraft:skins/x"}` is the texture
+  `videocraft:textures/skins/x.png` (a `DynamicTexture` from the PNG), no network.
 
 ## Working with agents
 
