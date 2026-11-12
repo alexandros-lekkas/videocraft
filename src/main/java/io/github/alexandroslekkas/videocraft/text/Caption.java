@@ -84,7 +84,7 @@ final class Caption extends Message {
 			}
 		}
 		if (words.isEmpty()) throw new IllegalArgumentException(where + ": the caption has no words");
-		double last = -1;
+		double last = Double.NEGATIVE_INFINITY;
 		for (Word w : words) {
 			if (Double.isNaN(w.at())) continue;
 			if (w.at() < last) throw new IllegalArgumentException(where + ": word times must not go backwards (\"" + w.text() + "\" at " + w.at() + ")");

@@ -336,14 +336,17 @@ def lint_spoken(problems, resolved):
     """Lint's reading rules are for text read without sound (max(1.2 s, 0.5 + 0.3 s a word) after the caption is
     complete, at most 2.5 words a second). A caption the voice speaks is a subtitle: the viewer hears it as it pops,
     so those become notes, unless the caption is up for less than SPOKEN_MIN in all."""
-    voiced = {}
+    voiced, line_up = {}, {}
     for shot in resolved.get('shot') or []:
         cues = shot.get('cue') or []
         for k, c in enumerate(cues):
             if c.get('do') == 'caption' and c.get('voiced'):
                 later = [x['at'] for x in cues if x.get('do') in ('caption', 'title', 'card', 'lower_third') and x['at'] > c['at']]
                 end = min(later + [float(shot.get('duration') or 0)])
-                voiced[f'shot {shot.get("name")}.cue[{k}]'] = end - c['at'] - c['words'][0]['at']
+                up = end - c['at'] - max(0.0, c['words'][0]['at'])
+                voiced[f'shot {shot.get("name")}.cue[{k}]'] = c['voiced']
+                line_up[c['voiced']] = line_up.get(c['voiced'], 0.0) + up   # a caption carried over cuts: all its shots
+    voiced = {where: line_up[v] for where, v in voiced.items()}
     out = []
     for p in problems:
         up = voiced.get(p.get('where'))
