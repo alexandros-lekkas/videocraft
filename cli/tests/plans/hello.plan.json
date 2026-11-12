@@ -8,7 +8,7 @@
     "fps": 60
   },
   "world": {
-    "seed": "blockreel",
+    "seed": "videocraft",
     "save": null,
     "gamemode": "creative",
     "time": 1000,

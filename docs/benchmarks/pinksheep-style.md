@@ -5,7 +5,7 @@ frame, clip and analysis file made from it stay in `reference/` (git-ignored) an
 
 ## What this benchmark is
 
-One test of whether blockreel is good: given a shot list, can it produce a short, funny Minecraft video with the
+One test of whether videocraft is good: given a shot list, can it produce a short, funny Minecraft video with the
 **form** of a well-known Minecraft comedy channel at its peak? Form means structure, shot count and lengths, camera
 language, staging, character acting, pacing, on-screen text and energy.
 
@@ -135,10 +135,10 @@ How the comedy is timed:
 - Acting is minimal otherwise: walking, turning, standing. The energy is in the voice, the cutting and the moving
   camera, not in the body.
 
-## Capability checklist for blockreel
+## Capability checklist for videocraft
 
 Status: **done in prototype** (T3 Craft's launch-video recorder did it: `scripts/demo/`, `DemoRecorder`, `DemoHand`,
-`DemoOverlay`, `DemoCameraMixin`, `DemoClockMixin`), **partial** (the prototype has the base, blockreel needs more),
+`DemoOverlay`, `DemoCameraMixin`, `DemoClockMixin`), **partial** (the prototype has the base, videocraft needs more),
 **build** (nothing yet), **out of scope for now** (with the reason).
 
 ### Capture and timing
@@ -211,7 +211,7 @@ Status: **done in prototype** (T3 Craft's launch-video recorder did it: `scripts
 | Positional, in-world music (a jukebox or note blocks "playing" in the room) | build | Follows from SFX capture |
 | Voice-over (synthetic voice) | out of scope for now | No voice in v1; see [what that costs](#what-no-voice-costs) and where it slots in |
 
-### The five capabilities blockreel most needs that it does not have
+### The five capabilities videocraft most needs that it does not have
 
 1. **A sound track**: capture or reconstruct the game's own sound effects, put them on the frames they belong to, and
    mix them with a ducked music bed. Without a voice, SFX carry the jokes.
@@ -240,7 +240,7 @@ at the lens, and their natural AI switched off without freezing their idle life 
 
 **Custom looks.** The reference's hero is a custom model and skin. Ours must be visibly its own character at a glance
 and from far away, which for a mob means a texture or a distinctive vanilla state, and a consistent look between the
-3D actor and any 2D card of it. The 2D cartoon card (shot 29) needs original art; blockreel can avoid drawing by
+3D actor and any 2D card of it. The 2D cartoon card (shot 29) needs original art; videocraft can avoid drawing by
 rendering the actor's own model on black as the card.
 
 **Sound effects.** The game is muted in every hidden run today. Recording what the game plays (or logging every sound

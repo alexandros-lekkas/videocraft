@@ -1,16 +1,16 @@
 {
 	"schemaVersion": 1,
-	"id": "blockreel",
+	"id": "videocraft",
 	"version": "${version}",
-	"name": "blockreel",
-	"description": "Agent-directed video for Minecraft: plays a shot list in a hidden client and captures every frame. A dev-time tool; it does nothing unless started with -Dblockreel.take.",
+	"name": "videocraft",
+	"description": "Agent-directed video for Minecraft: plays a shot list in a hidden client and captures every frame. A dev-time tool; it does nothing unless started with -Dvideocraft.take.",
 	"authors": ["Alexandros Lekkas"],
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {
-		"client": ["dev.blockreel.Blockreel"]
+		"client": ["io.github.alexandroslekkas.videocraft.Videocraft"]
 	},
-	"mixins": ["blockreel.mixins.json", "blockreel.dev.mixins.json"],
+	"mixins": ["videocraft.mixins.json", "videocraft.dev.mixins.json"],
 	"depends": {
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.3",

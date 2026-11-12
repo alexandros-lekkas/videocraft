@@ -1,9 +1,0 @@
-#!/usr/bin/env python3
-"""blockreel's command line, runnable straight from a checkout (no install): bin/blockreel doctor."""
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'cli'))
-from blockreel.cli import main  # noqa: E402
-
-raise SystemExit(main())

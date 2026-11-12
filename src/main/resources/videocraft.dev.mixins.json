@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "io.github.alexandroslekkas.videocraft.devmixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "io.github.alexandroslekkas.videocraft.HiddenWindow",
+  "client": [
+    "HiddenWindowMixin",
+    "HiddenAppMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

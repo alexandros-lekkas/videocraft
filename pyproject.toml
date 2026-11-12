@@ -1,5 +1,5 @@
 [project]
-name = "blockreel"
+name = "videocraft"
 version = "0.1.0"
 description = "Agent-directed video for Minecraft Java: shot list in, cut video out."
 requires-python = ">=3.11"
@@ -7,7 +7,7 @@ license = "MIT"
 dependencies = []
 
 [project.scripts]
-blockreel = "blockreel.cli:main"
+videocraft = "videocraft.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -15,4 +15,4 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["cli"]
-include = ["blockreel*"]
+include = ["videocraft*"]

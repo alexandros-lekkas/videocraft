@@ -1,8 +1,8 @@
-# The blockreel modpack: what `blockreel modpack` (workstream d) turns into a Modrinth .mrpack.
+# The videocraft modpack: what `videocraft modpack` (workstream d) turns into a Modrinth .mrpack.
 # Versions were checked on Modrinth on 2026-11-11 for Fabric on Minecraft 26.3. An .mrpack references downloads
-# on Modrinth's CDN; only blockreel's own jar goes into overrides/.
+# on Modrinth's CDN; only videocraft's own jar goes into overrides/.
 [pack]
-name = "blockreel"
+name = "videocraft"
 minecraft = "26.3"
 fabric_loader = "0.19.5"
 
@@ -24,7 +24,7 @@ version = "1.17.1+26.3-fabric"
 
 # Not in the pack, on purpose (docs/DESIGN.md, "Existing mods"):
 #   sodium      mc26.3-0.9.2-fabric exists; changes the render path, so capture parity must be verified first.
-#   flashback   0.43.6 for 26.3; a replay editor driven from its UI, "do not redistribute". blockreel captures itself.
+#   flashback   0.43.6 for 26.3; a replay editor driven from its UI, "do not redistribute". videocraft captures itself.
 #   replaymod   26.3-2.6.28; GPL, GUI-only render queue.
 #   cmdcam      no Fabric build for 26.3 (NeoForge only).
 #   modernfix   no Fabric build for 26.x.
