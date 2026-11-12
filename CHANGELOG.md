@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `clips cut --max S` lets a vertical short run past 60 s (the platforms now take longer shorts); the default
+  stays 60 s.
 - `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
   painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
   filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,

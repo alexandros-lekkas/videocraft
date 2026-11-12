@@ -62,7 +62,7 @@ def cmd_cut(args):
     it = runs.resolve(args.target)
     record = shorts.cut(it, moment=args.moment, start=args.start, end=args.end, method=args.method, aspect=args.aspect,
                         subject=args.subject, hook=args.hook, pull=args.pull, say=say, timeout=args.timeout,
-                        from_start=args.from_start)
+                        from_start=args.from_start, longest=args.max)
     say(f'RESULT   {"PASS" if record["pass"] else "FAIL"} {record["width"]}x{record["height"]} {record["seconds"]:.2f} s by {record["method"]}; '
         + '; '.join(record['checks_text']))
     say(f'VIDEO    {record["video"]}')
@@ -115,6 +115,8 @@ def register(sub):
     k.add_argument('--hook', help='hook text in the first second (default: from the moment when it starts cold; "none" for none)')
     k.add_argument('--pull', type=float, default=1.0, help='re-shoot: pull every rig back by this factor (radius/distance)')
     k.add_argument('--from-start', action='store_true', help='re-shoot: take every shot from the first (state carried between shots)')
+    k.add_argument('--max', type=float, default=60.0,
+                   help='longest short in seconds (60; YouTube Shorts, TikTok and Reels now take longer ones)')
     k.add_argument('--timeout', type=int, default=900)
     k.set_defaults(run=cmd_cut)
     q = s.add_parser('pack', help='per short: title, description, hashtags and a thumbnail frame into clips/<n>/meta.json')

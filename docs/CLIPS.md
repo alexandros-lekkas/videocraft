@@ -1,14 +1,14 @@
 # Long form and clipping
 
 Finished runs become two more kinds of video: **long form** (several runs joined into one video with chapter cards
-and chapters) and **vertical shorts** (9:16, at most 60 s, cut from a moment of a run or an assembly). The code is
+and chapters) and **vertical shorts** (9:16, at most 60 s unless `clips cut --max` allows more, cut from a moment of a run or an assembly). The code is
 `cli/videocraft/clips/`; the fixture is `examples/clips/reframe.toml`.
 
 ```sh
 bin/videocraft assemble <series-id | run run ...> -o <name> [--title "…" ...] [--cards game|plain|none] [--cold-open]
 bin/videocraft clips find <run> [--min 15] [--max 60] [--ask]            # rank moments → clips/moments.json
 bin/videocraft clips cut <run> --moment N | --from s --to s [--method auto|reshoot|reframe] [--aspect 9:16]
-                                [--subject <actor id | x,y,z>] [--hook "…" | --hook none] [--pull 1.2] [--from-start]
+                                [--subject <actor id | x,y,z>] [--hook "…" | --hook none] [--pull 1.2] [--from-start] [--max 60]
 bin/videocraft clips pack <run> [--ask]                                   # title, description, hashtags, thumbnail
 ```
 

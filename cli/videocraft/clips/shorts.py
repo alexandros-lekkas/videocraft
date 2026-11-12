@@ -35,9 +35,9 @@ TEXT_ACTIONS = ('caption', 'title', 'card', 'lower_third', 'keycap')
 
 # ---- The range ----
 
-def pick_range(it, m, moment=None, start=None, end=None):
+def pick_range(it, m, moment=None, start=None, end=None, longest=LONGEST):
     """(start, end, moment or None) in master seconds: a moment from clips/moments.json, or --from/--to snapped so it
-    starts and ends on a cut or between words; at most LONGEST seconds."""
+    starts and ends on a cut or between words; at most `longest` seconds (LONGEST unless --max asks for more)."""
     words = timemap.words(m)
     cuts = m.boundaries()
     mo = None
@@ -53,8 +53,8 @@ def pick_range(it, m, moment=None, start=None, end=None):
     else:
         s = timemap.snap_start(max(0.0, start or 0.0), cuts, words, tolerance=0.4)
         e = timemap.snap_end(min(m.seconds, end if end is not None else m.seconds), cuts, words, tolerance=0.4, ceiling=m.seconds)
-    if e - s > LONGEST:
-        limit = s + LONGEST
+    if e - s > longest:
+        limit = s + longest
         options = [c for c in cuts if s < c <= limit] + [w.end for w in words if s < w.end <= limit]
         e = max(options) if options else limit
     if e - s <= 0:
@@ -473,13 +473,13 @@ def vertical_text(vit, shots, fps):
 
 
 def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', subject=None, hook=None, pull=1.0, say=print, timeout=900,
-        from_start=False):
+        from_start=False, longest=LONGEST):
     if aspect != '9:16':
         raise SystemExit('only --aspect 9:16 is made today')
     if not (it.cut / 'master.mp4').exists():
         raise SystemExit(f'{it.path} has no cut/master.mp4 to clip')
     m = timemap.load(it)
-    s, e, mo = pick_range(it, m, moment, start, end)
+    s, e, mo = pick_range(it, m, moment, start, end, longest)
     a, b = timemap.frame_range(s, e, m.fps)
     pieces = timemap.sub_timeline(m.segments, a, b)
     folder = folder_for(it, mo)
@@ -525,7 +525,7 @@ def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', sub
     checks, text = {}, []
     checks['size'] = (got['width'], got['height']) == (OUT_W, OUT_H)
     checks['frames'] = got['frames'] == b - a
-    checks['at_most_60s'] = got['seconds'] <= LONGEST + 0.05
+    checks['at_most_60s'] = got['seconds'] <= longest + 0.05   # the key keeps its name; --max moves the limit
     checks['under_50mb'] = got['bytes'] <= LIMIT_MB * 1e6
     if record['loudness'] and (record['loudness'].get('before') or -120) > -60:   # a silent source makes a silent short
         checks['loudness'] = abs(record['loudness']['integrated'] - loudness.TARGET) <= 1.0
