@@ -22,6 +22,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 |--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:--|
 | 1 | 0006 | 8.0 | 7.0 | 7.0 | 5.0 | 6.5 | 6.5 | 6.0 | 6.0 | 6.5 | **6.5** | 5 | pass |
 | 2 | 0007 | 8.0 | 7.5 | 7.0 | 5.5 | 6.5 | 6.0 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
+| 3 | 0009 | 8.0 | 6.5 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 7.0 | 6.5 | **6.61** | 5.5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -45,3 +46,19 @@ the lens, unimpressed) and to Duke at full brightness in s10; Nibs faces the len
 214, scream at 3.6 s); the bed in C (the melody's key), drums under the flashback, out for the wait, a crash on
 "it"; s18 over Duke's shoulder onto the four motionless hens; a second of preroll on the barn shots; the end card
 opaque; s07 cut to 2.2 s so the poster lands on the line; lead tracks varied in side, height and drift.
+
+Take 0008 found the master's true peak at +0.1 dBTP although the mastered wav measured -1.2: the AAC encode of a
+dense, limited mix overshoots. Fixed in `audio/loudness.py` (limit 1 dB under the ceiling): 0009 measures -1.6 dBTP.
+0009 also dropped the slow push on the bow, which cropped the top caption. 0009: 30 shots, median 2.25 s, longest
+7.25 s, loudness range 7.7 LU, 70.1 s without the end card.
+
+Round 3 held the average (6.61): technical +0.5 and text +0.5, camera -1.0, within the documented reviewer wobble.
+Every reviewer named s16-bow: 5.9 s wide with Duke at 10% of the frame, the banner cut through by the top caption.
+Others: "A standing ovation." needs the seated hens big and to the lens; the street tracks are one composition;
+Nibs' anger in s19 has no gesture; the look to the lens in s05 is not a turn (he already faces it); the face
+cut-in's horn sits on dark leaves. And a bug found in the strip: Nibs' s01 walk carried on into s02 over its
+`place` (actors.csv), so the cut-in framed the goat by luck. Applied for 0010: s16 split into a 3.8 s medium of the
+bow (Duke at about a third of the frame, caption at the bottom) and a 2.1 s s16b of Duke trotting in and taking
+the trophy; s18 a medium on the four hens on the rail, all to the lens, Duke's line over them; `stop` before the
+s02 `place` and the lens low, looking up, so the horn is against the sky; s05 from the side; s19 stops on "jump",
+shakes its head and looks to the lens; s06 3.6 s; s10 2.0 s with a chin-up; s11 0.9 s; s17 and s18 a beat longer.
