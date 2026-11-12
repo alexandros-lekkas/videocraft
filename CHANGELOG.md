@@ -77,3 +77,5 @@
   `runs`, `status`, `stop`); the run store; `examples/hello.toml` (an orbit around spawn, 1080p60).
 - First run is no longer silent: while Gradle and Loom set up (about 1 GB of downloads on a fresh machine), `run`
   passes Gradle's download lines through and says a progress line every 30 s after 15 s of silence.
+- Game assets (sounds, music) are found under `GRADLE_USER_HOME` when it is set, not only `~/.gradle`
+  (`paths.loom_assets`, used by `doctor` and the audio mix).
