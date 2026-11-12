@@ -118,7 +118,7 @@ final class Commands {
 							for (int z = a[1]; z <= a[3]; z = Math.floorDiv(z, 16) * 16 + 256) {
 								int x2 = Math.min(a[2], Math.floorDiv(x, 16) * 16 + 255), z2 = Math.min(a[3], Math.floorDiv(z, 16) * 16 + 255);
 								String e = run(server, at, "forceload add " + x + " " + z + " " + x2 + " " + z2);
-								if (e != null && !e.contains("already") && error == null) error = where + ": forceload failed: " + e;
+								if (e != null && !e.contains("already") && !e.contains("No chunks were marked") && error == null) error = where + ": forceload failed: " + e;
 							}
 						}
 						return 0;
