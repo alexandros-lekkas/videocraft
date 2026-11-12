@@ -5,7 +5,13 @@
   videocraft run <script.toml> [--show]     take → cut → measure, as a new iteration under runs/<name>/
   videocraft cut <iteration>                re-cut an iteration (`<name>`, `<name>/<n>` or a path)
   videocraft measure <iteration>            re-measure an iteration
-  videocraft runs <name>                    the iterations of a script and their verdicts
+  videocraft runs <name>                    the iterations of a script: verdicts, scores, parents
+  videocraft lint <script.toml>             every problem in a script before a take
+  videocraft measure --video <file>         measure any video (--from s --to s --out dir)
+  videocraft review packet|add|run <it>     review packets, reviews, reviewer agents (docs/REVIEW.md)
+  videocraft score <it> · compare <a> <b>   aggregate the reviews; what changed between two iterations
+  videocraft climb <script.toml> --budget N propose, run with --parent, review, keep if better
+  videocraft modpack                        modpack/pack.toml → build/modpack/*.mrpack
   videocraft status | stop                  this checkout's client, over its control port
 
 Takes run in parallel across checkouts: each holds one of three machine-wide slots (control ports 25750-25752)
@@ -215,7 +221,7 @@ def cmd_climb(args):
 
     def judge(it, rub, roles):
         review.run_reviews(it, rub, roles, args.model)
-        return review.score(it, rub)
+        return review.score(it, rub, roles)
 
     log = climb.climb(args.script, args.budget, args.rubric, args.reviewers, args.model, take, judge, say)
     say(f'CLIMB    best {log.get("best")} average {log.get("best_average")} after {log.get("spent", 0)} take(s)' + (f'; stopped: {log["stopped"]}' if log.get('stopped') else ''))

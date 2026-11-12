@@ -109,6 +109,9 @@ def climb(script_path, budget, rubric_ref=None, reviewers=None, model=None, run_
         s = review(it, rub, roles)
         log['steps'].append({'iteration': it.name, 'parent': None, 'average': s.get('average'), 'kept': True, 'summary': 'the script as written'})
         best = (it, s)
+    if roles and sorted(best[1].get('reviewers', [])) != sorted(roles):
+        say(f'climb {name}: re-reviewing {best[0].name} with {", ".join(roles)} so scores compare')
+        best = (best[0], review(best[0], rub, roles))
     say(f'climb {name}: best {best[0].name}, average {best[1].get("average")}')
     failures = 0
     while spent < budget:

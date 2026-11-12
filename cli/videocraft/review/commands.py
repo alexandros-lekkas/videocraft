@@ -103,8 +103,8 @@ def cmd_run(args):
     return 1 if failed else code
 
 
-def score(it, rub):
-    found = reviews.load_all(it, rub['name'])
+def score(it, rub, roles=None):
+    found = [r for r in reviews.load_all(it, rub['name']) if not roles or r['reviewer'] in roles]
     result = reviews.aggregate(found, rub)
     (it.path / 'score.json').write_text(json.dumps(result, indent=2) + '\n')
     store.update_index(it.path.parent)
