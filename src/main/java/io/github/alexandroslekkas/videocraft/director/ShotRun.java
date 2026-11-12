@@ -51,13 +51,20 @@ final class ShotRun implements ShotContext {
 	private final JsonArray marks = new JsonArray();
 	private final FrameLog log = new FrameLog();
 	private CameraRig rig;
+	/** Set up and waiting for the world to be drawn; running unrecorded from -preroll; recording from frame 0. */
+	private enum Phase { PREPARE, ROLL, RECORD }
+
+	private final int prerollFrames;
+	private Phase phase = Phase.PREPARE;
 	private int prepared, frame;
-	private boolean recording, finished;
+	private boolean finished;
 	private int poseFrame = -1;
 	private Pose pose;
+	private double lens = 70;
 
-	ShotRun(Director director, String name, double duration, List<Plan.Cue> timeline, boolean records, long seed) {
+	ShotRun(Director director, String name, double duration, double preroll, List<Plan.Cue> timeline, boolean records, long seed) {
 		this.director = director;
+		this.prerollFrames = (int) Math.round(Math.max(0, preroll) * director.plan().output().fps());
 		this.name = name;
 		this.duration = duration;
 		this.due = new ArrayList<>(timeline);
@@ -75,18 +82,23 @@ final class ShotRun implements ShotContext {
 	/** Once per game frame, after the capture of the last one. */
 	void advance() {
 		if (finished) return;
-		if (!recording) {
+		if (phase == Phase.PREPARE) {
 			if (records) {
 				prepared++;
 				boolean drawn = minecraft().levelRenderer.hasRenderedAllSections();
 				if (prepared < PREPARE_FRAMES || (!drawn && prepared < PREPARE_MAX_FRAMES)) return;
 				if (!drawn) VideocraftLog.LOGGER.warn("VIDEOCRAFT {} records before every section in view is drawn", name);
 			}
-			recording = true;
-			frame = 0;
-			if (records) director.beginSegment(this);
+			// Pre-roll: the timeline and the rig run from -preroll, unrecorded, so frame 0 starts mid-action.
+			phase = Phase.ROLL;
+			frame = -prerollFrames;
 		} else {
 			frame++;
+		}
+		if (phase == Phase.ROLL && frame >= 0) {
+			phase = Phase.RECORD;
+			if (records) director.beginSegment(this);
+		} else if (phase == Phase.RECORD) {
 			boolean over = records ? frame >= Math.round(duration * fps()) : due.isEmpty() && running.isEmpty();
 			if (over) { finish(); return; }
 		}
@@ -141,10 +153,11 @@ final class ShotRun implements ShotContext {
 
 	@Override public Minecraft minecraft() { return Minecraft.getInstance(); }
 	@Override public String shot() { return name; }
-	@Override public int frame() { return recording ? frame : 0; }
+	/** Negative during pre-roll, {@code -preroll * fps} while the shot is prepared. */
+	@Override public int frame() { return phase == Phase.PREPARE ? -prerollFrames : frame; }
 	@Override public double seconds() { return frame() / (double) fps(); }
 	@Override public double duration() { return duration; }
-	@Override public boolean recording() { return recording && records; }
+	@Override public boolean recording() { return phase == Phase.RECORD && records; }
 	@Override public int fps() { return director.plan().output().fps(); }
 	@Override public Vec3 anchor(String name) { return director.anchor(name); }
 	@Override public void anchor(String name, Vec3 at) { director.anchor(name, at); }

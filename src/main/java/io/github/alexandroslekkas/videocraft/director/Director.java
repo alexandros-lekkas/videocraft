@@ -217,7 +217,7 @@ public final class Director {
 		command("gamerule advance_weather false");
 		command("difficulty peaceful");
 		command("gamemode " + w.gamemode() + " " + p.getName().getString());
-		cast = Cast.stage(plan.actors(), mc);
+		cast = new java.util.LinkedHashMap<>(Cast.stage(plan.actors(), mc));
 		go(Step.SETTLE);
 	}
 
@@ -264,7 +264,7 @@ public final class Director {
 		}
 		Plan.Shot spec = plan.shots().get(shotIndex);
 		VideocraftLog.LOGGER.info("VIDEOCRAFT shot {} ({} s)", spec.name(), spec.duration());
-		shot = new ShotRun(this, spec.name(), spec.duration(), spec.timeline(), true, plan.seed());
+		shot = new ShotRun(this, spec.name(), spec.duration(), spec.params().number("preroll", 0), spec.timeline(), true, plan.seed());
 		CameraRig rig = registries.rig(spec.camera().string("rig")).create(spec.camera(), shot);
 		shot.rig(rig);
 		view(mc, rig, spec);
