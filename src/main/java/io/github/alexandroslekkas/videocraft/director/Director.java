@@ -191,7 +191,11 @@ public final class Director {
 	private void arrive(Minecraft mc) {
 		if (mc.gui.screen() != null || stepTicks < 20) return;
 		var p = mc.player;
-		anchor("spawn", p.position());
+		// The world spawn point, not where the player happened to land: vanilla scatters the first spawn within the
+		// spawn radius at random, so the same seed would put "spawn" somewhere else in every take.
+		Vec3 spawn = WorldBoot.spawnPoint(mc);
+		anchor("spawn", spawn);
+		command(String.format(Locale.ROOT, "tp %s %.3f %.3f %.3f 0 0", p.getName().getString(), spawn.x, spawn.y, spawn.z));
 		// The script presses jump itself where a person would; auto-jump would hop at anything brushed in passing.
 		mc.options.autoJump().set(false);
 		mc.options.guiScale().set(4);

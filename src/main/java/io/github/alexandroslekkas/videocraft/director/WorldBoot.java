@@ -5,16 +5,19 @@ import io.github.alexandroslekkas.videocraft.plan.Plan;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.util.FileUtil;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 
 /** Getting into the take's world, and the frame size check. All the world-creation API drift stays in this file. */
 final class WorldBoot {
@@ -43,6 +46,26 @@ final class WorldBoot {
 		mc.createWorldOpenFlows().createFreshLevel(levelId, settings, new WorldOptions(seed, true, false), WorldPresets::createNormalWorldDimensions, new TitleScreen());
 		VideocraftLog.LOGGER.info("VIDEOCRAFT creating world {} from seed {}", levelId, seed);
 		return levelId;
+	}
+
+	/**
+	 * The middle of the world spawn block, standing on the highest block that stops movement there. Asked of the
+	 * integrated server (the client may not have the heightmap yet); the same world always gives the same point.
+	 */
+	static Vec3 spawnPoint(Minecraft mc) {
+		var server = mc.getSingleplayerServer();
+		if (server == null) throw new IllegalStateException("no integrated server to ask for the spawn point");
+		try {
+			return server.submit(() -> {
+				var level = server.overworld();
+				var pos = level.getRespawnData().pos();
+				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
+				if (y <= level.getMinY()) y = pos.getY();
+				return new Vec3(pos.getX() + 0.5, y, pos.getZ() + 0.5);
+			}).get(10, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			throw new IllegalStateException("could not read the world spawn point: " + e, e);
+		}
 	}
 
 	/**
