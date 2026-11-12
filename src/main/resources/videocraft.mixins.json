@@ -5,7 +5,9 @@
   "client": [
     "ClockMixin",
     "CameraMixin",
-    "ParkedPlayerMixin"
+    "ParkedPlayerMixin",
+    "sound.SoundEngineMixin",
+    "sound.SoundInstanceAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

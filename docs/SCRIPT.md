@@ -57,6 +57,7 @@ Cues at the same time start in the order written.
 | `walk`, `run`, `look`, `turn`, `jump`, `crouch`, `swing`, `use`, `break`, `place`, `select`, `type`, `open`, `close`, `point`, `click`, `pose` | see DESIGN.md | [b] |
 | `caption`, `title`, `card`, `lower_third`, `keycap`, `clear` | see [Text](#text) | **Implemented.** |
 | `<modid>:<name>` | the plugin's | Another mod's action ([DESIGN.md](DESIGN.md#6-extension-point)). |
+| `sound`, `tune`, `ambience`, `particles` | see [Audio](#audio) | **Implemented** (audio). |
 
 ## Text
 
@@ -140,3 +141,68 @@ the BT.709 matrix. Fades include the look (a framed flashback fades up from blac
 picture encodes and muxes the `cut/audio.wav` it returns as AAC 192k, cut or padded to the picture's length. With
 no audio module, `[edit] audio = "none"`, `VIDEOCRAFT_SILENT=1` or `videocraft edit cut <run> --silent`, the master
 has no audio stream. Music, effects and voice keys are in the audio section.
+
+## Audio
+
+The game is muted. Every sound the client starts while a shot is prepared or recorded is logged to
+`take/shots/<name>/sounds.csv`, and the edit rebuilds the sound track from your own game assets (read from
+`~/.gradle/caches/fabric-loom/assets`, decoded into the git-ignored `cache/audio/`). So anything that should be heard
+must be played through the client's sound system on its frame: the actions below do that, and so must actors (their
+footsteps and voices). **Implemented.**
+
+`sounds.csv` columns (add at the end only): `frame` (the shot's frame; negative: started while the shot was being
+prepared, the last 20 s are kept), `event` (`minecraft:entity.goat.step`, or `videocraft:<name>` for a synthesized
+one), `file` (the variant actually chosen, `mob/goat/step3`; the same in every take of the plan), `category`
+(`music` is the game's own music, ignored by the mix), `volume`, `pitch`, `x`, `y`, `z`, `relative` (1: not
+positional), `attenuation_distance` (blocks), `looping`.
+
+### Actions
+
+Positions are `pos` (the cue's `at` is its time); without `pos` a sound is at the cue's `actor` (default the player),
+or not positional with `relative = true`. Bad ids, instruments, notes or categories fail the take naming the cue.
+
+| `do` | Keys (defaults) | |
+|:--|:--|:--|
+| `sound` | `id` (an event: `minecraft:entity.chicken.egg`, `block.note_block.bell`, or `videocraft:<name>`), `pos` / `relative`, `volume` (1), `pitch` (1, playback rate 0.5–2), `category` (`neutral`; `master` if relative) | One sound, on the cue's frame. |
+| `tune` | `blocks` (a list of positions) or `block` (one), `notes`, `bpm` (120), `step` (0.5 beats per token), `instrument` (the block's own, else `harp`), `volume` (3, as a note block), `particles` (true), `mark` (a label noted in `marks.json` on each note's frame, for cuts on the beat) | A melody on note blocks: note *i* plays on block *i* mod *n*, on its frame, with the instrument's real sound at the note's pitch and the note particle rising from the block (as vanilla's note block). |
+| `ambience` | `id`, `pos` / `relative` / actor, `every` (0.8 s mean gap), `jitter` (0.5 of the gap), `spread` (4 blocks), `volume` (0.5), `pitch` (1), `pitch_jitter` (0.1), `duration` (to the end of the shot), `category` (`ambient`) | A bed of one event repeated with seeded jitter in time, pitch, volume and place (crickets: `videocraft:cricket`). |
+| `particles` | `id` (a simple particle: `heart`, `note`, `poof`, `happy_villager`, `cloud`, `flame`, `smoke`, `crit`, `angry_villager`, `splash`…), `pos` or actor, `offset` ([0, 0, 0]), `count` (8), `spread` (0.4 or [x, y, z]), `speed` (0), `every` (0: one burst), `duration` | A burst, or a stream every `every` seconds. Seeded. |
+
+`notes`: one token per step, `-` a rest, `c4*2` a note held two steps, `c4+e4+g4` a chord; names at harp pitch
+within a note block's range, `f#3` to `f#5` (or the block's note value 0–24).
+
+Synthesized events (no game sound; the mix makes them, and they are original audio): `videocraft:kick`, `snare`,
+`hat`, `crash`, `ding` (a bell), `dun` (a low sting), `sting` (a rising stab), `cricket`, `pop`, `whoosh`, `boing`.
+
+### The mix: `[edit]` keys
+
+| Key | Default | Meaning |
+|:--|:--|:--|
+| `audio` | `"game"` | `"game"`: logged game sounds from your assets. `"original"`: no byte of game audio: synthesized stand-ins for logged sounds (footstep ticks, note-block tones at the logged pitch, plops, thuds; others are left out), the synth bed instead of a game track, voice. `"none"`: no audio stream. |
+| `[edit.music]` | none | `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
+| `[[edit.music.cue]]` | | `shot` and `at` (seconds in the shot), or `time` (seconds in the cut); `do` = `out` (fade to silence), `in`, `drop` (silent for `length`, default one beat, then back), `thin` (drums only), `full` (all stems; `gain` in dB to come back harder), `hit` (a crash and kick on the beat); `fade` (s). |
+| `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else). |
+| `voice` | | `[{ file, shot, at, gain }]`, written by the dialogue resolver: each line placed at `at` seconds into the shot (dB `gain`), levelled, never cut at a clip end. |
+
+Each logged sound lands at the output time of its frame (through trims, speed and black gaps), at its pitch, quieter
+with distance from that frame's camera (the game's linear model, `1 − d / attenuation_distance`) and panned by its
+bearing from the camera's yaw. A sound that started before a clip's first frame joins part-way only if it is long
+(≥ 1 s) or looping; every sound stops at the end of its clip. The master is −14 LUFS integrated with true peak at
+most −1 dBTP; `cut/audio.json` lists every placed and skipped event and the measured loudness.
+
+Recipes (the benchmark's sound column):
+
+- A character's "voice" on each caption: a `sound` cue (or the actor's `voice` action) at the caption's `at`, e.g.
+  `id = "minecraft:entity.goat.ambient"` at the actor.
+- One beat of dropout as someone looks at the lens: `[[edit.music.cue]] do = "drop"` at that moment (`length` in s).
+- The bed thins to drums, then returns harder: `do = "thin"`, later `do = "full", gain = 3`.
+- Silence before a reveal: a `black = 0.8` clip (the bed and effects are silent there; a `fade_out` on the clip
+  before it fades the bed with the picture).
+- A montage cut on drum hits: a `videocraft:kick` `sound` cue at `at = 0` of each montage shot, or a music `hit`.
+- In-world music: `tune` on real note blocks (positional: panned and quieter with distance from the camera);
+  `do = "out"` on the bed while it plays.
+- A button at the end: `do = "hit"` then `do = "out"`.
+
+Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
+logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
+`videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
