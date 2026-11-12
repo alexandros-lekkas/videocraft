@@ -1,0 +1,89 @@
+# Player-shaped actors: two mannequins with skins painted by examples/skins/paint.py (original, no network skins).
+#   bin/videocraft run examples/mannequins.toml
+# Ana walks a bend across the square to Ben, stops, turns to him and waves; Ben turns to her head first and nods;
+# Ana talks with her hands, Ben shrugs, Ana facepalms.
+name = "mannequins"
+seed = 5
+description = "Mannequin puppets: walk, turn to each other, wave, talk, nod, shrug, facepalm."
+
+[world]
+seed = "videocraft"
+time = 9000
+settle = 3.0
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill -14 99 -14 14 99 14 grass_block",
+  "fill -6 99 -6 6 99 6 polished_andesite",
+  "fill -6 99 0 6 99 0 smooth_stone",
+  "setblock -5 100 5 lantern",
+  "setblock 5 100 -5 barrel",
+  "setblock 5 101 -5 flower_pot",
+  "fill -6 100 -6 -6 100 -2 oak_fence",
+]
+
+[[actor]]
+id = "ana"
+kind = "mannequin"
+skin = "skins/ana.png"
+model = "slim"
+at = [-4.5, 100, -4.0]
+facing = 0
+
+[[actor]]
+id = "ben"
+kind = "mannequin"
+skin = "skins/ben.png"
+at = [2.5, 100, 2.5]
+facing = -90                    # looking east, away from where Ana comes from
+
+[[shot]]
+name = "meet"
+duration = 11.0
+camera = { rig = "fixed", eye = [-1.0, 101.6, 9.5], at = [-0.6, 100.9, -0.5], fov = 62 }
+
+[[shot.cue]]
+at = 0.3
+do = "walk"
+actor = "ana"
+path = [[-3.5, 100, -0.5], [-1.0, 100, 2.0], [0.9, 100, 2.4]]
+face = "ben"
+
+[[shot.cue]]
+at = 3.6
+do = "turn"
+actor = "ben"
+to = "ana"
+
+[[shot.cue]]
+at = 5.0
+do = "pose"
+actor = "ana"
+pose = "wave"
+seconds = 1.4
+
+[[shot.cue]]
+at = 5.5
+do = "nod"
+actor = "ben"
+
+[[shot.cue]]
+at = 6.6
+do = "talk"
+actor = "ana"
+seconds = 2.2
+
+[[shot.cue]]
+at = 8.4
+do = "pose"
+actor = "ben"
+pose = "shrug"
+seconds = 1.2
+
+[[shot.cue]]
+at = 9.4
+do = "pose"
+actor = "ana"
+pose = "facepalm"
+seconds = 1.4

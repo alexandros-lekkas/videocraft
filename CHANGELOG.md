@@ -16,6 +16,12 @@
   (an `.mrpack`), `runs` with scores, and `index.json` with the parent chain. Rubrics: `docs/REVIEW.md` (general) and
   `docs/benchmarks/pinksheep-style.rubric.toml`. `doctor` also checks game sounds, the voice venv and the reviewers,
   and runs a `doctor()` from any command group that defines one.
+- Actors: `[[actor]]` `kind = "mob"` (any living entity, with its own variants and states, `tint`, `scale`) and
+  `kind = "mannequin"` (a local PNG `skin`) are deterministic client-side puppets on the frame clock; actions
+  `place`, `walk`/`run` (gaits, eased, over steps), `stop`, `turn`, `look` (to the lens), `hop`, `state` (fox sit,
+  sleep, bow; goat lower; chicken flap...), `hold`, `emit` (an egg), `voice`, `swing`, `nod`, `shake`, `talk`, `pose`;
+  their own footsteps and voices through the client's sound system; `shots/<name>/actors.csv`;
+  `examples/animals.toml`, `examples/mannequins.toml`; `ActorChecks`.
 - Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
   chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
   their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and
