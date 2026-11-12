@@ -153,13 +153,13 @@ actor = "nibs"
 target = "camera"
 hold = 1.2
 
-# 2. The face cut-in on the brag: the single horn fills the frame (a punch-in in the edit).
+# 2. The face cut-in on the brag: head-on, so the one horn and the missing one read at once (a push in the edit).
 [[shot]]
 name = "s02-horn"
 duration = 1.3
 preroll = 0.3
 time = 11000
-camera = { rig = "fixed", eye = { anchor = "market-lane:shot-01", offset = [15.25, 0.9, -1.5] }, at = { anchor = "market-lane:shot-01", offset = [14.7, 1.65, 0.05] }, fov = 38 }
+camera = { rig = "face", subject = "nibs", distance = 2.1, angle = -18, height = 0.35, fov = 46 }
 
 [[shot.cue]]
 at = -0.3
@@ -181,7 +181,7 @@ actor = "nibs"
 style = "proud"
 text = "This *horn."
 fit = "none"
-caption = { style = "whole", position = "top" }
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.35
@@ -780,7 +780,7 @@ name = "s15-note-one"
 duration = 2.5
 preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [2.75, 0.5, 0.5] }, at = { anchor = "barn-stage:note-4", offset = [0.5, 0.35, 0.5] }, fov = 40 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [3.7, 0.55, 0.5] }, at = { anchor = "barn-stage:note-4", offset = [0.5, 0.25, 0.5] }, fov = 44 }
 
 [[shot.cue]]
 at = -1.0
@@ -839,27 +839,29 @@ id = "videocraft:crash"
 relative = true
 volume = 0.5
 
-# 16. A medium on Duke at the front of the stage: the melody ends, he bows deep, twice, and waits. Crickets.
+# 16. From behind Duke, over his shoulder to the audience: he bows deep to the four hens, twice, and waits; they
+# sit there. The melody ends; then nothing but crickets.
 [[shot]]
 name = "s16-bow"
 duration = 3.8
 preroll = 1.0
 time = 18000
-camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [3.4, 0.95, 1.5] }, at = { anchor = "barn-stage:note-4", offset = [0.5, 0.4, 0.4] }, fov = 40 }
+camera = { rig = "fixed", eye = { anchor = "barn-stage:note-4", offset = [-2.1, 1.75, 2.2] }, at = { anchor = "barn-stage:note-4", offset = [4.5, 0.2, 0.4] }, fov = 48 }
 
 [[shot.cue]]
 at = -1.0
 do = "place"
 actor = "duke"
 to = { anchor = "barn-stage:note-4", offset = [0.5, 0, 0.5] }
-facing = -75
+facing = -90
 
 [[shot.cue]]
 at = 0.0
 do = "ambience"
 id = "videocraft:cricket"
 relative = true
-volume = 0.9
+volume = 1.0
+every = 0.35
 
 [[shot.cue]]
 at = 0.05
@@ -868,6 +870,7 @@ actor = "duke"
 style = "smug"
 text = "Thank you. Thank *you."
 fit = "none"
+position = "top"
 
 [[shot.cue]]
 at = 0.2
@@ -909,7 +912,8 @@ at = 0.0
 do = "ambience"
 id = "videocraft:cricket"
 relative = true
-volume = 0.8
+volume = 1.0
+every = 0.35
 
 [[shot.cue]]
 at = 0.0
@@ -930,9 +934,10 @@ seconds = 0.25
 at = 0.9
 do = "walk"
 actor = "duke"
-to = { anchor = "barn-stage:trophy", offset = [0.5, 0, 0.5] }
+to = { anchor = "barn-stage:trophy", offset = [0, 0, 0] }
 speed = 2.2
 arrive = 0.15
+face = "camera"
 
 [[shot.cue]]
 at = 1.15
@@ -960,7 +965,13 @@ actor = "duke"
 volume = 0.9
 
 [[shot.cue]]
-at = 1.5
+at = 1.55
+do = "look"
+actor = "duke"
+target = "camera"
+
+[[shot.cue]]
+at = 1.75
 do = "turn"
 actor = "duke"
 to = "camera"
@@ -1004,7 +1015,8 @@ at = 0.0
 do = "ambience"
 id = "videocraft:cricket"
 relative = true
-volume = 0.8
+volume = 1.0
+every = 0.35
 
 # 18. The audience: four hens on the rail, each looking somewhere else, snap to the lens together on "standing" and
 # stare. The flashback ends with the shot.
@@ -1753,7 +1765,7 @@ shot = "s01-nibs"
 push = [{ at = 0.95, zoom = 1.18, cut = true, hold = 84, out = 12 }]
 [[edit.clip]]
 shot = "s02-horn"
-push = { from = 1.0, to = 1.2 }
+push = { from = 1.0, to = 1.2, x = 560, y = 420 }
 [[edit.clip]]
 shot = "s03-bridge"
 push = [{ at = 0.45, zoom = 1.16, cut = true }]
