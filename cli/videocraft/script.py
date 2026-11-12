@@ -14,7 +14,7 @@ NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description', 'cast'}
 WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage', 'preset'}
 WORLD |= {'set', 'sets', 'anchors', 'paths', 'views'}  # [[world.set]]: sets/expand.py (sets workstream)
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather', 'vertical'}
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather', 'vertical', 'until'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -135,6 +135,10 @@ def compile_script(raw, source='script'):
         for key in ('hud', 'bob'):
             if key in shot:
                 out[key] = bool(shot[key])
+        if 'until' in shot:
+            if not isinstance(shot['until'], str) or not shot['until']:
+                raise ScriptError(f'shot {sname}: until = "<mark label>" ends the shot on that mark (duration is the cap)')
+            out['until'] = shot['until']
         for key in ('time', 'weather'):
             if key in shot:
                 out[key] = shot[key]

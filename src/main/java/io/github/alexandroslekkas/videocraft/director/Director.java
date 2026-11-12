@@ -297,6 +297,7 @@ public final class Director {
 		Plan.Shot spec = plan.shots().get(shotIndex);
 		VideocraftLog.LOGGER.info("VIDEOCRAFT shot {} ({} s)", spec.name(), spec.duration());
 		shot = new ShotRun(this, spec.name(), spec.duration(), spec.params().number("preroll", 0), spec.timeline(), true, plan.seed());
+		if (spec.params().has("until")) shot.until(spec.params().string("until"));
 		CameraRig rig = registries.rig(spec.camera().string("rig")).create(spec.camera(), shot);
 		shot.rig(rig);
 		// The world as this shot wants it (a lane in late afternoon, a barn at night), from the start of preparation.
@@ -386,7 +387,7 @@ public final class Director {
 	}
 
 	void endSegment() {
-		recordedFrames += Math.round((float) (shot == null ? 0 : shot.duration() * plan.output().fps()));
+		recordedFrames += shot == null ? 0 : Math.max(0, shot.frame());
 		capture.end();
 	}
 

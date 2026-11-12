@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Shots end on a beat: `until = "<mark>"` stops recording on the frame an action notes that mark, with `duration`
+  as the cap; a mark that never comes fails the take with the shot and the label.
 - Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),
   `swarm` (bees on concentric tilting orbits that never touch each other or the body they circle), `land` (on a block,
   or on an actor's shoulder and ride along); `[[actor]]` keys `flying`, `angry`, `buzz_volume`; wings beat by vanilla's
