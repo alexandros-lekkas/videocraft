@@ -118,6 +118,8 @@ def compile_script(raw, source='script'):
     edit = dict(raw.get('edit', {}))
     clips = edit.get('clip') or [{'shot': s['name']} for s in shots]
     for i, clip in enumerate(clips):
+        if clip.get('shot') is None and isinstance(clip.get('black'), (int, float)):
+            continue  # a gap of black seconds between clips
         if clip.get('shot') not in names:
             raise ScriptError(f'edit.clip[{i}]: shot = "{clip.get("shot")}" is not a shot in this script; shots: {sorted(names)}')
     edit['clip'] = clips

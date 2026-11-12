@@ -1,0 +1,130 @@
+# The sound track: game sounds logged on their frames, a note-block tune, an ambience bed, a synth music bed with
+# cues, a black gap. The muted game logs every sound to shots/<name>/sounds.csv; the mix rebuilds them from your own
+# game assets (or synthesizes stand-ins with [edit] audio = "original").
+#   bin/videocraft run examples/sound.toml
+#   bin/videocraft audio events sound --onsets        each event's onset in the mix against its frame
+name = "sound"
+seed = 7
+
+[world]
+seed = "videocraft"
+time = 1000
+weather = "clear"
+
+# A lawn at spawn, a row of five note blocks on gold (bell), and a chicken that keeps still and quiet: its sounds
+# are played by the script, on the frames they belong to.
+[[world.stage]]
+do = "command"
+commands = [
+    "execute at @p run fill ~-9 ~-1 ~-9 ~9 ~-1 ~9 minecraft:grass_block",
+    "execute at @p run fill ~-9 ~ ~-9 ~9 ~8 ~9 minecraft:air",
+    "execute at @p run fill ~-2 ~ ~4 ~2 ~ ~4 minecraft:gold_block",
+    "execute at @p run fill ~-2 ~1 ~4 ~2 ~1 ~4 minecraft:note_block[instrument=bell]",
+    "execute at @p run summon minecraft:chicken ~3.5 ~ ~1.5 {NoAI:1b,Silent:1b,Rotation:[150f,0f]}",
+]
+
+[[shot]]
+name = "notes"
+duration = 4.0
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [0, 2.6, -1.2] }, at = { anchor = "spawn", offset = [0, 1.2, 4.5] }, fov = 70 }
+
+# An original melody, one note per eighth at 140 bpm, walking along the five blocks; each note on its frame with
+# the block's own bell sound and a note particle.
+[[shot.cue]]
+at = 0.25
+do = "tune"
+blocks = [{ anchor = "spawn", offset = [-2, 1, 4] }, { anchor = "spawn", offset = [-1, 1, 4] }, { anchor = "spawn", offset = [0, 1, 4] },
+          { anchor = "spawn", offset = [1, 1, 4] }, { anchor = "spawn", offset = [2, 1, 4] }]
+notes = "c4 e4 g4 c5 - g4 e4 c4*2 d4 f4 a4 d5*2"
+bpm = 140
+
+[[shot.cue]]
+at = 3.4
+do = "sound"
+id = "videocraft:ding"
+relative = true
+volume = 0.6
+
+[[shot]]
+name = "yard"
+duration = 4.0
+camera = { rig = "fixed", eye = { anchor = "spawn", offset = [6.5, 1.9, -2.5] }, at = { anchor = "spawn", offset = [3.5, 0.5, 1.5] }, fov = 60 }
+
+[[shot.cue]]
+at = 0.0
+do = "ambience"
+id = "videocraft:cricket"
+pos = { anchor = "spawn", offset = [3, 0, 3] }
+every = 0.4
+spread = 4
+volume = 0.5
+
+[[shot.cue]]
+at = 0.6
+do = "sound"
+id = "minecraft:entity.chicken.ambient"
+pos = { anchor = "spawn", offset = [3.5, 0.4, 1.5] }
+
+[[shot.cue]]
+at = 2.0
+do = "sound"
+id = "minecraft:entity.chicken.egg"
+pos = { anchor = "spawn", offset = [3.5, 0.2, 1.5] }
+
+[[shot.cue]]
+at = 2.0
+do = "particles"
+id = "minecraft:poof"
+pos = { anchor = "spawn", offset = [3.5, 0.3, 1.5] }
+count = 6
+spread = 0.2
+
+[[shot.cue]]
+at = 3.1
+do = "sound"
+id = "minecraft:entity.chicken.ambient"
+pos = { anchor = "spawn", offset = [3.5, 0.4, 1.5] }
+pitch = 1.2
+
+[edit]
+audio = "game"
+
+[[edit.clip]]
+shot = "notes"
+
+[[edit.clip]]
+black = 0.8
+
+[[edit.clip]]
+shot = "yard"
+
+[edit.music]
+source = "synth"
+style = "upbeat"
+bpm = 128
+gain = -2
+
+# The bed thins to drums under the tune, comes back full, drops out for the egg and lands a hit at the end.
+[[edit.music.cue]]
+shot = "notes"
+at = 0.2
+do = "thin"
+
+[[edit.music.cue]]
+shot = "notes"
+at = 3.4
+do = "full"
+
+[[edit.music.cue]]
+shot = "yard"
+at = 1.9
+do = "drop"
+length = 0.8
+
+[[edit.music.cue]]
+shot = "yard"
+at = 3.5
+do = "hit"
+
+[edit.mix]
+duck = ["entity.chicken.egg"]
