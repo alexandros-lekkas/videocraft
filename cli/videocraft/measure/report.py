@@ -1,4 +1,5 @@
 """measure/report.md: metrics.json for a person or a reviewer agent to read in one pass."""
+from pathlib import Path
 
 
 def _tc(seconds):
@@ -90,4 +91,4 @@ def write_report(m, path, title='', plan=None):
         L.append('')
     if m.get('warnings'):
         L += ['## Look at', ''] + [f'- {w}' for w in m['warnings']] + ['']
-    open(path, 'w').write('\n'.join(L))
+    Path(path).write_text('\n'.join(L))

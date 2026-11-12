@@ -14,7 +14,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from videocraft import tools
+from videocraft import timeline as tl, tools
 from videocraft.measure import camera, loudness, text, video
 from videocraft.measure.report import write_report
 
@@ -43,28 +43,6 @@ def _write_signals(sig, path):
         f.write('frame,full,blur,peak,luma\n')
         for i, row in enumerate(zip(sig['full'], sig['blur'], sig['peak'], sig['luma'])):
             f.write(f'{i},{row[0]:.3f},{row[1]:.3f},{row[2]},{row[3]:.2f}\n')
-
-
-def expected_cuts(it, result):
-    """Frames of the master where the cut itself changes clip, and which of them are soft (a fade or black next to
-    it, where a detector sees no hard cut). From cut/timeline.json when the edit wrote one, else edit.json's clips."""
-    timeline = it.cut / 'timeline.json'
-    if timeline.exists():
-        clips = json.loads(timeline.read_text()).get('clips', [])
-        hard, soft = [], []
-        for a, b in zip(clips, clips[1:]):
-            frame = int(b.get('out_start', 0))
-            fade = a.get('kind') != 'shot' or b.get('kind') != 'shot' or a.get('fade_out') or b.get('fade_in')
-            (soft if fade else hard).append(frame)
-        return hard, soft
-    frames = {s['name']: s['frames'] for s in result.get('shots', [])}
-    at, hard = 0, []
-    for k, clip in enumerate(it.edit()['clip']):
-        if k:
-            hard.append(at)
-        head, tail = clip.get('trim') or [0, 0]
-        at += frames.get(clip.get('shot'), 0) - int(head) - int(tail)
-    return hard, []
 
 
 def _shots_measures(it, plan, fps, aspect):
@@ -141,7 +119,7 @@ def measure(it):
     it.measure.mkdir(exist_ok=True)
     pic, sig = _picture(master, out['fps'])
     _write_signals(sig, it.measure / 'signals.csv')
-    hard, soft = expected_cuts(it, result)
+    hard, soft = tl.boundaries(tl.clips(it))
     matched, missed, extra = video.compare_cuts([c['frame'] for c in pic['cuts']], hard)
     soft_seen = [f for f in extra if any(abs(f - s) <= 3 for s in soft)]
     extra = [f for f in extra if f not in soft_seen]

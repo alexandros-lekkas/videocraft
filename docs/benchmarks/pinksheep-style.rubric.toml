@@ -1,0 +1,130 @@
+# The benchmark's rubric (docs/benchmarks/pinksheep-style.md, "Scoring rubric"), for `videocraft review` and `score`.
+# Nine criteria scored 1-10 against the reference's form, the 5 and 9 anchors as written there, and the originality
+# gate. Pass: average 7 or more, nothing under 5, gate passing.
+name = "pinksheep-style"
+title = "Nibs vs Duke: a PinkSheep-style comedic short (form, not content)"
+
+[pass]
+average = 7.0
+minimum = 5
+max_shot_seconds = 7.5
+
+[[gate]]
+id = "originality"
+name = "Originality gate"
+measures = "No PinkSheep character, skin, rival, voice, audio, music, jokes, title, thumbnail or footage. Our own characters: a one-horned grey goat (Nibs), a snow fox (Duke), chickens"
+
+[[criterion]]
+id = "pacing"
+name = "Pacing match"
+measures = "Shot count, length distribution, rhythm"
+anchor_5 = "20 to 24 shots in 60 to 75 s, or 30 shots but evenly spaced at about 2.5 s each: no long opening, no montage, the rhythm is mechanical"
+anchor_9 = "28 to 32 shots; median 2.3 to 3.0 s; a 5 to 7 s opening; one montage of at least five shots under 0.6 s; no shot over 7.5 s; the cutting speeds up on the brag and slows into the flashback"
+numbers = ["picture.shot_stats", "picture.shots", "picture.black", "cut_check"]
+
+[[criterion]]
+id = "camera"
+name = "Camera language and variety"
+measures = "The reference's mix and moves"
+anchor_5 = "Mostly one camera type; the follow shots are behind the subject, not leading it; static shots wander; one close-up or none"
+anchor_9 = "Lead track about half the screen time, statics about a quarter, at least one face cut-in and two close inserts and two graphic cards; lead tracks hold the subject's size and centre; wide lens on tracks, tighter on close-ups; nothing passes through geometry"
+numbers = ["camera", "framing"]
+
+[[criterion]]
+id = "staging"
+name = "Staging and sets"
+measures = "Do the places read and serve the jokes"
+anchor_5 = "One set, or sets that read as test worlds (flat, empty, repeated); props placed but not used"
+anchor_9 = "Two distinct sets that read at a glance (a street that changes as the hero walks, an interior with a clear stage and lighting); every prop on screen pays off; no repeated stretch in consecutive shots; no unloaded chunks or void"
+numbers = []
+
+[[criterion]]
+id = "acting"
+name = "Acting readability"
+measures = "Can you tell what each character feels and wants with the sound off and the captions covered"
+anchor_5 = "Characters move from mark to mark; turns and stops look scripted or robotic; one gesture repeated"
+anchor_9 = "Every beat reads without text: the strut, the look to the lens, the reaction; mobs keep idle life between beats; actions start and stop with human-like timing, not on round frames"
+numbers = ["framing"]
+
+[[criterion]]
+id = "comedic_timing"
+name = "Comedic timing"
+measures = "Do the cuts and reactions land the jokes"
+anchor_5 = "Jokes exist in the captions but the picture does not help them; cuts fall between words; the punchline shot arrives late"
+anchor_9 = "Cuts land within 2 frames of the key word's appearance; setups wide, punchlines close and to the lens; a beat of hold after each punchline; at least four separate laughs in 70 s, two of them visual only"
+numbers = ["text", "picture.shots"]
+
+[[criterion]]
+id = "text"
+name = "Text use"
+measures = "Captions and cards"
+anchor_5 = "Captions readable but long (over two lines), on screen too briefly or covering the action; no key-word emphasis"
+anchor_9 = "One or two lines, under 2.5 words a second, never under 1 s; key word highlighted and timed to the cut; text never covers a face or the gag; cards are clean and consistent with the characters"
+numbers = ["text"]
+
+[[criterion]]
+id = "sound"
+name = "Sound"
+measures = "Music bed, effects, mix"
+anchor_5 = "A music bed only, or effects that are late or missing on visible actions; uneven loudness"
+anchor_9 = "Bed under everything, ducked under character sounds; every visible action that should make a sound makes it on the right frame; silence used deliberately at the dips; master at -14 LUFS (plus or minus 1) with no clipping"
+numbers = ["loudness"]
+
+[[criterion]]
+id = "technical"
+name = "Technical cleanliness"
+measures = "The frame itself"
+anchor_5 = "Occasional judder, a HUD element or name tag leak, a frame of the wrong shot at a cut, chunk pop-in, a camera clipping into a wall"
+anchor_9 = "1080p (or more) at a steady 60 fps; no HUD, hand, crosshair, chat or debug text; no pop-in or flicker; cuts frame-exact; colours consistent across shots; reproducible from the same shot list and seed"
+numbers = ["checks", "picture.frozen", "picture.duplicate_at_cuts", "camera"]
+
+[[criterion]]
+id = "energy"
+name = "Energy"
+measures = "Does it feel like a YouTube comedy short rather than a demo"
+anchor_5 = "Competent but flat: it plays like a showcase of the tool"
+anchor_9 = "Watched cold, a viewer would believe a channel made it; it keeps moving, builds to the reveal and ends on a button"
+numbers = ["picture.shot_stats"]
+
+# Every criterion is scored by two roles, so one reviewer's blind spot does not decide it.
+[[role]]
+id = "story"
+name = "Story and comedy reviewer"
+criteria = ["staging", "acting", "comedic_timing", "energy"]
+images = ["contact", "strips"]
+focus = "Read the cut as a comedy short: does each joke set up and land, does each character want something and show it, do the places read? Compare the structure with the benchmark's shot list."
+
+[[role]]
+id = "camera"
+name = "Camera reviewer"
+criteria = ["camera", "staging", "technical"]
+images = ["strips"]
+focus = "Judge camera type per shot against the shot list (lead track, static, cut-in, insert, graphic), the subject's size and centre in lead tracks (framing numbers), lens and clipping."
+
+[[role]]
+id = "legibility"
+name = "Text and acting reviewer"
+criteria = ["text", "acting"]
+images = ["strips"]
+focus = "Read every caption and card as if on a phone 390 px wide; check the text rule table; then cover the text in your mind and ask whether each beat still reads."
+
+[[role]]
+id = "pacing"
+name = "Pacing reviewer"
+criteria = ["pacing", "comedic_timing", "energy"]
+images = ["contact", "cuts"]
+focus = "Compare the shot table and histogram with the reference's (30 shots, median 2.6 s, a 6-7 s opening, a six-shot montage under 0.6 s, dips to black before each reveal). Check that cuts land on key words."
+
+[[role]]
+id = "sound"
+name = "Sound reviewer"
+criteria = ["sound"]
+images = []
+focus = "You cannot hear. Judge from the loudness numbers (integrated, true peak, silences at the dips, the momentary curve) and the listed sound events against the shot list's sound column."
+
+[[role]]
+id = "technical"
+name = "Technical reviewer"
+criteria = ["technical", "camera", "text"]
+images = ["strips", "cuts"]
+focus = "Look for HUD, hand, crosshair, chat, name tag or debug leaks; a wrong frame at a join; pop-in or void; black or frozen by accident; the format checks."

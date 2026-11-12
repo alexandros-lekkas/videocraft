@@ -14,6 +14,7 @@ for at least max(1.2 s, 0.5 s + 0.3 s a word); capital height at least 44 px at 
 second over the time it is on screen. One-word items under the reading time are listed apart (montage words).
 """
 import json
+from pathlib import Path
 
 SAFE = (96 / 1920, 54 / 1080, 1824 / 1920, 918 / 1080)
 CAP_MIN = 44
@@ -59,7 +60,7 @@ def normalise(item, fps):
 
 
 def load(path, fps):
-    data = json.loads(open(path).read())
+    data = json.loads(Path(path).read_text())
     items = data if isinstance(data, list) else _get(data, 'items', 'text', default=[])
     size = (data.get('width'), data.get('height')) if isinstance(data, dict) else (None, None)
     return [normalise(i, fps) for i in items], size

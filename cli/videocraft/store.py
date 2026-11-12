@@ -89,6 +89,7 @@ def new_iteration(script_path: Path, plan: dict, edit: dict, parent: str | None 
         os.symlink(it.name, latest)
     except OSError:
         pass
+    update_index(project)
     return it
 
 
@@ -108,3 +109,50 @@ def open_iteration(ref: str) -> Iteration:
 def iterations(project: str):
     base = RUNS / project
     return sorted((Iteration(p) for p in base.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda i: i.name) if base.exists() else []
+
+
+def _read(path):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def summary(it):
+    """One iteration's line in index.json: verdict, score, parent and the chain back to the first iteration."""
+    meta = _read(it.path / 'meta.json') or {}
+    result = it.result() or {}
+    score = _read(it.path / 'score.json') or {}
+    metrics = _read(it.measure / 'metrics.json') or {}
+    shots = (metrics.get('picture') or {}).get('shot_stats') or {}
+    return {'iteration': it.name, 'parent': meta.get('parent'), 'created': meta.get('created'), 'scriptSha': meta.get('scriptSha'),
+            'verdict': result.get('verdict'), 'reason': result.get('reason'),
+            'score': score.get('average'), 'minimum': score.get('minimum'), 'pass': score.get('pass'), 'rubric': score.get('rubric'),
+            'criteria': score.get('criteria'), 'shots': shots.get('count'), 'medianShot': shots.get('median'),
+            'seconds': (metrics.get('master') or {}).get('seconds'), 'notes': (it.path / 'notes.md').exists()}
+
+
+def _parent_name(ref):
+    """`0003`, `3`, `hello/3` or a path → the iteration folder name, or None."""
+    if not ref:
+        return None
+    tail = str(ref).rstrip('/').split('/')[-1]
+    return f'{int(tail):04d}' if tail.isdigit() else tail
+
+
+def update_index(project: Path):
+    """Rewrites runs/<name>/index.json from what is on disk (every stage calls it; it is cheap and idempotent)."""
+    its = sorted((Iteration(p) for p in project.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda i: i.name)
+    rows = {i.name: summary(i) for i in its}
+    for row in rows.values():
+        chain, seen, cur = [], set(), _parent_name(row['parent'])
+        while cur and cur in rows and cur not in seen:
+            chain.append(cur)
+            seen.add(cur)
+            cur = _parent_name(rows[cur]['parent'])
+        row['chain'] = chain
+    scored = [r for r in rows.values() if r['score'] is not None and r['verdict'] == 'PASS']
+    best = max(scored, key=lambda r: (r['score'], r['iteration']))['iteration'] if scored else None
+    index = {'name': project.name, 'best': best, 'iterations': list(rows.values())}
+    (project / 'index.json').write_text(json.dumps(index, indent=2) + '\n')
+    return index
