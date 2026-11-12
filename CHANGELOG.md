@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `AGENTS.md`: a "Working with agents" section (orchestrator, builders in worktrees, reviewer agents, probing
+  accounts); T3 Craft is linked by its public repository.
 - Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,
   `sets`, `story`, `review`, `series` and `clips`, so new commands land in their own files instead of `cli.py`.
 - Takes in several checkouts at once: each take holds one of three machine-wide slots (control ports

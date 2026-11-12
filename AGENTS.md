@@ -107,10 +107,10 @@ They protect the owner's machine and game. They are not preferences.
 - **Homebrew's ffmpeg has no `drawtext`** (`bin/videocraft doctor` shows it), so all text is rendered in the game. A
   caption drawn as a Screen cannot overlap another screen, so text is drawn on the HUD layer and again after any
   screen draws (`TextLayer`).
-- **From the T3 Craft prototype, not yet re-checked here** (no third-person or actor shots exist yet): view bobbing
-  must be off for third-person cameras, and the camera must follow a ground reference, not the player's head, or it
-  bobs with steps and jumps; auto-jump must be off (it is, in `options.txt` and on arrival); a mouse pointer at rest
-  is frozen to the pixel and clicks only after it has stopped.
+- **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype, not yet re-checked here** (no
+  third-person or actor shots exist yet): view bobbing must be off for third-person cameras, and the camera must
+  follow a ground reference, not the player's head, or it bobs with steps and jumps; auto-jump must be off (it is, in
+  `options.txt` and on arrival); a mouse pointer at rest is frozen to the pixel and clicks only after it has stopped.
 - **Layout rules** (DESIGN.md section 5): safe area x 96–1824, y 54–918; one message at a time; text complete on screen
   for `max(1.2 s, 0.5 s + 0.3 s per word)`; capital height under 44 px at 1920 wide does not count as shown at phone
   width.
@@ -119,6 +119,20 @@ They protect the owner's machine and game. They are not preferences.
   `javap -cp ~/.gradle/caches/fabric-loom/26.3/minecraft-merged.jar <class>` (`-p` for private) before assuming an API.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
+
+## Working with agents
+
+- **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git
+  worktree and own files that do not overlap (the Owner column of the project map). Visual output is judged by fresh
+  reviewer agents, who score it 1 to 10 from frame strips and measurements; they cannot watch video or hear audio,
+  and must say so in their review. Reviewers may be a stronger model than the builders (on 2026-11-11 the builders
+  were Opus).
+- **Probe every account first.** When delegates are spread over more than one model-provider account, send each
+  account one small delegate before relying on it. Verified 2026-11-11: on a secondary account the newest top-tier
+  model failed at once with "Usage credits are required for this model", while the Opus-tier model on the same
+  account worked; that night's delegates therefore all ran on Opus.
+- **Each worktree is its own studio.** It has its own `run-game/` and `runs/` (both git-ignored), so takes never share
+  a game folder or a run store; the three-slot cap (hard rule 4) is what keeps the machine usable with several running.
 
 ## Definition of done
 

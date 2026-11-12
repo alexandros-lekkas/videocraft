@@ -5,7 +5,7 @@
 > measures it and has reviewer agents score it. Every stage writes its output to disk, so an agent can compare
 > iterations and keep the best ("hill-climb").
 
-The system was prototyped as the launch-video recorder in T3 Craft (`DemoRecorder`, `DemoHand`, `DemoOverlay`,
+The system was prototyped as the launch-video recorder in [T3 Craft](https://github.com/alexandros-lekkas/t3craft) (`DemoRecorder`, `DemoHand`, `DemoOverlay`,
 `scripts/demo/*.sh`). videocraft is the generic version: nothing in it knows about T3 Craft.
 
 ```
