@@ -7,7 +7,7 @@ by the game. A synthetic voice reads the dialogue; sound effects are the game's 
 
 ## Lessons from the benchmark (a reference comedy short, measured shot by shot)
 - **Cuts land on words.** A cut falls on the first syllable of a key word or of a new sentence, and the picture
-  illustrates that word the instant it is said. Mark the key word of a line with `*` (at most one) (`NIBS: This *horn.`).
+  illustrates that word the instant it is said. Mark the key word of a line with a leading `*` (at most one): `NIBS: This *horn.`, never `*horn*` (not Markdown emphasis).
 - **Setup wide, punchline close.** Set a joke up in a wide, still shot; cut to a close-up facing the lens for the
   punchline, and hold a beat after it.
 - **The look to the lens** is the acting: a character stops, turns its head to the camera, deadpan, at the end of a
