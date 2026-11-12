@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Text never shrinks under 44 px: the smallest font scale for titles, cards, captions and lower thirds rounds up (7, 49 px), not
+  to the nearest (6, 42 px), so a long card line wraps instead of shrinking under the minimum.
 - Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),
   `swarm` (bees on concentric tilting orbits that never touch each other or the body they circle), `land` (on a block,
   or on an actor's shoulder and ride along); `[[actor]]` keys `flying`, `angry`, `buzz_volume`; wings beat by vanilla's
