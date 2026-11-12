@@ -27,7 +27,11 @@ bin/videocraft sets skin sets/skins/presenter.toml -o /tmp/presenter.png    # an
 | `market-lane` | 11000 (late afternoon) | The benchmark's lead tracks: a 237-block curving lane with ten stretches that each look different at one block up (market stalls and bunting, the bridge, produce, the well, the lantern street, the notice board with the Talent Night poster, the corner, the farm, the cherry orchard, the open end over a valley). Marks `shot-01` … `shot-28`, `spot-1` … `spot-6`, `stall-*`, cameras `poster`, `high-wide`, `valley`. |
 | `barn-stage` | 18000 (night) | The flashback: a lit barn with a curtained stage, seven note blocks (`note-1` … `note-7`), a trophy, a rail with four seats (`rail-1` … `rail-4`), bunting, and cameras for shots 10-18 (`cam-*`). |
 | `black-stage` | 18000 | Character cards on black: a subject lit by hidden light on an invisible pad, black 24 blocks away on every side (`subject`, cameras `card`, `small`, `close`). |
-| `keynote-stage`, `office` | | For the human parody: a dark keynote stage with a screen wall, and a small glass-and-concrete office. |
+| `keynote-stage` | 6000 (enclosed) | For the human parody: a dark hall, a stage with a glowing lip and pools of light under hanging spots, a giant screen wall with a `text_display` slide and an original chart, tiered seats with aisle lights (`stage-center`, `podium`, `stage-walk`, `slide`, `seat-front`, cameras `cam-wide`, `cam-presenter`, `cam-side`, `cam-audience`, `cam-screen`). |
+| `office` | midday | A small glass-and-concrete office in a green park: desks with monitors, a meeting table before a whiteboard slide, plants and a lounge (`desk-1`, `desk-2`, `door`, seats `meeting-1`/`-2`, standing `meeting-stand-1`/`-2`, `walk-in`, cameras `cam-desk`, `cam-meeting`, `cam-wide`, `cam-outside`, `whiteboard`). |
+
+Skin specs for mannequins are in `sets/skins/` (`presenter`, `engineer`, `manager`): `sets skin <spec> -o x.png`, then
+`skin = "x.png"` on a `kind = "mannequin"` actor. All generic: no real company names, products or logos.
 
 ## Coordinates
 

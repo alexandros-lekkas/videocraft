@@ -1,0 +1,10 @@
+# A keynote presenter: black crew-neck top, dark jeans, white trainers, short grey hair, glasses.
+description = "keynote presenter"
+model = "wide"
+skin = "#d9a77e"
+hair = { style = "short", color = "#8a8a8a" }
+glasses = "#1c1c1c"
+mouth = "smile"
+top = { color = "#151515", sleeves = "long" }
+trousers = { color = "#2c3a52" }
+shoes = { color = "#f2f2f2", sole = "#cfcfcf" }

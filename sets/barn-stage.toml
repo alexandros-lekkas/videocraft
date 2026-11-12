@@ -265,7 +265,7 @@ list = [
   [-2, 1, -7, "candle[candles=2,lit=true]"],
   [11, 0, 7, "hay_block"], [11, 1, 7, "hay_block"], [10, 0, 7, "hay_block"], [11, 0, 6, "composter[level=7]"],
   [11, 0, -7, "barrel[facing=up]"], [11, 1, -7, "candle[candles=4,lit=true]"],
-  [6, 0, -8, "crafting_table"], [6, 1, -8, "lantern[hanging=false]"],
+  [6, 0, -8, "crafting_table"], [6, 1, -8, "potted_fern"],
 ]
 
 # Bunting under the tie beams, over the audience and the stage front.

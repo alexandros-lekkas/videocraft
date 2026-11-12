@@ -185,6 +185,19 @@ list = [
   [10, 0, -7, "bookshelf"], [10, 1, -7, "bookshelf"], [9, 0, -7, "bookshelf"],
 ]
 
+# Plants and a lounge by the glass (south-east): big potted plants, a rug, a sofa, a low table with a lamp.
+[[build]]
+do = "blocks"
+list = [
+  [11, 0, -7, "potted_bamboo"], [11, 0, 7, "potted_bamboo"], [-11, 0, 7, "potted_bamboo"], [0, 0, -7, "potted_fern"],
+  [10, 0, 7, "flowering_azalea"], [-11, 0, -1, "azalea"], [11, 0, 0, "potted_dark_oak_sapling"],
+  [7, 0, 6, "light_blue_carpet"], [8, 0, 6, "light_blue_carpet"], [9, 0, 6, "light_blue_carpet"],
+  [7, 0, 5, "light_blue_carpet"], [8, 0, 5, "light_blue_carpet"], [9, 0, 5, "light_blue_carpet"],
+  [7, 0, 7, "cyan_wool"], [8, 0, 7, "cyan_wool"], [9, 0, 7, "cyan_wool"],
+  [6, 0, 7, "smooth_quartz_slab[type=bottom]"], [10, 0, 6, "smooth_quartz_slab[type=bottom]"],
+  [8, 1, 5, "potted_cactus"],
+]
+
 # Ceiling lights.
 [[build]]
 do = "blocks"
@@ -217,6 +230,17 @@ facing = "north"
 name = "desk-2"
 at = [4, 0, -1]
 facing = "north"
+
+# Standing places at the ends of the meeting table (meeting-1 and -2 below are the chairs: seats, for a sitting pose).
+[[mark]]
+name = "meeting-stand-1"
+at = [-10, 0, -4]
+facing = "east"
+
+[[mark]]
+name = "meeting-stand-2"
+at = [-5, 0, -4]
+facing = "west"
 
 [[mark]]
 name = "meeting-1"

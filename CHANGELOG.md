@@ -6,6 +6,9 @@
   card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
   flashback, dips to black and the six-shot montage cut on the spoken words; production log in
   `docs/benchmarks/nibs-vs-duke-log.md`.
+- Docs for people: a README with install, a quickstart timed from a fresh clone (5.5 min first-time setup, then
+  about a minute a take), how it works, a docs map and an honest status; `docs/GALLERY.md`; DESIGN.md's status and
+  milestones, AGENTS.md's project map and commands, and SCRIPT.md brought up to the code.
 - Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
   CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
   snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that

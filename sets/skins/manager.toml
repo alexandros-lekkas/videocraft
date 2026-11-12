@@ -1,0 +1,11 @@
+# An office manager: a white shirt under a navy jacket, a beard, a buzz cut.
+description = "office manager"
+model = "wide"
+skin = "#f0c8a8"
+hair = { style = "buzz", color = "#5a3b22" }
+beard = "#5a3b22"
+mouth = "smile"
+top = { color = "#f4f4f4", sleeves = "long" }
+jacket = { color = "#22304f" }
+trousers = { color = "#2b2b2b" }
+shoes = { color = "#3a2416" }
