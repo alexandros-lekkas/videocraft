@@ -1,7 +1,8 @@
 """The run store: every stage of every iteration on disk, so agents can compare iterations and hill-climb.
 
     runs/<script name>/
-      index.json                  one line per iteration: verdict, scores, parent (rewritten after each stage)
+      index.json                  one line per iteration: verdict, scores, parent and chain, best (rewritten after each stage)
+      climb.json, proposals/      the hill-climb's log and the scripts it proposed
       latest -> 0007              symlink to the newest iteration
       0007/
         meta.json                 iteration, parent, created, script and plan hashes, videocraft git commit
@@ -10,9 +11,12 @@
         edit.json                 the cut as compiled (order, trims, music, exports)
         take/                     written by the mod: result.json, game.log, shots/<name>/{video.mp4,frames.csv,marks.json}
         cut/                      written by the edit: <export>.mp4, graph.txt, poster.png
-        measure/metrics.json      written by measure
-        lint.json                 written by lint
-        review/<reviewer>.json    one per reviewer agent: scores per criterion, notes with timestamps
+        measure/metrics.json      written by measure (stable keys; measure/__init__.py lists them)
+        measure/report.md         the same for reading; measure/signals.csv the per-frame picture signals
+        lint.json                 written by lint before the take
+        review/packet/            strips, contact sheets, cut pairs, captions, prompts, packet.json (docs/REVIEW.md)
+        review/<reviewer>.json    one per reviewer agent: scores per criterion, gates, notes, three fixes
+        compare/<name>-<n>/       compare against another iteration: compare.md, compare.json, shots/*.png
         score.json                the aggregate the hill-climb compares
         notes.md                  what the agent changed from the parent and why
 
@@ -89,6 +93,7 @@ def new_iteration(script_path: Path, plan: dict, edit: dict, parent: str | None 
         os.symlink(it.name, latest)
     except OSError:
         pass
+    update_index(project)
     return it
 
 
@@ -108,3 +113,52 @@ def open_iteration(ref: str) -> Iteration:
 def iterations(project: str):
     base = RUNS / project
     return sorted((Iteration(p) for p in base.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda i: i.name) if base.exists() else []
+
+
+def _read(path):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def summary(it):
+    """One iteration's line in index.json: verdict, score, parent and the chain back to the first iteration."""
+    meta = _read(it.path / 'meta.json') or {}
+    result = it.result() or {}
+    score = _read(it.path / 'score.json') or {}
+    metrics = _read(it.measure / 'metrics.json') or {}
+    shots = (metrics.get('picture') or {}).get('shot_stats') or {}
+    return {'iteration': it.name, 'parent': meta.get('parent'), 'created': meta.get('created'), 'scriptSha': meta.get('scriptSha'),
+            'verdict': result.get('verdict'), 'reason': result.get('reason'),
+            'score': score.get('average'), 'minimum': score.get('minimum'), 'pass': score.get('pass'), 'rubric': score.get('rubric'),
+            'criteria': score.get('criteria'), 'shots': shots.get('count'), 'medianShot': shots.get('median'),
+            'seconds': (metrics.get('master') or {}).get('seconds'), 'notes': (it.path / 'notes.md').exists()}
+
+
+def _parent_name(ref):
+    """`0003`, `3`, `hello/3` or a path → the iteration folder name, or None."""
+    if not ref:
+        return None
+    tail = str(ref).rstrip('/').split('/')[-1]
+    return f'{int(tail):04d}' if tail.isdigit() else tail
+
+
+def update_index(project: Path):
+    """Rewrites runs/<name>/index.json from what is on disk (every stage calls it; it is cheap and idempotent)."""
+    its = sorted((Iteration(p) for p in project.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda i: i.name)
+    rows = {i.name: summary(i) for i in its}
+    for row in rows.values():
+        chain, seen, cur = [], set(), _parent_name(row['parent'])
+        while cur and cur in rows and cur not in seen:
+            chain.append(cur)
+            seen.add(cur)
+            cur = _parent_name(rows[cur]['parent'])
+        row['chain'] = chain
+    best, best_score = None, None
+    for r in rows.values():   # the climb's rule: a later iteration must score strictly higher (ties stay earlier)
+        if r['score'] is not None and r['verdict'] == 'PASS' and (best_score is None or r['score'] > best_score):
+            best, best_score = r['iteration'], r['score']
+    index = {'name': project.name, 'best': best, 'iterations': list(rows.values())}
+    (project / 'index.json').write_text(json.dumps(index, indent=2) + '\n')
+    return index

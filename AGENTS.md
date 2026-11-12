@@ -20,6 +20,8 @@ bin/videocraft run examples/hello.toml     # take → cut → measure as runs/he
 bin/videocraft runs hello                  # iterations and verdicts
 bin/videocraft cut hello · measure hello   # re-cut / re-measure the latest iteration (or hello/3, or a path)
 bin/videocraft status · stop               # this checkout's client, over its control port
+bin/videocraft lint x.toml · measure --video f.mp4 --from 0 --to 82.2 --out /tmp/m   # before a take; any video
+bin/videocraft review packet x · review run x · score x · compare x/1 x/2 · climb x.toml --budget 3   # docs/REVIEW.md
 ```
 
 Every run ends like this, so a script or an agent can act on it (exit 0 PASS, 1 FAIL, 2 no verdict):
@@ -49,10 +51,11 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `…/actor/` | `Hand` (human input model, no Minecraft classes), `Cast`, `PlayerActor`, `Actions` | b |
 | `…/text/` | `TextLayer` (HUD layer, also over screens), `TextActions` | c |
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
-| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `measure.py`, `tools.py`, `paths.py`, `review/` | d |
+| `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `tools.py`, `paths.py`, `measure/` (picture, loudness, camera, text rules), `lint.py`, `timeline.py`, `compare.py`, `climb.py`, `modpack.py`, `agents.py` (the one model call: `ask`), `review/` (packets, rubrics, prompts, reviews) | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
+| `cli/videocraft/story/`, `cli/videocraft/series/`, `stories/` | The story pipeline (premise → shots.toml), series, `make`; prompts in `story/prompts/` ([docs/STORY.md](docs/STORY.md)) | story |
 | `modpack/pack.toml` | The distributable pack definition | d |
 
 A new CLI command lives in its own subpackage's `commands.py` with `register(subparsers)`; do not add commands to
@@ -107,6 +110,9 @@ They protect the owner's machine and game. They are not preferences.
 - **Homebrew's ffmpeg has no `drawtext`** (`bin/videocraft doctor` shows it), so all text is rendered in the game. A
   caption drawn as a Screen cannot overlap another screen, so text is drawn on the HUD layer and again after any
   screen draws (`TextLayer`).
+- **Exact push-in holds** need the crop at even offsets and sizes (yuv420p chroma); ffmpeg's `scale=flags=neighbor`
+  then equals source index `floor((2x+1)·cw / 2W)` on every plane (`videocraft edit verify` checks it). Sub-pixel
+  zooms use `perspective=…:eval=frame` with `in` (ffmpeg 9 has no `n` there).
 - **From the [T3 Craft](https://github.com/alexandros-lekkas/t3craft) prototype, not yet re-checked here** (no
   third-person or actor shots exist yet): view bobbing must be off for third-person cameras, and the camera must
   follow a ground reference, not the player's head, or it bobs with steps and jumps; auto-jump must be off (it is, in
@@ -119,6 +125,35 @@ They protect the owner's machine and game. They are not preferences.
   `javap -cp ~/.gradle/caches/fabric-loom/26.3/minecraft-merged.jar <class>` (`-p` for private) before assuming an API.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
+- **Model calls are slow and big.** One `claude -p` draft of a 30-shot shot script took about 10 minutes and came
+  back as about 1000 lines of TOML; the story pipeline allows 30 minutes a call (`VIDEOCRAFT_ASK_TIMEOUT`). A
+  not-yet placeholder command (`lint`) takes no arguments, so calling it with a file is an argparse usage error
+  (exit 2), not a verdict.
+- **Uploaded 60 fps video repeats frames.** The benchmark's reference is lower-rate footage in a 60 fps file: about
+  one frame in three or four is an exact repeat. A cut detector that takes the local median over every frame
+  difference sees those zeros and fires on walking motion. `measure` ignores repeated frames for the local level, and
+  so finds 28 shots with a median of 2.59 s on 0:00–1:22.2 (the doc's hand count is 30 and 2.6 s).
+- **Frames by number from ffmpeg:** `-vf "select='eq(n,12)+eq(n,90)',scale=640:360,format=rgb24" -fps_mode
+  passthrough -f rawvideo -` gives exactly those frames in order. Pass it as one argv item (no shell), so ffmpeg's own
+  quotes protect the commas. Review packets and `compare` use this; there is no drawtext, so labels are a built-in
+  bitmap font.
+- **Reviewers through `claude -p`:** prompt on stdin, `--allowedTools Read --add-dir <packet>` so it can open the PNGs,
+  `--output-format json` (the answer is `result`, or `structured_output` with `--json-schema`). A reviewer that is
+  told it sees stills only, and is given frames.csv numbers, cites timecodes and gives fixes that can be applied
+  (`runs/hello/*/review/camera.json`).
+- **Reviewer scores wobble by about a point** between two runs of the same role on the same packet (camera 4, then 5,
+  on hello 0001). A climb step that gains one point on one criterion is noise; `climb` keeps ties with the parent.
+- **The proposer must see the frames.** The first hello climb spent three takes moving a subject behind the same
+  ice spikes, because it read the reviewers' words without the strips; it now gets the contact sheets and strips.
+
+- **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
+  drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or
+  pitch) comes from the instance's own `RandomSource`, which vanilla seeds from the level's or an entity's unseeded
+  random: `SoundEngineMixin` swaps in a seeded one at `play` HEAD, else two takes log different files.
+- **ffmpeg audio.** Homebrew's ffmpeg has no `soxr` resampler, and `alimiter` delays its output by its attack unless
+  `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
+- **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
+  `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
 
 ## Working with agents
 

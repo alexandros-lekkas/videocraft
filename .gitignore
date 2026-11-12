@@ -12,4 +12,7 @@ out/
 __pycache__/
 *.egg-info/
 .DS_Store
+# Decoded game audio and other local caches (never committed)
 /cache/
+# Local (the owner decides whether these are published)
+/stories/honeypot/

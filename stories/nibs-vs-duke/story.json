@@ -1,0 +1,42 @@
+{
+  "id": "nibs-vs-duke",
+  "format": "short",
+  "vertical": false,
+  "created": "2026-11-11T22:43:42-06:00",
+  "series": null,
+  "episode": null,
+  "bible_from": null,
+  "stages": {
+    "premise": {
+      "rev": 1,
+      "sha": "273ab6717120541e",
+      "inputs": {}
+    },
+    "bible": {
+      "rev": 1,
+      "sha": "1a14e60ad4d3acd4",
+      "inputs": {
+        "premise": "273ab6717120541e"
+      }
+    },
+    "outline": {
+      "rev": 1,
+      "sha": "869e0ef61141a205",
+      "inputs": {
+        "premise": "273ab6717120541e",
+        "bible": "1a14e60ad4d3acd4"
+      }
+    },
+    "script": {
+      "rev": 1,
+      "sha": "7f6e40983b95248e",
+      "inputs": {
+        "premise": "273ab6717120541e",
+        "bible": "1a14e60ad4d3acd4",
+        "outline": "869e0ef61141a205"
+      }
+    }
+  },
+  "request": "A one-horned goat challenges the three-time Talent Night champion, a snow fox, to a jump-off",
+  "reference": "docs/benchmarks/pinksheep-style.md"
+}

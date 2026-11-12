@@ -5,7 +5,13 @@
   videocraft run <script.toml> [--show]     take → cut → measure, as a new iteration under runs/<name>/
   videocraft cut <iteration>                re-cut an iteration (`<name>`, `<name>/<n>` or a path)
   videocraft measure <iteration>            re-measure an iteration
-  videocraft runs <name>                    the iterations of a script and their verdicts
+  videocraft runs <name>                    the iterations of a script: verdicts, scores, parents
+  videocraft lint <script.toml>             every problem in a script before a take
+  videocraft measure --video <file>         measure any video (--from s --to s --out dir)
+  videocraft review packet|add|run <it>     review packets, reviews, reviewer agents (docs/REVIEW.md)
+  videocraft score <it> · compare <a> <b>   aggregate the reviews; what changed between two iterations
+  videocraft climb <script.toml> --budget N propose, run with --parent, review, keep if better
+  videocraft modpack                        modpack/pack.toml → build/modpack/*.mrpack
   videocraft status | stop                  this checkout's client, over its control port
 
 Takes run in parallel across checkouts: each holds one of three machine-wide slots (control ports 25750-25752)
@@ -18,11 +24,12 @@ import importlib
 import json
 import sys
 import time
+from pathlib import Path
 
 from videocraft import __version__, game, script, store
 from videocraft.paths import PORT_OVERRIDE, SLOT_PORTS
 
-NOT_YET = {'lint': 'd', 'review': 'd', 'climb': 'd', 'modpack': 'd'}
+NOT_YET = {'review': 'd'}  # placeholders for commands a missing group would provide
 # Optional command groups: videocraft.<name>.commands with register(subparsers), loaded after the built-ins. A new
 # command lives in its own subpackage's commands.py, so parallel work does not collide in this file.
 GROUPS = ('edit', 'audio', 'voice', 'sets', 'story', 'review', 'series', 'clips')
@@ -54,38 +61,48 @@ def cmd_compile(args):
     return 0
 
 
-def cmd_run(args):
-    compiled = _compile(args.script)
+def run_take(path, parent=None, show=False, timeout=900, window=None, port=None, slot_wait=1800, no_cut=False, keep_world=False):
+    """One iteration: lint, take, cut, measure. Returns (iteration or None, exit code: 0 PASS, 1 FAIL, 2 no verdict)."""
+    compiled = _compile(path)
     if not compiled:
-        return 1
+        return None, 1
     plan, edit = compiled
-    if args.port is not None:
-        game.check_port(args.port)  # before an iteration is made for a take that cannot start
-    it = store.new_iteration(args.script, plan, edit, parent=args.parent)
+    if port is not None:
+        game.check_port(port)  # before an iteration is made for a take that cannot start
+    it = store.new_iteration(path, plan, edit, parent=parent)
+    from videocraft import lint
+    problems = lint.lint(script.load(path))
+    lint.write(it, problems)
+    counts, lines = lint.report(problems)
     say(f'videocraft {__version__}: {plan["name"]} iteration {it.name}, {len(plan["shots"])} shot(s), '
-        f'{plan["output"]["width"]}x{plan["output"]["height"]} {plan["output"]["fps"]} fps, hidden' + (' (shown)' if args.show else ''))
+        f'{plan["output"]["width"]}x{plan["output"]["height"]} {plan["output"]["fps"]} fps, hidden' + (' (shown)' if show else ''))
+    if counts['error'] or counts['warn']:
+        say(f'  lint: {counts["error"]} error(s), {counts["warn"]} warning(s) (lint.json)')
+        for line in lines[:8]:
+            if not line.startswith('INFO'):
+                say('    ' + line)
     started = time.time()
-    window = tuple(int(v) for v in args.window.lower().split('x')) if args.window else None
+    window = tuple(int(v) for v in window.lower().split('x')) if window else None
 
     def echo(line):
         if 'VIDEOCRAFT ' in line and ('RESULT' in line or 'shot ' in line or 'step ' in line or 'world ' in line) or 'FAILURE' in line or 'error:' in line:
             say('  ' + line[line.find('VIDEOCRAFT') if 'VIDEOCRAFT' in line else 0:])
 
     try:
-        result, code, seconds = game.play(it.take, show=args.show, timeout=args.timeout, window=window, port=args.port,
-                                          slot_wait=args.slot_wait, on_line=echo, say=say)
+        result, code, seconds = game.play(it.take, show=show, timeout=timeout, window=window, port=port,
+                                          slot_wait=slot_wait, on_line=echo, say=say)
     except SystemExit as e:
         if not isinstance(e.code, str):
             raise
-        return _report(it, None, f'no verdict: {e.code}', started)
-    if result and plan['world']['save'] is None and not args.keep_world:
+        return it, _report(it, None, f'no verdict: {e.code}', started)
+    if result and plan['world']['save'] is None and not keep_world:
         game.discard_world(result.get('level'))
     if result is None:
-        return _report(it, None, f'no verdict: the client exited ({code}) without a result; see {it.take / "game.log"}', started)
+        return it, _report(it, None, f'no verdict: the client exited ({code}) without a result; see {it.take / "game.log"}', started)
     if result['verdict'] != 'PASS':
-        return _report(it, False, result.get('reason', 'FAIL'), started)
-    if args.no_cut:
-        return _report(it, True, 'take only (--no-cut)', started)
+        return it, _report(it, False, result.get('reason', 'FAIL'), started)
+    if no_cut:
+        return it, _report(it, True, 'take only (--no-cut)', started)
     from videocraft.edit.cut import cut
     from videocraft.measure import measure
     master = cut(it)
@@ -93,7 +110,12 @@ def cmd_run(args):
     m = metrics['master']
     detail = f'{m["width"]}x{m["height"]} {m["fps"]:g} fps {m["frames"]} frames {m["seconds"]:.2f} s; capture {result.get("captureFps", 0):.1f} fps real time'
     failed = [k for k, v in metrics['checks'].items() if not v]
-    return _report(it, not failed, detail + (f'; checks failed: {", ".join(failed)}' if failed else ''), started, master)
+    return it, _report(it, not failed, detail + (f'; checks failed: {", ".join(failed)}' if failed else ''), started, master)
+
+
+def cmd_run(args):
+    it, code = run_take(args.script, args.parent, args.show, args.timeout, args.window, args.port, args.slot_wait, args.no_cut, args.keep_world)
+    return code
 
 
 def _report(it, verdict, detail, started, video=None):
@@ -104,6 +126,7 @@ def _report(it, verdict, detail, started, video=None):
     say(f'RUN      {it.path}')
     say(f'LOG      {it.take / "game.log"}')
     say(f'TIME     {time.time() - started:.0f} s')
+    store.update_index(it.path.parent)
     return 0 if verdict else 1 if verdict is False else 2
 
 
@@ -114,17 +137,106 @@ def cmd_cut(args):
 
 
 def cmd_measure(args):
-    from videocraft.measure import measure
-    metrics = measure(store.open_iteration(args.iteration))
-    say(json.dumps(metrics, indent=2))
+    from videocraft import measure
+    if args.video:
+        out = args.out or 'measure'
+        metrics = measure.measure_video(args.video, args.start, args.end, out)
+        say((Path(out) / 'report.md').read_text())
+        say(f'METRICS  {Path(out).resolve() / "metrics.json"}')
+        return 0
+    if not args.iteration:
+        say('measure needs an iteration (`<name>`, `<name>/<n>` or a path) or --video <file>')
+        return 2
+    it = store.open_iteration(args.iteration)
+    metrics = measure.measure(it)
+    say((it.measure / 'report.md').read_text())
+    say(f'METRICS  {it.measure / "metrics.json"}')
     return 0 if metrics['pass'] else 1
 
 
 def cmd_runs(args):
-    for it in store.iterations(args.name):
-        r = it.result() or {}
-        meta = it.meta()
-        say(f'{it.name}  {r.get("verdict", "-"):4}  {meta["created"]}  parent {meta.get("parent") or "-":5}  {r.get("reason", "")}')
+    its = store.iterations(args.name)
+    if not its:
+        say(f'No iterations of {args.name} in {store.RUNS / args.name}')
+        return 1
+    index = store.update_index(its[0].path.parent)
+    say(f'{"it":4}  {"take":4}  {"score":>5}  {"min":>4}  {"pass":5}  {"shots":>5}  {"median":>6}  {"parent":6}  created')
+    for row in index['iterations']:
+        fmt = lambda v, spec: format(v, spec) if isinstance(v, (int, float)) else '-'
+        say(f'{row["iteration"]}  {row["verdict"] or "-":4}  {fmt(row["score"], "5.2f"):>5}  {fmt(row["minimum"], "4.1f"):>4}  '
+            f'{str(row["pass"]) if row["pass"] is not None else "-":5}  {fmt(row["shots"], "d"):>5}  {fmt(row["medianShot"], "6.2f"):>6}  '
+            f'{row["parent"] or "-":6}  {row["created"]}' + ('  *' if row['iteration'] == index['best'] else '') + (f'  {row["reason"]}' if row['reason'] else ''))
+    say(f'best {index["best"] or "-"} (highest scored passing take); INDEX {its[0].path.parent / "index.json"}')
+    return 0
+
+
+def cmd_lint(args):
+    from videocraft import lint
+    try:
+        raw = script.load(args.script)
+    except script.ScriptError as e:
+        say(f'SCRIPT ERROR {e}')
+        return 1
+    rub = None
+    if args.rubric:
+        from videocraft.review import rubric
+        rub = rubric.load(args.rubric)
+    problems = lint.lint(raw, rub)
+    counts, lines = lint.report(problems)
+    for line in lines:
+        if args.all or not line.startswith('INFO'):
+            say(line)
+    compiled = _compile(args.script) if not counts['error'] else None
+    say(f'LINT     {counts["error"]} error(s), {counts["warn"]} warning(s), {counts["info"]} note(s)' + ('' if compiled or counts['error'] else ' (and it does not compile)'))
+    return 1 if counts['error'] or not compiled else 0
+
+
+def cmd_compare(args):
+    from videocraft.compare import compare
+    out, data = compare(store.open_iteration(args.a), store.open_iteration(args.b))
+    say((out / 'compare.md').read_text())
+    say(f'COMPARE  {out}')
+    return 0
+
+
+def cmd_notes(args):
+    it = store.open_iteration(args.iteration)
+    path = it.path / 'notes.md'
+    if args.text:
+        path.write_text(' '.join(args.text).strip() + '\n' if not path.exists() else path.read_text() + ' '.join(args.text).strip() + '\n')
+        store.update_index(it.path.parent)
+    say(path.read_text() if path.exists() else f'No notes in {it.path}')
+    return 0
+
+
+def cmd_climb(args):
+    from videocraft import agents, climb
+    from videocraft.review import commands as review
+    if not agents.backend():
+        say('climb needs a model: put the `claude` CLI on PATH or set ANTHROPIC_API_KEY')
+        return 2
+
+    def take(path, parent):
+        return run_take(path, parent, timeout=args.timeout, slot_wait=args.slot_wait)
+
+    def judge(it, rub, roles):
+        review.run_reviews(it, rub, roles, args.model)
+        return review.score(it, rub, roles)
+
+    log = climb.climb(args.script, args.budget, args.rubric, args.reviewers, args.model, take, judge, say)
+    say(f'CLIMB    best {log.get("best")} average {log.get("best_average")} after {log.get("spent", 0)} take(s)' + (f'; stopped: {log["stopped"]}' if log.get('stopped') else ''))
+    say(f'LOG      {store.RUNS / script.compile_script(script.load(args.script))[0]["name"] / "climb.json"}')
+    return 0 if log.get('best') else 1
+
+
+def cmd_modpack(args):
+    from videocraft import modpack
+    try:
+        target, data = modpack.build(args.pack, args.jar, args.out)
+    except (modpack.PackError, OSError) as e:
+        say(f'MODPACK ERROR {e}')
+        return 1
+    say(f'MODPACK  {target} ({len(data["files"])} mods from Modrinth + the videocraft jar; Minecraft {data["dependencies"]["minecraft"]}, Fabric Loader {data["dependencies"]["fabric-loader"]})')
     return 0
 
 
@@ -220,13 +332,46 @@ def build_parser():
     p.add_argument('--no-cut', action='store_true', help='take only')
     p.add_argument('--keep-world', action='store_true', help='keep the world a seed created (in run-game/saves)')
     p.set_defaults(run=cmd_run)
-    for name, fn in (('cut', cmd_cut), ('measure', cmd_measure)):
-        p = sub.add_parser(name)
-        p.add_argument('iteration')
-        p.set_defaults(run=fn)
-    p = sub.add_parser('runs')
+    p = sub.add_parser('cut')
+    p.add_argument('iteration')
+    p.set_defaults(run=cmd_cut)
+    p = sub.add_parser('measure', help='measure an iteration, or any video file with --video')
+    p.add_argument('iteration', nargs='?')
+    p.add_argument('--video', help='measure this video file instead of an iteration')
+    p.add_argument('--from', dest='start', type=float, help='with --video: start of the stretch, seconds')
+    p.add_argument('--to', dest='end', type=float, help='with --video: end of the stretch, seconds')
+    p.add_argument('--out', help='with --video: folder for metrics.json and report.md (default ./measure)')
+    p.set_defaults(run=cmd_measure)
+    p = sub.add_parser('runs', help='the iterations of a script: take verdicts, scores, parents')
     p.add_argument('name')
     p.set_defaults(run=cmd_runs)
+    p = sub.add_parser('lint', help='problems in a script before a take (all of them)')
+    p.add_argument('script')
+    p.add_argument('--rubric', help='also check the rubric\'s limits (e.g. pinksheep-style: shots at most 7.5 s)')
+    p.add_argument('--all', action='store_true', help='also print notes (info)')
+    p.set_defaults(run=cmd_lint)
+    p = sub.add_parser('compare', help='scores, measured deltas and the same shots side by side, into <b>/compare/')
+    p.add_argument('a')
+    p.add_argument('b')
+    p.set_defaults(run=cmd_compare)
+    p = sub.add_parser('notes', help='show (or append to) an iteration\'s notes.md')
+    p.add_argument('iteration')
+    p.add_argument('text', nargs='*')
+    p.set_defaults(run=cmd_notes)
+    p = sub.add_parser('climb', help='hill-climb a script: propose, run with --parent, review, keep if better')
+    p.add_argument('script')
+    p.add_argument('--budget', type=int, default=3, help='takes to spend, the first included (default 3)')
+    p.add_argument('--rubric', help='default docs/REVIEW.md (general); e.g. pinksheep-style')
+    p.add_argument('--reviewers', help='comma-separated roles (default: all of the rubric\'s)')
+    p.add_argument('--model', help='for proposals and reviews (default claude-opus-5-5)')
+    p.add_argument('--timeout', type=int, default=900)
+    p.add_argument('--slot-wait', type=float, default=1800)
+    p.set_defaults(run=cmd_climb)
+    p = sub.add_parser('modpack', help='modpack/pack.toml → build/modpack/<name>-<version>.mrpack')
+    p.add_argument('--pack', help='default modpack/pack.toml')
+    p.add_argument('--jar', help='default the newest build/libs/videocraft-*.jar')
+    p.add_argument('--out', help='default build/modpack/')
+    p.set_defaults(run=cmd_modpack)
     for name, fn in (('status', cmd_status), ('stop', cmd_stop)):
         p = sub.add_parser(name)
         p.add_argument('--port', type=int, help="another client's control port (default: this checkout's client)")

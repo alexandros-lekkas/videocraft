@@ -14,7 +14,9 @@
     "FilmTimeMixin",
     "FilmRandomMixin",
     "FogAccessor",
-    "RainFogAccessor"
+    "RainFogAccessor",
+    "sound.SoundEngineMixin",
+    "sound.SoundInstanceAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

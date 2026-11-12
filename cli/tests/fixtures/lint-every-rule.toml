@@ -1,0 +1,66 @@
+# Breaks every lint rule once (cli/tests/test_lint.py). Not a real script.
+name = "lint-fixture"
+colour = "blue"                      # unknown_key (top level)
+
+[world]
+seed = "x"
+sunset = true                        # unknown_key (world)
+
+[[world.set]]
+name = "market-lane"
+at = [0, 64, 0]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "minecraft:goat"
+at = { anchor = "market-lane:stall-1" }
+
+[[shot]]
+name = "long"
+duration = 8.0                       # long_shot with the benchmark rubric
+camera = { rig = "lead", subject = "duke" }          # unknown_actor (subject)
+until = "arrived"                    # mark: no mark cue makes it
+
+[[shot.cue]]
+at = 9.0                             # cue_outside
+do = "mark"
+label = "late"
+
+[[shot.cue]]
+at = 0.5
+do = "dance"                         # unknown_action
+actor = "nibs"
+
+[[shot.cue]]
+at = 1.0
+do = "walk"
+actor = "ghost"                      # unknown_actor (cue)
+path = [{ anchor = "barn:door" }, { anchor = "well" }]   # anchor: no set "barn" (error); "well" not built in (info)
+
+[[shot.cue]]
+at = 2.0
+do = "caption"
+text = ["Hey. It's me. Nibs. Best jumper in the whole valley, by far."]   # reading (needs 4.0 s, has 1.0)
+
+[[shot.cue]]
+at = 3.0
+do = "title"                         # two_messages: a title while the caption is up
+text = "TALENT NIGHT"
+hold = 1.0
+
+[[shot.cue]]
+at = 6.0
+do = "caption"
+text = ["One two three four five six seven eight nine ten"]
+style = "whole"
+hold = 1.0                           # words_per_second: 10 words in 1 s (and reading)
+
+[[shot.cue]]
+at = 7.8
+do = "caption"
+text = ["SIX"]                       # one word, 0.2 s: reading_one_word (info)
+
+[[edit.clip]]
+shot = "long"
+in = "start"                         # mark: no such mark in the shot
