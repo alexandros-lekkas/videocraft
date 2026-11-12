@@ -1,0 +1,72 @@
+name: Bug report
+description: A command fails, a take does not finish, or the CLI says something wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The fastest bug to fix is one we can re-run: the script, the last lines of the run and
+        what `bin/videocraft doctor` says. Please do not attach anything from your real Minecraft folder or any game
+        assets (textures, sounds, music).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, what you got instead.
+      placeholder: |
+        I ran `bin/videocraft run examples/hello.toml` and expected RESULT PASS; it stopped after "waiting for sections".
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: The end of the run
+      description: The `RESULT`, `VIDEO`, `RUN`, `LOG` and `TIME` lines every run prints (or the traceback, if there are none).
+      render: text
+      placeholder: |
+        RESULT   FAIL ...
+        VIDEO    <repo>/runs/hello/0002/cut/master.mp4
+        RUN      <repo>/runs/hello/0002
+        LOG      <repo>/runs/hello/0002/take/game.log
+        TIME     27 s
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: The game log around the failure
+      description: The last 50 or so lines of the file on the `LOG` line (`tail -n 50 <LOG>`). Remove anything private.
+      render: text
+  - type: textarea
+    id: doctor
+    attributes:
+      label: bin/videocraft doctor
+      description: The full output.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: script
+    attributes:
+      label: The script
+      description: The `.toml` you ran, or the smallest one that still fails. Paste it or attach it.
+      render: toml
+  - type: input
+    id: version
+    attributes:
+      label: Commit
+      description: "`git rev-parse --short HEAD`"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS (Apple silicon)
+        - macOS (Intel)
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
