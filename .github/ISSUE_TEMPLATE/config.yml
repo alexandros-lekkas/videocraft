@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: https://github.com/alexandros-lekkas/videocraft/security/advisories/new
+    about: Report it privately (see SECURITY.md), not as a public issue.
+  - name: Question or idea
+    url: https://github.com/alexandros-lekkas/videocraft/discussions
+    about: Ask how to write a shot, or share what you made.
