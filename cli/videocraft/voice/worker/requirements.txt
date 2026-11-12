@@ -1,0 +1,12 @@
+# The voice worker's venv (Python 3.12, Apple silicon). `videocraft voice setup` installs these into cache/voice/venv.
+# Verified 2026-11-11 on macOS 26 / M4 Pro; the full freeze is requirements.lock.txt. Never imported by the CLI core.
+kokoro==0.9.4
+misaki[en]==0.9.4
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+mlx==0.32.4
+mlx-audio==0.6.5
+torch==2.15.0
+transformers==5.22.2
+huggingface-hub==2.4.0
+numpy==2.5.4
+soundfile==0.14.0

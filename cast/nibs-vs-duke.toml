@@ -1,0 +1,40 @@
+# The cast of "Nibs vs Duke" (docs/benchmarks/pinksheep-style.md): character -> voice. Read by `videocraft voice` and
+# by the say resolver (docs/VOICE.md). Voices are original synthetic voices; they imitate no real person.
+#
+# Default engine: Qwen3-TTS 12Hz 1.7B CustomVoice (8-bit MLX), a preset voice steered by an instruction. Measured in
+# the voice lab: ryan + "cocky" median f0 225 Hz, aiden + "smug" 131 Hz (9.4 semitones apart), 0 ASR errors in 52
+# words, bit-identical with the seed. `draft` is the Kokoro-82M fallback (VIDEOCRAFT_VOICE=draft): 5x faster.
+
+[[character]]
+id = "nibs"
+name = "Nibs"
+color = "#a8c8ff"
+engine = "qwen3"
+voice = "ryan"
+instruct = "Cocky, brash and bright. A fast-talking show-off who loves the sound of his own voice, grinning the whole time."
+seed = 7
+bark = "minecraft:entity.goat.ambient"
+bark_volume = 0.6
+draft = { engine = "kokoro", voice = "am_fenrir", speed = 1.1 }
+
+[[character]]
+id = "duke"
+name = "Duke"
+color = "#e8eef5"
+engine = "qwen3"
+voice = "aiden"
+instruct = "Slow, smug and low. A sly fox drawling each word, pleased with himself, unhurried and condescending."
+seed = 7
+bark = "minecraft:entity.fox.ambient"
+bark_volume = 0.5
+draft = { engine = "kokoro", voice = "am_onyx", speed = 0.85 }
+
+# The narrator (title cards, the voice over a montage): Kokoro's steadiest male voice, no acting needed.
+[[character]]
+id = "narrator"
+name = "Narrator"
+color = "#ffffff"
+engine = "kokoro"
+voice = "bm_george"
+speed = 0.95
+seed = 7
