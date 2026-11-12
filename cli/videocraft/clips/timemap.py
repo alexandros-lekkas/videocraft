@@ -6,8 +6,9 @@ that knows something about a shot (text.json words, sounds.csv, marks.json, acto
 through these, so moments and shorts work on a single run and on an assembly alike.
 
 Words are intervals: a caption word's onset is the frame it pops in; it lasts until the next word of the same line,
-and a line's last word lasts LAST_WORD seconds (or to the end of the item). With a voice timing (edit.json `voice`
-entries with `words` = [{w, start, end}] in seconds of the shot) the spoken interval is used instead. A cut never
+and a line's last word lasts LAST_WORD seconds (or to the end of the item). Spoken lines (the iteration's voice.json,
+written by the voice resolver: [{shot, at, words: [{word, start, end}]}], seconds of the shot) add their spoken
+intervals, so a cut never lands inside a spoken word either. A cut never
 lands strictly inside a word interval (`snap_start`, `snap_end`). Pure functions except the readers at the bottom.
 """
 import bisect
@@ -257,7 +258,8 @@ def words(m):
     seen_runs = {s.run for s in m.segments if s.run}
     for run in seen_runs:
         edit = _json(Path(run) / 'edit.json') or {}
-        for n, line in enumerate(edit.get('voice') or []):
+        lines = _json(Path(run) / 'voice.json') or edit.get('dialogue') or edit.get('voice') or []
+        for n, line in enumerate(lines if isinstance(lines, list) else []):
             if not isinstance(line, dict) or not line.get('words') or not line.get('shot'):
                 continue
             at = float(line.get('at', 0))

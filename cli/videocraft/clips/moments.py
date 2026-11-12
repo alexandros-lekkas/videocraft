@@ -115,7 +115,10 @@ def events(m):
     lines = {}
     for w in words:
         lines.setdefault(w.line, []).append(w)
+    caption_starts = [ws[0].start for ws in lines.values() if not ws[0].spoken]
     for line, ws in lines.items():
+        if ws[0].spoken and any(abs(ws[0].start - t) < 0.3 for t in caption_starts):
+            continue     # a spoken line and its own caption are one line (its words still guard the cuts)
         text = ' '.join(w.text for w in ws)
         out.append({'t': ws[0].start, 'end': ws[-1].end, 'kind': 'line', 'weight': 0.5, 'what': text})
         for w in ws:

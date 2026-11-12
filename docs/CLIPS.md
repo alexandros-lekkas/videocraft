@@ -45,7 +45,7 @@ Nothing watches the video. Every signal the run already holds is mapped into mas
 
 | Signal | From | Counts as |
 |:--|:--|:--|
-| words and lines | `text.json` caption words (a word lasts until the next of its line; a line's last word 0.35 s), voice timings in `edit.json` `voice[].words` when the dialogue resolver writes them | a line start is a setup; no range starts or ends inside a word |
+| words and lines | `text.json` caption words (a word lasts until the next of its line; a line's last word 0.35 s), spoken words from the iteration's `voice.json` (the voice resolver's word times) | a line start is a setup; no range starts or ends inside a word |
 | key words | the `*key` words | payoffs |
 | outline beats | `stories/<id>/outline.md`: `## n. name (purpose, ~length, shots a-b)`; shot n is a shot whose name carries n, else the n-th | a setup/turn/escalation beat start is a setup, a payoff/button beat end a payoff |
 | jokes | the outline's comedy pass table (joke, beat, how it lands) | a range that holds a whole beat holds its jokes |
