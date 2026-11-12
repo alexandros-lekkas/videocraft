@@ -1,0 +1,635 @@
+# Market Lane: a curving village lane of cobbles with a pale centre line, about 220 blocks from the west hills to an
+# open end over a valley in the east, late afternoon. Ten stretches that each look different, so no two lead tracks
+# in a row show the same place:
+#
+#   d   0-30   the market: three stalls with striped awnings, a cart, lanterns, cottages behind
+#   d  32-46   a plank bridge over a stream (lily pads, reeds, willows)
+#   d  48-64   the orange stall, barrels and hay
+#   d  66-82   the well with flower pots, a bench
+#   d  84-102  lantern posts both sides, flower beds, cottages
+#   d 104-118  the notice board with the Talent Night poster (north side)
+#   d 120-138  the corner: the lane bends round a cottage and hay
+#   d 140-158  the cart by the wheat field
+#   d 160-180  the flower stall and the orchard
+#   d 184-222  the open end: a rail, a bench and the valley beyond
+#
+# `d` is blocks along the lane mark from its west end; `side` is blocks to the right of walking east (south is +).
+# Paths for the benchmark's lead tracks are marks below (shot-01 … shot-28, spot-1 … spot-6), each walked east
+# (so a camera ahead looks back west down the lane) except shot-28, walked west with the valley behind.
+name = "market-lane"
+description = "A curving market lane at golden hour: stalls, a bridge, a well, a notice board, an open end over a valley"
+time = 11000
+weather = "clear"
+biome = "minecraft:plains"
+seed = 11
+
+# ---------------------------------------------------------------- the ground
+
+[[build]]
+do = "ground"
+from = [-118, -48]
+to = [118, 48]
+mix = { grass_block = 40, moss_block = 1, coarse_dirt = 1 }
+grain = 5
+depth = 3
+
+[[build]]
+do = "paint"
+from = [-118, -48]
+to = [118, 48]
+mix = { grass_block = 40, podzol = 1 }
+grain = 8
+only = ["grass_block"]
+
+[[build]]
+do = "lane"
+points = [[-112, 2], [-86, -4], [-60, 3], [-34, 9], [-8, 6], [16, -3], [36, -12], [58, -9], [80, -1], [100, 5], [116, 6]]
+width = 7
+mix = { cobblestone = 6, andesite = 3, stone = 2, gravel = 1, mossy_cobblestone = 1, tuff = 1 }
+grain = 1.5
+center = { block = "smooth_stone", width = 1 }
+edge = { mix = { coarse_dirt = 3, gravel = 2, dirt_path = 2 }, width = 1.2, chance = 0.45 }
+mark = "lane"
+
+# The stream: north to south across the lane, its ends under the hills.
+[[build]]
+do = "stream"
+points = [[-62, -60], [-58, -32], { along = "lane", d = 39, side = -9 }, { along = "lane", d = 39, side = 0 }, { along = "lane", d = 41, side = 10 }, [-63, 34], [-60, 60]]
+width = 4
+depth = 2
+
+[[build]]
+do = "bridge"
+from = { along = "lane", d = 33 }
+to = { along = "lane", d = 46 }
+width = 7
+deck = { spruce_planks = 5, oak_planks = 1, stripped_spruce_wood = 1 }
+
+# ---------------------------------------------------------------- d 0-30: the market
+
+[[build]]
+do = "stall"
+at = { along = "lane", d = 12, side = -6.5 }
+facing = "lane"
+colors = ["red_wool", "white_wool"]
+goods = ["pumpkin", "melon", "hay_block", "potted_poppy", "carved_pumpkin[facing=south]"]
+mark = "stall-red"
+
+[[build]]
+do = "stall"
+at = { along = "lane", d = 18, side = 6.5 }
+facing = "lane"
+colors = ["blue_wool", "yellow_wool"]
+goods = ["barrel[facing=up]", "potted_blue_orchid", "bee_nest[facing=north]", "potted_azure_bluet"]
+mark = "stall-blue"
+
+[[build]]
+do = "stall"
+at = { along = "lane", d = 26, side = -6.5 }
+facing = "lane"
+width = 7
+colors = ["lime_wool", "white_wool"]
+goods = ["melon", "potted_fern", "hay_block", "moss_block", "potted_dandelion"]
+mark = "stall-green"
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 8, side = 5 }, { along = "lane", d = 22, side = 5 }, { along = "lane", d = 16, side = -5 }]
+height = 3
+
+[[build]]
+do = "cart"
+at = { along = "lane", d = 29, side = 6 }
+facing = "east"
+load = ["hay_block", "pumpkin", "barrel[facing=up]", "hay_block"]
+
+[[build]]
+do = "pile"
+at = [{ along = "lane", d = 10, side = -9 }, { along = "lane", d = 21, side = 9 }]
+count = 5
+blocks = { "barrel[facing=up]" = 3, hay_block = 2, composter = 1 }
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 9, side = -16 }
+size = [8, 6]
+facing = "lane"
+walls = { white_terracotta = 5, smooth_sandstone = 1 }
+frame = "stripped_spruce_log"
+post_every = 3
+windows = { shutters = "spruce_trapdoor", boxes = { block = "spruce_trapdoor", plants = { potted_red_tulip = 1, potted_poppy = 1 } } }
+roof = { block = "dark_oak", kind = "gable", overhang = 1 }
+chimney = { height = 6 }
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 24, side = 16 }
+size = [9, 6]
+height = 5
+facing = "lane"
+walls = { spruce_planks = 4, stripped_spruce_log = 1 }
+base = "cobblestone"
+frame = "spruce_log"
+windows = { every = 3, shutters = "dark_oak_trapdoor" }
+roof = { block = "spruce", kind = "hip", overhang = 1 }
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 34, side = -18 }
+size = [6, 6]
+facing = "lane"
+walls = { bricks = 3, granite = 1 }
+base = "stone_bricks"
+frame = "dark_oak_log"
+roof = { block = "dark_oak", kind = "gable" }
+
+# ---------------------------------------------------------------- d 32-46: the bridge
+
+[[build]]
+do = "tree"
+at = [{ along = "lane", d = 34, side = 11 }, { along = "lane", d = 47, side = -11 }]
+kind = "oak"
+radius = 3.4
+
+[[build]]
+do = "scatter"
+from = [-75, -46]
+to = [-50, 46]
+blocks = { sugar_cane = 1 }
+density = 0.3
+near = "water"
+within = 1
+
+# ---------------------------------------------------------------- d 48-64: the orange stall
+
+[[build]]
+do = "stall"
+at = { along = "lane", d = 55, side = 6.5 }
+facing = "lane"
+colors = ["orange_wool", "white_wool"]
+goods = ["pumpkin", "carved_pumpkin[facing=north]", "pumpkin", "hay_block", "potted_orange_tulip"]
+mark = "stall-orange"
+
+[[build]]
+do = "pile"
+at = [{ along = "lane", d = 50, side = 8 }, { along = "lane", d = 60, side = -7 }]
+count = 6
+blocks = { hay_block = 3, "barrel[facing=up]" = 2 }
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 51, side = -5 }, { along = "lane", d = 63, side = 5 }]
+height = 3
+arm = "north"
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 58, side = 16 }
+size = [7, 6]
+facing = "lane"
+walls = { yellow_terracotta = 1, white_terracotta = 3 }
+frame = "stripped_dark_oak_log"
+windows = { shutters = "spruce_trapdoor" }
+roof = { block = "brick", kind = "gable" }
+
+[[build]]
+do = "tree"
+at = [{ along = "lane", d = 60, side = -14 }, { along = "lane", d = 50, side = -20 }]
+kind = "birch"
+
+# ---------------------------------------------------------------- d 66-82: the well
+
+[[build]]
+do = "well"
+at = { along = "lane", d = 73, side = -9 }
+
+[[build]]
+do = "pots"
+at = [{ along = "lane", d = 69, side = -6, y = 0 }, { along = "lane", d = 71, side = -6, y = 0 }, { along = "lane", d = 75, side = -6, y = 0 }, { along = "lane", d = 77, side = -6, y = 0 }, { along = "lane", d = 70, side = 5, y = 0 }, { along = "lane", d = 76, side = 5, y = 0 }]
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 67, side = 5 }, { along = "lane", d = 80, side = -5 }]
+height = 3
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 75, side = 16 }
+size = [8, 7]
+height = 5
+facing = "lane"
+walls = { white_terracotta = 4, stripped_birch_log = 1 }
+frame = "stripped_spruce_log"
+post_every = 4
+windows = { shutters = "spruce_trapdoor", boxes = { block = "spruce_trapdoor", plants = { potted_allium = 1, potted_cornflower = 1 } } }
+roof = { block = "dark_oak", kind = "hip" }
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 82, side = -19 }
+size = [7, 6]
+facing = "lane"
+walls = { mud_bricks = 3, packed_mud = 1 }
+frame = "stripped_oak_log"
+roof = { block = "spruce", kind = "gable" }
+
+[[build]]
+do = "bush"
+at = [{ along = "lane", d = 66, side = -7 }, { along = "lane", d = 80, side = 8 }]
+leaves = "flowering_azalea_leaves"
+
+# ---------------------------------------------------------------- d 84-102: lanterns and flower beds
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 85, side = 5 }, { along = "lane", d = 90, side = -5 }, { along = "lane", d = 95, side = 5 }, { along = "lane", d = 100, side = -5 }]
+height = 4
+
+[[build]]
+do = "scatter"
+from = { along = "lane", d = 84, side = -6 }
+to = { along = "lane", d = 102, side = -9 }
+blocks = { poppy = 2, dandelion = 2, cornflower = 1, oxeye_daisy = 1, allium = 1 }
+density = 0.7
+
+[[build]]
+do = "scatter"
+from = { along = "lane", d = 84, side = 6 }
+to = { along = "lane", d = 102, side = 9 }
+blocks = { red_tulip = 2, pink_tulip = 1, white_tulip = 1, azure_bluet = 1 }
+density = 0.6
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 92, side = 15 }
+size = [8, 6]
+facing = "lane"
+walls = { smooth_sandstone = 2, white_terracotta = 3 }
+frame = "dark_oak_log"
+post_every = 4
+windows = { shutters = "dark_oak_trapdoor" }
+roof = { block = "deepslate_tile", kind = "gable" }
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 96, side = -16 }
+size = [9, 6]
+height = 5
+facing = "lane"
+walls = { white_terracotta = 4, light_gray_terracotta = 1 }
+frame = "stripped_spruce_log"
+post_every = 3
+windows = { shutters = "spruce_trapdoor" }
+roof = { block = "dark_oak", kind = "gable" }
+chimney = { height = 7 }
+
+# ---------------------------------------------------------------- d 104-118: the notice board
+
+[[build]]
+do = "poster"
+center = { along = "lane", d = 110, side = -6.5 }
+y = 1
+facing = "lane"
+size = [5, 4]
+board = "spruce_planks"
+frame = "stripped_dark_oak_log"
+stand = "spruce_log"
+roof = "dark_oak"
+paper = "blue_concrete"
+mark = "poster"
+fov = 40
+lines = [
+  { text = "TALENT NIGHT", at = [2.5, 3.05], scale = 1.9, color = "#ffd34d", bold = true },
+  { text = "Champion 3 years running:", at = [2.5, 2.6], scale = 1.05, color = "#ffffff" },
+  { text = "DUKE", at = [3.55, 0.35], scale = 2.6, color = "#ffffff", bold = true },
+]
+# Original pixel art: a white fox sitting (left) and a golden trophy (right), 1/16 block a pixel.
+[[build.art]]
+at = [0.3, 0.25]
+pixel = 0.08
+palette = { W = "white_concrete", w = "snow_block", g = "light_gray_concrete", K = "black_concrete", O = "orange_concrete", k = "gray_concrete", P = "pink_concrete" }
+rows = [
+  "..W.....W.......",
+  ".WWW...WWW......",
+  ".WPWW.WWPW......",
+  ".WWWWWWWWW......",
+  "WWKWWWWWKWW.....",
+  "WWWWWWWWWWW.....",
+  ".WWWWKKWWW......",
+  "..WWWWWWW.......",
+  "...WWWWW........",
+  "..WWWWWWW.......",
+  ".WWWWWWWWW..ww..",
+  ".WWWWWWWWWW.www.",
+  ".WWWWWWWWWWWwww.",
+  ".WWWgWWWWWWWWww.",
+  ".WWWgWWWWWWWWww.",
+  ".WWWWWWWWWWWWw..",
+  ".WWWWWWWWWWWW...",
+  ".WWgWWWgWWWW....",
+  ".WW.WW.WW.WW....",
+  ".kk.kk.kk.kk....",
+]
+[[build.art]]
+at = [3.75, 1.2]
+pixel = 0.075
+palette = { G = "gold_block", Y = "yellow_concrete", N = "brown_concrete", K = "black_concrete" }
+rows = [
+  "YYYYYYYYYYYY",
+  "GYGGGGGGGGYG",
+  "G.GGGGGGGG.G",
+  "G.GGGYGGGG.G",
+  ".GGGGYGGGGG.",
+  "..GGGGGGGG..",
+  "...GGGGGG...",
+  "....GGGG....",
+  ".....GG.....",
+  ".....GG.....",
+  "...GGGGGG...",
+  "..NNNNNNNN..",
+  "..NNNNNNNN..",
+]
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 104, side = -5 }, { along = "lane", d = 116, side = 5 }]
+height = 3
+
+[[build]]
+do = "tree"
+at = [{ along = "lane", d = 115, side = -13 }, { along = "lane", d = 106, side = 14 }]
+kind = "oak"
+radius = 3.2
+
+[[build]]
+do = "pile"
+at = [{ along = "lane", d = 113, side = -8 }]
+count = 3
+blocks = { "barrel[facing=up]" = 1, hay_block = 1 }
+
+# ---------------------------------------------------------------- d 120-138: the corner
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 129, side = 14 }
+size = [9, 7]
+height = 5
+facing = "lane"
+walls = { white_terracotta = 3, smooth_sandstone = 1 }
+frame = "stripped_spruce_log"
+post_every = 4
+windows = { shutters = "spruce_trapdoor", boxes = { block = "spruce_trapdoor", plants = { potted_red_tulip = 1, potted_white_tulip = 1 } } }
+roof = { block = "dark_oak", kind = "hip", overhang = 1 }
+chimney = { height = 7 }
+
+[[build]]
+do = "pile"
+at = [{ along = "lane", d = 123, side = 8 }, { along = "lane", d = 135, side = -8 }]
+count = 7
+stack = 3
+blocks = { hay_block = 4, "barrel[facing=up]" = 1 }
+
+[[build]]
+do = "fence"
+points = [{ along = "lane", d = 120, side = -6 }, { along = "lane", d = 126, side = -6 }, { along = "lane", d = 132, side = -6 }, { along = "lane", d = 138, side = -6 }]
+block = "spruce_fence"
+posts = 4
+post = "stripped_spruce_log[axis=y]"
+
+# ---------------------------------------------------------------- d 140-158: the cart and the wheat
+
+[[build]]
+do = "cart"
+at = { along = "lane", d = 147, side = -6 }
+facing = "west"
+load = ["hay_block", "hay_block", "pumpkin", "melon"]
+
+[[build]]
+do = "crops"
+from = { along = "lane", d = 141, side = 9 }
+to = { along = "lane", d = 159, side = 22 }
+crop = "wheat"
+water = 4
+
+[[build]]
+do = "crops"
+from = { along = "lane", d = 141, side = -10 }
+to = { along = "lane", d = 156, side = -18 }
+crop = "carrots"
+water = 4
+rows = "z"
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 141, side = 5 }, { along = "lane", d = 153, side = -5 }]
+height = 3
+
+[[build]]
+do = "house"
+at = { along = "lane", d = 150, side = -24 }
+size = [7, 6]
+facing = "lane"
+walls = { spruce_planks = 1 }
+frame = "stripped_spruce_log"
+base = "cobblestone"
+roof = { block = "spruce", kind = "gable" }
+
+# ---------------------------------------------------------------- d 160-180: the flower stall and the orchard
+
+[[build]]
+do = "stall"
+at = { along = "lane", d = 166, side = -6.5 }
+facing = "lane"
+colors = ["pink_wool", "white_wool"]
+goods = ["potted_pink_tulip", "potted_allium", "potted_red_tulip", "flowering_azalea", "potted_cornflower"]
+mark = "stall-pink"
+
+[[build]]
+do = "tree"
+at = [{ along = "lane", d = 162, side = 11 }, { along = "lane", d = 170, side = 13 }, { along = "lane", d = 178, side = 11 }, { along = "lane", d = 174, side = -13 }, { along = "lane", d = 182, side = -12 }]
+kind = "cherry"
+radius = 3.2
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 161, side = 5 }, { along = "lane", d = 175, side = -5 }]
+height = 3
+arm = "south"
+
+[[build]]
+do = "bush"
+at = [{ along = "lane", d = 168, side = 6 }, { along = "lane", d = 179, side = 6 }]
+leaves = "azalea_leaves"
+
+# ---------------------------------------------------------------- d 184-222: the open end
+
+[[build]]
+do = "fence"
+points = [[114, -30], [117, -10], [117, 20], [114, 34]]
+block = "spruce_fence"
+posts = 5
+post = "stripped_spruce_log[axis=y]"
+lanterns = true
+
+[[build]]
+do = "lamp"
+at = [{ along = "lane", d = 190, side = 5 }, { along = "lane", d = 200, side = -5 }, { along = "lane", d = 212, side = 5 }]
+height = 4
+
+[[build]]
+do = "tree"
+at = [{ along = "lane", d = 196, side = 12 }, { along = "lane", d = 205, side = -14 }]
+kind = "oak"
+
+# ---------------------------------------------------------------- everywhere
+
+[[build]]
+do = "scatter"
+from = [-118, -48]
+to = [118, 48]
+blocks = { short_grass = 14, tall_grass = 3, fern = 2, dandelion = 1, poppy = 1, oxeye_daisy = 1, cornflower = 1, bush = 1 }
+density = 0.22
+
+[[build]]
+do = "tree"
+at = [[-100, -36], [-80, 30], [-40, -38], [-20, 36], [10, -36], [44, 34], [70, -40], [95, 36], [-110, 30], [30, 40]]
+kind = "oak"
+
+[[build]]
+do = "tree"
+at = [[-92, -42], [-30, 42], [22, -42], [84, -36], [-50, -44], [60, 44]]
+kind = "spruce"
+
+[[build]]
+do = "backdrop"
+from = [-118, -48]
+to = [118, 48]
+width = 40
+height = [6, 30]
+roughness = 8
+scale = 18
+trees = { kinds = ["oak", "oak", "birch", "spruce", "dark_oak"], density = 0.035 }
+houses = 4
+open = { side = "east", drop = 20, far = 10, width = 90 }
+
+# ---------------------------------------------------------------- marks
+
+# Lead tracks: each walked east unless noted. Lengths fit the benchmark's shot lengths at a goat's walk.
+[[mark]]
+name = "shot-01"
+along = "lane"
+from = 4
+to = 22
+
+[[mark]]
+name = "shot-03"
+along = "lane"
+from = 31
+to = 41
+
+[[mark]]
+name = "shot-04"
+along = "lane"
+from = 46
+to = 58
+
+[[mark]]
+name = "shot-05"
+along = "lane"
+from = 64
+to = 73
+
+[[mark]]
+name = "shot-06"
+along = "lane"
+from = 70
+to = 88
+
+[[mark]]
+name = "shot-07"
+along = "lane"
+from = 96
+to = 107
+
+[[mark]]
+name = "shot-09"
+along = "lane"
+from = 104
+to = 114
+
+[[mark]]
+name = "shot-19"
+along = "lane"
+from = 140
+to = 156
+
+[[mark]]
+name = "shot-20"
+along = "lane"
+from = 122
+to = 131
+
+[[mark]]
+name = "shot-27"
+along = "lane"
+from = 160
+to = 169
+
+# The open end, walked west: the valley is behind the walker.
+[[mark]]
+name = "shot-28"
+along = "lane"
+from = 200
+to = 220
+reverse = true
+
+# The montage: six short struts at six places.
+[[mark]]
+name = "spot-1"
+along = "lane"
+from = 50
+to = 55
+
+[[mark]]
+name = "spot-2"
+along = "lane"
+from = 92
+to = 97
+
+[[mark]]
+name = "spot-3"
+along = "lane"
+from = 70
+to = 75
+
+[[mark]]
+name = "spot-4"
+along = "lane"
+from = 86
+to = 91
+offset = 1.5
+
+[[mark]]
+name = "spot-5"
+along = "lane"
+from = 36
+to = 41
+
+[[mark]]
+name = "spot-6"
+along = "lane"
+from = 144
+to = 149
+
+# Cameras.
+[[mark]]
+name = "high-wide"
+eye = [-60, 22, 40]
+look = [-40, 0, 0]
+fov = 70
+
+[[mark]]
+name = "valley"
+eye = [96, 2, 5]
+look = [140, -6, 8]
+fov = 90

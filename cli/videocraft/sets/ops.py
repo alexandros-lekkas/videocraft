@@ -21,10 +21,12 @@ class SetError(ValueError):
 
 
 class Op:
-    """One build entry: its keys, checked."""
+    """One build entry: its keys, checked. Positions may be given along a lane (see `Builder.along`)."""
+    current = None  # the builder running the entry (set by Builder.run)
 
     def __init__(self, spec, where, allowed):
         self.spec, self.where = spec, where
+        self.b = Op.current
         extra = sorted(set(spec) - set(allowed) - {'do', 'note'})
         if extra:
             raise SetError(f'{where}: unknown key(s) {", ".join(extra)}; allowed: {", ".join(sorted(allowed))}')
@@ -50,6 +52,9 @@ class Op:
 
     def xz(self, k, default=None):
         v = self.spec.get(k, default)
+        if isinstance(v, dict) and 'along' in v and self.b is not None:
+            x, z = self.b.along(v, self.where)
+            return math.floor(x), math.floor(z)
         if not (isinstance(v, (list, tuple)) and len(v) in (2, 3)):
             raise SetError(f'{self.where}: `{k}` is [x, z] (got {v!r})')
         return (v[0], v[-1]) if len(v) == 2 else (v[0], v[2])
@@ -60,10 +65,15 @@ class Op:
             raise SetError(f'{self.where}: `{k}` is [x, y, z] (got {v!r})')
         return tuple(v)
 
-    def facing(self, k='facing', default='south'):
+    def facing(self, k='facing', default='south', at='at'):
         v = self.spec.get(k, default)
+        if v in ('lane', 'away') and self.b is not None:
+            # Toward (or away from) the nearest lane centre line, to the nearest of the four directions.
+            x, z = self.xz(at)
+            d = self.b.toward_lane(x + 0.5, z + 0.5, self.where)
+            return turn_dir(d, 2) if v == 'away' else d
         if v not in FACING_QUARTERS:
-            raise SetError(f'{self.where}: `{k}` is north, east, south or west (got {v!r})')
+            raise SetError(f'{self.where}: `{k}` is north, east, south, west, lane or away (got {v!r})')
         return v
 
     def points(self, k):
@@ -73,6 +83,9 @@ class Op:
         return [self._point(p, k) for p in v]
 
     def _point(self, p, k):
+        if isinstance(p, dict) and 'along' in p and self.b is not None:
+            x, z = self.b.along(p, self.where)
+            return (math.floor(x), int(p['y']), math.floor(z)) if 'y' in p else (math.floor(x), math.floor(z))
         if isinstance(p, (list, tuple)) and len(p) in (2, 3) and all(isinstance(c, (int, float)) for c in p):
             return tuple(p)
         raise SetError(f'{self.where}: `{k}` holds [x, z] or [x, y, z] positions (got {p!r})')
@@ -136,7 +149,41 @@ class Builder:
             if fn is None:
                 raise SetError(f'{where}: unknown build `do = "{spec["do"]}"`; known: {", ".join(sorted(OPS))}')
             self.where = f'{where} ({spec["do"]})'
-            fn(self, spec)
+            saved, Op.current = Op.current, self
+            try:
+                fn(self, spec)
+            except SetError:
+                raise
+            except (TypeError, ValueError, KeyError, IndexError, AttributeError) as e:
+                raise SetError(f'{self.where}: {type(e).__name__}: {e} (check the keys and value types of this entry)') from e
+            finally:
+                Op.current = saved
+
+    # ---- positions along a lane ----
+
+    def along(self, v, where):
+        """`{ along = "lane", d = 40, side = 8 }`: `d` blocks along the lane mark's centre line from its first point,
+        `side` blocks to the right of the direction of travel (negative: left). Returns a continuous (x, z)."""
+        lane = v.get('along')
+        if lane not in self.spines:
+            raise SetError(f'{where}: along = "{lane}" is not a lane with a mark (yet); lanes: {", ".join(sorted(self.spines)) or "none"}')
+        x, z, tx, tz = spine_at(self.spines[lane], float(v.get('d', 0)))
+        side = float(v.get('side', 0))
+        return x - tz * side, z + tx * side
+
+    def toward_lane(self, x, z, where):
+        if not self.spines:
+            raise SetError(f'{where}: facing = "lane" needs a lane with a mark before this entry')
+        best = None
+        for spine in self.spines.values():
+            for sx, sz, _ in spine:
+                d = (sx - x) ** 2 + (sz - z) ** 2
+                if best is None or d < best[0]:
+                    best = (d, sx - x, sz - z)
+        _, dx, dz = best
+        if abs(dx) >= abs(dz):
+            return 'east' if dx > 0 else 'west'
+        return 'south' if dz > 0 else 'north'
 
     # ---- areas ----
 
@@ -218,6 +265,20 @@ def smooth(points, step=0.25):
     dist += math.dist((out[-1][0], out[-1][1]), last)
     out.append((last[0], last[1], dist))
     return out
+
+
+def spine_at(spine, d):
+    """The point and unit direction `d` blocks along a sampled spine (clamped to its ends)."""
+    d = max(0.0, min(d, spine[-1][2]))
+    for i in range(1, len(spine)):
+        if spine[i][2] >= d or i == len(spine) - 1:
+            a, c = spine[i - 1], spine[i]
+            seg = (c[2] - a[2]) or 1e-9
+            t = max(0.0, min(1.0, (d - a[2]) / seg))
+            tx, tz = c[0] - a[0], c[1] - a[1]
+            n = math.hypot(tx, tz) or 1.0
+            return a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t, tx / n, tz / n
+    return spine[0][0], spine[0][1], 1.0, 0.0
 
 
 def straight(points, step=0.25):
@@ -428,8 +489,19 @@ def op_house(b, spec):
     `frame` posts (also every `post_every`), a `band` course under the roof, `windows` with rhythm, a `door`, a `roof`
     (see `roof`), a `chimney`, a lit interior. Faces of the walls: windows on every side unless `windows.sides`."""
     op = Op(spec, b.where, {'from', 'to', 'y', 'height', 'walls', 'grain', 'base', 'frame', 'post_every', 'band',
-                            'windows', 'door', 'roof', 'chimney', 'floor', 'light', 'interior'})
-    (x1, z1), (x2, z2) = op.xz('from'), op.xz('to')
+                            'windows', 'door', 'roof', 'chimney', 'floor', 'light', 'interior', 'at', 'size', 'facing'})
+    door = op.get('door', {'side': 'south'})
+    if op.has('at'):
+        # A footprint `size = [width, depth]` centred on `at`, its door on the `facing` side (e.g. "lane").
+        cx, cz = op.xz('at')
+        w, d = op.get('size', [7, 5])
+        f = op.facing(default='south')
+        W, D = (w, d) if f in ('north', 'south') else (d, w)
+        x1, z1 = cx - (W - 1) // 2, cz - (D - 1) // 2
+        x2, z2 = x1 + W - 1, z1 + D - 1
+        door = {**(door or {}), 'side': f} if door is not False else False
+    else:
+        (x1, z1), (x2, z2) = op.xz('from'), op.xz('to')
     x1, x2, z1, z2 = min(x1, x2), max(x1, x2), min(z1, z2), max(z1, z2)
     y0 = int(op.get('y', 0))
     h = int(op.get('height', 4))
@@ -472,7 +544,6 @@ def op_house(b, spec):
                 b.put(x, top, z, f'{band}[axis=z]' if band.endswith('_log') and '[' not in band else band)
     # Windows: a rhythm along each wall, skipping posts and the door.
     win = op.get('windows', {})
-    door = op.get('door', {'side': 'south'})
     door_cells = set()
     if door:
         side = door.get('side', 'south')
@@ -548,7 +619,9 @@ def op_house(b, spec):
         b.where = saved
     ch = op.get('chimney')
     if ch:
-        cx, cz = ch.get('at', [x1 + 1, z1 + 1])
+        # Inside the footprint, by default at the back corner away from the door.
+        back = {'north': (x2 - 1, z2 - 1), 'south': (x1 + 1, z1 + 1), 'east': (x1 + 1, z2 - 1), 'west': (x2 - 1, z1 + 1)}
+        cx, cz = ch.get('at', back.get((door or {}).get('side', 'south'), (x1 + 1, z1 + 1)))
         for y in range(y0, top + 1 + int(ch.get('height', 6))):
             b.put(cx, y, cz, ch.get('block', 'bricks'))
         b.put(cx, top + 1 + int(ch.get('height', 6)), cz, ch.get('cap', 'brick_slab[type=bottom]'))
@@ -888,8 +961,10 @@ def op_bush(b, spec):
 def op_scatter(b, spec):
     """Plants or small props scattered over an area on top of the ground: `blocks` mix, `density` (0-1), `on`
     (blocks they may stand on; default grass_block), `y` (0, the layer they go in)."""
-    op = Op(spec, b.where, {'from', 'to', 'center', 'radius', 'blocks', 'density', 'on', 'y', 'grain'})
+    op = Op(spec, b.where, {'from', 'to', 'center', 'radius', 'blocks', 'density', 'on', 'y', 'grain', 'near', 'within'})
     mix = b.mix(op.req('blocks'), op.get('grain', 0), 'scatter')
+    near = BlockState.parse(op.get('near')).name if op.has('near') else None
+    within = int(op.get('within', 1))
     density = float(op.get('density', 0.15))
     on = {BlockState.parse(o).name for o in op.get('on', ['grass_block'])}
     y = op.get('y')
@@ -902,6 +977,9 @@ def op_scatter(b, spec):
             yy = t + 1
         below = b.grid.get(x, yy - 1, z)
         if below is None or below.name not in on or b.grid.has(x, yy, z):
+            continue
+        if near and not any(b.grid.get(x + a, y2, z + c) is not None and b.grid.get(x + a, y2, z + c).name == near
+                            for a in range(-within, within + 1) for c in range(-within, within + 1) for y2 in range(yy - 3, yy + 1)):
             continue
         if b.rand(x, z, 77) < density:
             blk = mix.pick(x, z)
@@ -984,7 +1062,7 @@ def op_well(b, spec):
         part.put(dx, 4, 1, f'{roof}_stairs[facing=north,half=bottom]')
         part.put(dx, 4, 0, f'{roof}_slab[type=top]' if abs(dx) < 3 else f'{roof}_slab[type=top]')
         part.put(dx, 5, 0, f'{roof}_slab[type=bottom]')
-    part.put(0, 3, 0, 'chain[axis=y]')
+    part.put(0, 3, 0, 'iron_chain[axis=y]')
     part.put(0, 2, 0, 'lantern[hanging=true]')
     _stamp(b, part, op.xz('at'), op.facing(default='south'))
     name = op.get('mark')
@@ -1052,7 +1130,7 @@ def op_backdrop(b, spec):
     `open = { side = "east", drop = 18, far = 6 }` turns one side into a valley: the ground falls away and rises again
     to lower far hills, so a camera sees a view rather than a wall. The crust is a few blocks thick and closed."""
     op = Op(spec, b.where, {'from', 'to', 'width', 'height', 'roughness', 'surface', 'under', 'trees', 'houses', 'open',
-                            'y', 'scale'})
+                            'y', 'scale', 'skin'})
     (x1, z1), (x2, z2) = op.xz('from'), op.xz('to')
     x1, x2, z1, z2 = min(x1, x2), max(x1, x2), min(z1, z2), max(z1, z2)
     width = int(op.get('width', 32))
@@ -1065,37 +1143,58 @@ def op_backdrop(b, spec):
     opened = op.get('open')
     seed = b.seed ^ noise.salt(f'hills{b.n}')
     heights = {}
-    for x in range(x1 - width, x2 + width + 1):
-        for z in range(z1 - width, z2 + width + 1):
+    ow = int(opened.get('width', width)) if opened else width
+    reach = max(width, ow)
+    oside = opened.get('side', 'east') if opened else None
+    for x in range(x1 - reach, x2 + reach + 1):
+        for z in range(z1 - reach, z2 + reach + 1):
             dx = max(x1 - x, 0, x - x2)
             dz = max(z1 - z, 0, z - z2)
             if dx == 0 and dz == 0:
                 continue
             d = math.hypot(dx, dz)
-            if d > width:
+            on_open = oside is not None and {'east': x > x2, 'west': x < x1, 'south': z > z2, 'north': z < z1}[oside]
+            lim = ow if on_open else width
+            if d > lim:
                 continue
-            t = d / width
+            t = min(1.0, d / width)
             ramp = t * t * (3 - 2 * t)
             h = near + (far - near) * ramp + (noise.fbm(seed, x / scale, z / scale, 3) - 0.5) * 2 * rough * min(1, t * 2.5)
             # The first blocks off the plate rise gently, so the join to the ground is not a step.
             h = min(h, d * 0.9)
+            if opened and not on_open:
+                # The hills either side lower toward the open end, so it opens out instead of making a gorge.
+                taper = float(opened.get('taper', 40))
+                to_open = {'east': x2 - x, 'west': x - x1, 'south': z2 - z, 'north': z - z1}[oside]
+                if to_open < taper:
+                    h *= 0.35 + 0.65 * max(0.0, to_open) / taper
             if opened:
                 side = opened.get('side', 'east')
                 dist_side = {'east': x - x2, 'west': x1 - x, 'south': z - z2, 'north': z1 - z}[side]
                 if dist_side > 0:
                     drop = float(opened.get('drop', 18))
                     farh = float(opened.get('far', 6))
-                    u = dist_side / width
-                    valley = -drop * math.sin(min(1, u / 0.75) * math.pi / 2) if u < 0.75 else -drop + (drop + farh) * ((u - 0.75) / 0.25) ** 1.5
+                    u = dist_side / ow
+                    # Falls away over the first half, a valley floor, then rises gently to far hills at the rim.
+                    if u < 0.45:
+                        valley = -drop * math.sin(u / 0.45 * math.pi / 2)
+                    elif u < 0.6:
+                        valley = -drop
+                    else:
+                        t2 = (u - 0.6) / 0.4
+                        valley = -drop + (drop + farh) * (t2 * t2 * (3 - 2 * t2))
                     other = max(0, {'east': max(z1 - z, z - z2), 'west': max(z1 - z, z - z2),
                                     'south': max(x1 - x, x - x2), 'north': max(x1 - x, x - x2)}[side])
                     blend = min(1.0, other / 12)
                     h = valley * (1 - blend) + h * blend + (noise.fbm(seed + 5, x / 9, z / 9, 2) - 0.5) * 3
             heights[(x, z)] = top0 + round(h)
+    green = b.state(op.get('skin', 'moss_block'))
     for (x, z), h in heights.items():
         lowest = min([h] + [heights.get((x + a, z + c), top0) for a, c in ((1, 0), (-1, 0), (0, 1), (0, -1))]) - 2
         for y in range(min(lowest, h - 2), h):
-            b.put(x, y, z, under)
+            # The two layers under the surface show on the faces of steps: green there, so hills read as hills
+            # rather than terraces of dirt.
+            b.put(x, y, z, green if y >= h - 2 else under)
         b.put(x, h, z, surface.pick(x, z))
     trees = op.get('trees')
     if trees:
@@ -1326,11 +1425,19 @@ def op_poster(b, spec):
     and `lines` of text (`{ text, at = [u, v], scale, color, bold }`, u is the middle of the line).
     Layers stand off the wall at different depths, so nothing z-fights. `mark = "poster"` exports a straight-on
     camera that fills the frame with the poster at `fov` (40)."""
-    op = Op(spec, b.where, {'at', 'facing', 'size', 'board', 'frame', 'paper', 'art', 'lines', 'mark', 'fov', 'glow', 'paper_margin'})
-    x0, y0, z0 = op.xyz('at')
-    f = op.facing()
+    op = Op(spec, b.where, {'at', 'facing', 'size', 'board', 'frame', 'paper', 'art', 'lines', 'mark', 'fov', 'glow',
+                            'paper_margin', 'center', 'y', 'stand', 'roof'})
     w, h = op.req('size')
-    (rx, rz), (nx, nz) = _face_frame(f)
+    if op.has('center'):
+        # Centred on a column (`center`, e.g. along a lane), its bottom row at `y`, facing `facing` ("lane" works).
+        cx, cz = op.xz('center')
+        f = op.facing(default='south', at='center')
+        (rx, rz), (nx, nz) = _face_frame(f)
+        x0, y0, z0 = cx - rx * (w // 2), int(op.get('y', 1)), cz - rz * (w // 2)
+    else:
+        x0, y0, z0 = op.xyz('at')
+        f = op.facing()
+        (rx, rz), (nx, nz) = _face_frame(f)
     board = op.get('board', 'spruce_planks')
     frame = op.get('frame', 'stripped_dark_oak_log')
     for u in range(-1, w + 1):
@@ -1342,6 +1449,19 @@ def op_poster(b, spec):
                 b.put(x, y0 + v, z, f'{frame}[axis={axis}]' if frame.endswith(('_log', '_wood')) and '[' not in frame else frame)
             elif not edge:
                 b.put(x, y0 + v, z, board)
+    if op.get('stand'):
+        # A free-standing notice board: posts down to the ground either side and a little roof on top.
+        post = op.get('stand') if isinstance(op.get('stand'), str) else 'spruce_log'
+        roof = op.get('roof', 'dark_oak')
+        for u in range(-2, w + 2):
+            x, z = x0 + rx * u, z0 + rz * u
+            b.put(x, y0 + h + 1, z, f'{roof}_planks')
+            b.put(x + nx, y0 + h + 1, z + nz, f'{roof}_stairs[facing={turn_dir(f, 2)},half=bottom]')
+            b.put(x - nx, y0 + h + 1, z - nz, f'{roof}_stairs[facing={f},half=bottom]')
+        for u in (-1, w):
+            x, z = x0 + rx * u, z0 + rz * u
+            for y in range(0, y0 - 1):
+                b.put(x, y, z, f'{post}[axis=y]' if post.endswith('_log') else post)
     glow = {'brightness': {'sky': 15, 'block': 15}} if op.get('glow') else {}
     paper = op.get('paper', 'white_concrete')
     margin = float(op.get('paper_margin', 0.125))

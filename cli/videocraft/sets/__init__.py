@@ -4,7 +4,7 @@
     placed = place(built, at=(0, 160, 0), rotate=90)   # world coordinates: commands, anchors, paths, views
 
 The format is docs/SETS.md. A set is a self-contained island: its own ground plate and backdrop, so the natural
-world never shows, placeable anywhere (high in the sky by default). Nothing here touches a game; the commands are
+world never shows, placeable anywhere (by default at y 230, above the clouds). Nothing here touches a game; the commands are
 staged by the take (`[[world.set]]` in a script, see expand.py).
 """
 import math
@@ -21,7 +21,8 @@ TOP = {'name', 'description', 'time', 'weather', 'biome', 'seed', 'clear', 'head
        'preview', 'tags', 'kind'}
 MARK = {'name', 'at', 'facing', 'path', 'along', 'from', 'to', 'offset', 'reverse', 'eye', 'look', 'fov', 'note', 'y',
         'preview'}
-DEFAULT_AT = (0, 160, 0)
+# Above the cloud layer (y 192): no clouds slab overhead, and below the horizon only the set's own backdrop shows.
+DEFAULT_AT = (0, 230, 0)
 
 
 def find(name):
@@ -196,7 +197,14 @@ class Placed:
     # ---- commands ----
 
     def block_commands(self):
-        return emit.block_commands(self.cells)
+        if getattr(self, '_blocks', None) is None:
+            cells = self.cells
+            if self.built.clear:
+                # After clearing, air is already there: an air fill would change nothing, and a fill that changes
+                # nothing is a failed command.
+                cells = {k: v for k, v in cells.items() if v.name != 'minecraft:air'}
+            self._blocks = emit.block_commands(cells)
+        return self._blocks
 
     def entity_commands(self):
         out = []
@@ -217,11 +225,7 @@ class Placed:
             out += emit.biome_commands(self.lo, self.hi, self.built.biome)
         if self.built.clear:
             out += emit.clear_commands(self.lo, self.hi)
-            # After clearing, air is already there: an air fill would change nothing, and a fill that changes nothing
-            # is a failed command.
-            out += emit.block_commands({k: v for k, v in self.cells.items() if v.name != 'minecraft:air'})
-        else:
-            out += self.block_commands()
+        out += self.block_commands()
         return out
 
     def anchors(self, prefix):

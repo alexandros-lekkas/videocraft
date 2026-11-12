@@ -10,7 +10,7 @@ import math
 import subprocess
 from pathlib import Path
 
-from . import ROOT, build, load, place
+from . import DEFAULT_AT, ROOT, build, load, place
 
 SHOT_SECONDS = 0.25
 FRAME = 8
@@ -51,7 +51,7 @@ def viewpoints(placed, low_fov=105.0, include=None):
     return out
 
 
-def script(name, at=(0, 160, 0), rotate=0, world_seed='videocraft', include=None, time=None):
+def script(name, at=DEFAULT_AT, rotate=0, world_seed='videocraft', include=None, time=None):
     """The preview take as a script (a dict) and the viewpoint list."""
     built = build(load(name))
     placed = place(built, at, rotate)

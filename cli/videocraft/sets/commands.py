@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import SETS_DIR, SetError, build, listing, load, place
+from . import DEFAULT_AT, SETS_DIR, SetError, build, listing, load, place
 
 
 def say(text=''):
@@ -25,7 +25,7 @@ def register(sub):
     q.set_defaults(run=cmd_list)
     q = s.add_parser('build')
     q.add_argument('name')
-    q.add_argument('--at', nargs=3, type=int, default=[0, 160, 0], metavar=('X', 'Y', 'Z'))
+    q.add_argument('--at', nargs=3, type=int, default=list(DEFAULT_AT), metavar=('X', 'Y', 'Z'))
     q.add_argument('--rotate', type=int, default=0)
     q.add_argument('--mirror', action='store_true')
     q.add_argument('--commands', help='write the commands to this file, one per line')
@@ -33,7 +33,7 @@ def register(sub):
     q.set_defaults(run=cmd_build)
     q = s.add_parser('preview')
     q.add_argument('name')
-    q.add_argument('--at', nargs=3, type=int, default=[0, 160, 0], metavar=('X', 'Y', 'Z'))
+    q.add_argument('--at', nargs=3, type=int, default=list(DEFAULT_AT), metavar=('X', 'Y', 'Z'))
     q.add_argument('--rotate', type=int, default=0)
     q.add_argument('--only', nargs='*', help='only viewpoints whose name contains one of these')
     q.add_argument('--time', type=int, help='time of day (default: the set\'s own)')

@@ -33,16 +33,27 @@ def boxes(cells, limit=FILL_LIMIT):
         for (x, y, z) in todo:
             if (x, y, z) not in mine:
                 continue
-            x2 = x
-            while ok(x2 + 1, y, z) and (x2 + 2 - x) <= limit:
-                x2 += 1
-            z2 = z
-            while (x2 - x + 1) * (z2 + 2 - z) <= limit and all(ok(i, y, z2 + 1) for i in range(x, x2 + 1)):
-                z2 += 1
-            y2 = y
-            area = (x2 - x + 1) * (z2 - z + 1)
-            while area * (y2 + 2 - y) <= limit and all(ok(i, y2 + 1, k) for i in range(x, x2 + 1) for k in range(z, z2 + 1)):
-                y2 += 1
+            # Grow the box axis by axis; try three axis orders and keep the biggest (columns of hills grow up,
+            # plates grow sideways).
+            best = None
+            for order in ((0, 2, 1), (1, 0, 2), (2, 0, 1)):
+                lo, hi = [x, y, z], [x, y, z]
+                for axis in order:
+                    while True:
+                        size = [hi[i] - lo[i] + 1 for i in range(3)]
+                        size[axis] += 1
+                        if size[0] * size[1] * size[2] > limit:
+                            break
+                        a = hi[axis] + 1
+                        rng = [range(lo[i], hi[i] + 1) if i != axis else (a,) for i in range(3)]
+                        if all(ok(i, j, k) for i in rng[0] for j in rng[1] for k in rng[2]):
+                            hi[axis] = a
+                        else:
+                            break
+                vol = (hi[0] - lo[0] + 1) * (hi[1] - lo[1] + 1) * (hi[2] - lo[2] + 1)
+                if best is None or vol > best[0]:
+                    best = (vol, hi)
+            x2, y2, z2 = best[1]
             for i in range(x, x2 + 1):
                 for j in range(y, y2 + 1):
                     for k in range(z, z2 + 1):

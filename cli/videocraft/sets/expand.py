@@ -2,7 +2,7 @@
 
     [[world.set]]
     name = "market-lane"          # sets/market-lane.toml
-    at = [0, 160, 0]              # where the set's origin goes (default [0, 160, 0])
+    at = [0, 230, 0]              # where the set's origin goes (default [0, 230, 0], above the clouds)
     rotate = 0                    # 0, 90, 180, 270 (clockwise from above); mirror = true flips east and west
     as = "lane"                   # the prefix of its marks (default: the set's name)
 
@@ -21,7 +21,7 @@ new to use them:
 
 The plan's world also gets `anchors` (every mark, by name, for the runtime's anchor table), `paths` and `views`.
 """
-from . import SetError, build, load, place
+from . import DEFAULT_AT, SetError, build, load, place
 
 SET_KEYS = {'name', 'at', 'rotate', 'mirror', 'as', 'note'}
 LOAD_DELAY = 2.0     # staging seconds between forceload and the first block, so the chunks have loaded
@@ -49,7 +49,7 @@ def expand(raw, source='script'):
         if extra:
             raise SetError(f'{where}: unknown key(s) {", ".join(extra)}; allowed: {", ".join(sorted(SET_KEYS))}')
         built = build(load(spec['name']))
-        p = place(built, spec.get('at', (0, 160, 0)), spec.get('rotate', 0), spec.get('mirror', False))
+        p = place(built, spec.get('at', DEFAULT_AT), spec.get('rotate', 0), spec.get('mirror', False))
         prefix = spec.get('as', built.name)
         if prefix in placed:
             raise SetError(f'{where}: "{prefix}" is placed twice; give the second one `as = "<other name>"`')
