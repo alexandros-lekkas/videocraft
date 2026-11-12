@@ -7,6 +7,7 @@ import json
 import math
 import shutil
 import subprocess
+from pathlib import Path
 
 from videocraft import timeline, tools
 from videocraft.review import prompts, rubric as rubrics
@@ -152,23 +153,21 @@ def build(it, rubric_ref=None, reviewers=None, every=None, say=print):
                   f'{c["kind"].upper()}  {c["out_frames"]} FRAMES {c["out_frames"] / fps:.2f} S  CUT {tc(c["out_start"])}-{tc(c["out_start"] + c["out_frames"])}'
                   + (f'  RIG {_rig(plan, name)}' if c['kind'] == 'shot' else ''))
         tiles = [(big.get(f), label(f)) for f in picks]
-        path = out / 'strips' / f'{c["index"] + 1:02d}-{name}.png'
-        _sheet(tiles, BIG, 3, header).png(path)
+        path = Path(_sheet(tiles, BIG, 3, header).save(out / 'strips' / f'{c["index"] + 1:02d}-{name}.jpg'))
         files['strips'].append(str(path.relative_to(out)))
     per_sheet = CONTACT_COLS * CONTACT_ROWS
     for k in range(0, len(contact_picks), per_sheet):
         chunk = contact_picks[k:k + per_sheet]
         tiles = [(small.get(f), [(tc(f), None), ((shot_of.get(f) or {}).get('shot') or 'black', DIM)]) for f in chunk]
-        path = out / 'contact' / f'sheet-{k // per_sheet + 1}.png'
-        _sheet(tiles, SMALL, CONTACT_COLS, (f'CONTACT {k // per_sheet + 1}  {tc(chunk[0])}-{tc(chunk[-1])}', f'{CONTACT_FPS} FRAMES A SECOND, {plan["name"]} {it.name}')).png(path)
+        path = Path(_sheet(tiles, SMALL, CONTACT_COLS, (f'CONTACT {k // per_sheet + 1}  {tc(chunk[0])}-{tc(chunk[-1])}',
+                                                         f'{CONTACT_FPS} FRAMES A SECOND, {plan["name"]} {it.name}')).save(out / 'contact' / f'sheet-{k // per_sheet + 1}.jpg'))
         files['contact'].append(str(path.relative_to(out)))
     for n, j in enumerate(joins):
         a, b = shot_of.get(j - 1), shot_of.get(j)
         tiles = [(big.get(f), label(f)) for f in cut_picks[j]]
         header = (f'CUT {n + 1:02d} AT {tc(j)} (M{j})',
                   f'TOP: END OF {(a or {}).get("shot") or "black"}   BOTTOM: START OF {(b or {}).get("shot") or "black"}' + ('   SOFT' if j in soft else ''))
-        path = out / 'cuts' / f'cut-{n + 1:02d}.png'
-        _sheet(tiles, BIG, 3, header).png(path)
+        path = Path(_sheet(tiles, BIG, 3, header).save(out / 'cuts' / f'cut-{n + 1:02d}.jpg'))
         files['cuts'].append(str(path.relative_to(out)))
 
     (out / 'captions.md').write_text(_captions(it, plan, clips, fps))

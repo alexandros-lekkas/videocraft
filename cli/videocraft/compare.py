@@ -2,7 +2,7 @@
 
     compare.md        scores per criterion (a, b, delta), the pass verdicts, measured deltas, the notes of b
     compare.json      the same as data
-    shots/<shot>.png  for every shot in both: first, middle and last frame of a (top row) over b (bottom row)
+    shots/<shot>.jpg  for every shot in both: first, middle and last frame of a (top row) over b (bottom row)
 Owned by workstream (d).
 """
 import json
@@ -90,7 +90,7 @@ def _side_by_side(a, b, out):
                 if frames.get(f):
                     canvas.paste(frames[f], w, h, x, y)
                 canvas.text(x + 4, y + h + 6, f'{it.name}  {timeline.timecode(f, fps)}  M{f}', 2, INK)
-        path = out / f'{s}.png'
-        canvas.png(path)
+        from pathlib import Path
+        path = Path(canvas.save(out / f'{s}.jpg'))
         files.append(str(path.relative_to(out.parent)))
     return files

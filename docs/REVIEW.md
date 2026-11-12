@@ -21,9 +21,9 @@ bin/videocraft climb x.toml --budget 3            # propose → run --parent →
 
 | File | What |
 |:--|:--|
-| `strips/<nn>-<shot>.png` | One image per clip: its first, last and every n-th frame, 640x360 each, three across, with the shot name, the shot's own frame, the master frame and the timecode in the cut burnt into the margin. |
-| `contact/sheet-<k>.png` | The whole cut at 4 frames a second, 320x180 tiles, six across, timecode and shot under each. |
-| `cuts/cut-<nn>.png` | Every join: the three frames before (top row) and the three after (bottom row). |
+| `strips/<nn>-<shot>.jpg` | One image per clip: its first, last and every n-th frame, 640x360 each, three across, with the shot name, the shot's own frame, the master frame and the timecode in the cut burnt into the margin. |
+| `contact/sheet-<k>.jpg` | The whole cut at 4 frames a second, 320x180 tiles, six across, timecode and shot under each. |
+| `cuts/cut-<nn>.jpg` | Every join: the three frames before (top row) and the three after (bottom row). |
 | `captions.md` | Every line of text per shot: from `text.json` (frames, words, cap height) and from the script's cues. |
 | `report.md`, `metrics.json` | From measure: shot statistics, black, frozen, loudness, camera, framing, text rules. |
 | `script.toml`, `rubric.toml` | The script as authored; the rubric used. |

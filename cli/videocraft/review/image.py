@@ -77,6 +77,19 @@ class Canvas:
             cx += (GLYPH_W + 1) * scale
         return cx - x
 
+    def save(self, path, quality=2):
+        """JPEG through ffmpeg when the path ends in .jpg (a tenth of the PNG's size, labels still crisp at q 2), else PNG."""
+        if str(path).endswith('.jpg'):
+            import subprocess
+            from videocraft import tools
+            if tools.ffmpeg():
+                subprocess.run([tools.ffmpeg(), '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{self.w}x{self.h}', '-i', '-',
+                                '-q:v', str(quality), '-pix_fmt', 'yuvj444p', str(path)], input=bytes(self.px), check=True)
+                return path
+            path = str(path)[:-4] + '.png'
+        self.png(path)
+        return path
+
     def png(self, path):
         raw = b''.join(b'\x00' + bytes(self.px[r * self.w * 3:(r + 1) * self.w * 3]) for r in range(self.h))
         chunk = lambda tag, data: struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff)

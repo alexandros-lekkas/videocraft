@@ -167,16 +167,16 @@ class Packet(unittest.TestCase):
         self.assertEqual(m['text']['counts'].get('safe_area'), 1)    # a 1920-wide box on a 320-wide frame
         manifest = packet.build(self.it, 'pinksheep-style', 'pacing,sound', say=lambda *_: None)
         out = self.it.review / 'packet'
-        self.assertEqual(manifest['files']['strips'], ['strips/01-a.png', 'strips/02-b.png'])
-        self.assertEqual(manifest['files']['cuts'], ['cuts/cut-01.png'])
+        self.assertEqual(manifest['files']['strips'], ['strips/01-a.jpg', 'strips/02-b.jpg'])
+        self.assertEqual(manifest['files']['cuts'], ['cuts/cut-01.jpg'])
         self.assertEqual(manifest['joins'], [{'frame': 60, 't': '0:01.00', 'soft': False}])
         for f in manifest['files']['strips'] + manifest['files']['contact'] + manifest['files']['cuts']:
-            self.assertEqual((out / f).read_bytes()[:4], b'\x89PNG')
+            self.assertEqual((out / f).read_bytes()[:3], b'\xff\xd8\xff')   # JPEG
         captions = (out / 'captions.md').read_text()
         self.assertIn('"Hello there"', captions)
         self.assertIn('"Bars!"', captions)
         pacing = (out / 'prompts/pacing.md').read_text()
         self.assertIn('cannot hear', pacing)
-        self.assertIn('cuts/cut-01.png', pacing)
+        self.assertIn('cuts/cut-01.jpg', pacing)
         self.assertIn('exactly three', pacing)
         self.assertEqual(sorted(p.name for p in (out / 'prompts').iterdir()), ['pacing.md', 'sound.md'])
