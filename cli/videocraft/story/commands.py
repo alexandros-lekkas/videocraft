@@ -3,17 +3,23 @@
   story new "<premise>" [--id ID] [--format short|episode|long] [--vertical] [--from-file premise.md] [--through STAGE]
   story draft <stage> <story> [--note "…"] [--from-file F] [--no-lock]   regenerate a stage from the stages before it
   story revise <stage> <story> --note "…" [--from-file F]                a new revision with the note applied
-  story build <story> [--from-file shots.toml]                           shots.toml: compile + lint, up to 3 repairs
+  story build <story> [--from-file shots.toml] [--no-read] [--read-rounds N]
+                                       shots.toml: compile + lint, up to 3 repairs; then a cold read (>= 8 to pass)
+  story read <script.toml|story> [--out DIR] [--min 8]   a fresh model reads the dialogue cold: story-read.md
   story diff <story> <stage> [r1 r2]   story show <story> [stage] [--rev N]   story lock <story> <stage> <rev>
   story list
   make "<prompt>" [--format …] [--vertical] [--dry-run] [--id ID]        prompt → … → shots.toml → run → cut
 
-Exit codes: 0 done, 1 a stage did not pass its checks (the problems are printed), 2 no model or a usage error.
+Exit codes: 0 done, 1 a stage did not pass its checks or the read scored under 8 (the problems are printed), 2 no
+model or a usage error.
 """
 import difflib
 import sys
+from pathlib import Path
 
-from videocraft.story import stages
+from videocraft import script as shotscript
+from videocraft.paths import RUNS
+from videocraft.story import read, stages
 from videocraft.story._ask import AskError
 from videocraft.story.store import FILES, FORMATS, STAGES, Store, StoryError, slug
 
@@ -40,7 +46,10 @@ def _guarded(fn):
         except StoryError as e:
             say(f'STORY ERROR {e}')
             return 2
-        except AskError as e:
+        except (AskError, read.ReadError) as e:
+            say(f'MODEL ERROR {e}')
+            return 2
+        except RuntimeError as e:   # agents.AgentError: no model, or the call failed
             say(f'MODEL ERROR {e}')
             return 2
     return run
@@ -95,16 +104,72 @@ def cmd_revise(args, store):
     return _report(o, store, args.story)
 
 
+def _say_read(result, path):
+    say(f'READ     {result["score"]}/10 makes sense ({"PASS" if result["pass"] else "FAIL"}, needs {read.PASS}); '
+        f'{len(result["issues"])} issue(s); {path}')
+    order = {'high': 0, 'medium': 1, 'low': 2}
+    for i in sorted(result['issues'], key=lambda i: order.get(i.get('severity'), 3))[:8]:
+        say(f'  - {i.get("severity")} {i.get("kind")} {i.get("shot")}: "{i.get("line")}" {i.get("problem")} '
+            f'Fix: {i.get("fix")}')
+
+
+def _read_gate(store, sid, rounds, ask=None):
+    """The cold read of a story's shots.toml; below PASS, up to `rounds` revisions of the shots stage with the read's
+    fixes as the note (each re-checked and re-read). Returns 0 when it passes, 1 when it does not."""
+    for attempt in range(rounds + 1):
+        path = store.path(sid, 'shots')
+        result = read.read(shotscript.load(path), str(path), ask=ask)
+        md = read.write(result, store.story_dir(sid), sid)
+        _say_read(result, md)
+        if result['pass']:
+            return 0
+        if attempt == rounds:
+            break
+        say(f'REVISE   shots with the read\'s {len(result["issues"])} fix(es) (round {attempt + 1} of {rounds})')
+        o = stages.run_stage(store, sid, 'shots', note=read.note(result), say=say, revise=True, ask=ask)
+        if _report(o, store, sid):
+            return 1
+    say(f'STOPPED  the script does not make sense yet: fix it from {store.story_dir(sid) / "story-read.md"} '
+        f'(`story revise shots {sid} --note "…"`), or --no-read to build anyway')
+    return 1
+
+
 @_guarded
 def cmd_build(args, store):
     o = stages.run_stage(store, args.story, 'shots', note=args.note, from_file=args.from_file,
                          lock=not args.no_lock, repairs=args.repairs, say=say)
     code = _report(o, store, args.story)
+    if not code and not args.no_read and o.locked:
+        code = _read_gate(store, args.story, args.read_rounds)
     if not code:
-        plan = store.revision_path(args.story, 'shots', o.rev).with_suffix('.plan.json')
+        plan = store.revision_path(args.story, 'shots', store.current(args.story, 'shots')).with_suffix('.plan.json')
         say(f'PLAN     {plan}')
         say(f'NEXT     bin/videocraft run {store.path(args.story, "shots")}')
     return code
+
+
+@_guarded
+def cmd_read(args, store):
+    target = Path(args.target)
+    if target.is_file():
+        path, sid = target, None
+    else:
+        sid = args.target
+        store.meta(sid)   # a clear error for an unknown story
+        path = store.path(sid, 'shots')
+        if not path.exists():
+            raise StoryError(f'{sid} has no shots.toml yet (`story build {sid}`)')
+    try:
+        raw = shotscript.load(path)
+    except shotscript.ScriptError as e:
+        raise StoryError(f'{path}: {e}') from e
+    result = read.read(raw, str(path), model=args.model)
+    out = Path(args.out) if args.out else store.story_dir(sid) if sid else RUNS / str(raw.get('name') or path.stem) / 'story-read'
+    md = read.write(result, out, sid or raw.get('name') or path.stem)
+    _say_read(result, md)
+    say(f'RESULT   {"PASS" if result["score"] >= args.min else "FAIL"} {result["score"]}/10 makes sense '
+        f'({result["lines"]} lines read)')
+    return 0 if result['score'] >= args.min else 1
 
 
 @_guarded
@@ -185,6 +250,9 @@ def cmd_make(args, store):
     if code:
         say(f'RESULT   FAIL stopped before a take; story {sid}')
         return code
+    if not args.no_read and _read_gate(store, sid, args.read_rounds):
+        say(f'RESULT   FAIL the script does not make sense yet (story read); story {sid}')
+        return 1
     shots = store.path(sid, 'shots')
     if args.dry_run:
         say(f'RESULT   PASS shots.toml compiles (--dry-run: no take)')
@@ -198,6 +266,11 @@ def register(sub):
     p = sub.add_parser('story', help='premise → bible → outline → script → shots.toml (docs/STORY.md)',
                        description=__doc__, formatter_class=__import__('argparse').RawDescriptionHelpFormatter)
     s = p.add_subparsers(dest='story_command', required=True)
+
+    def readable(q):
+        q.add_argument('--no-read', action='store_true', help='skip the cold read (story read)')
+        q.add_argument('--read-rounds', type=int, default=1,
+                       help='revisions of shots.toml with the read\'s fixes when it scores under 8 (default 1)')
 
     def lockable(q):
         q.add_argument('--from-file', help='lock in a hand-written draft instead of asking a model')
@@ -221,11 +294,18 @@ def register(sub):
         q.add_argument('--note', help='what to change or emphasise')
         lockable(q)
         q.set_defaults(run=fn)
-    q = s.add_parser('build', help='draft shots.toml and check it compiles (and lints), with repair rounds')
+    q = s.add_parser('build', help='draft shots.toml and check it compiles (and lints), with repair rounds; then read it cold')
     q.add_argument('story')
     q.add_argument('--note')
     lockable(q)
+    readable(q)
     q.set_defaults(run=cmd_build)
+    q = s.add_parser('read', help='a fresh model reads the dialogue cold and scores whether it makes sense (story-read.md)')
+    q.add_argument('target', metavar='script.toml|story')
+    q.add_argument('--out', help='folder for story-read.md (default: the story\'s folder, or runs/<name>/story-read)')
+    q.add_argument('--min', type=int, default=read.PASS, help=f'the passing score (default {read.PASS})')
+    q.add_argument('--model', help='the reader model (default: the agents default)')
+    q.set_defaults(run=cmd_read)
     q = s.add_parser('diff', help='unified diff of two revisions (default: the last two)')
     q.add_argument('story')
     q.add_argument('stage', choices=STAGES)
@@ -252,4 +332,5 @@ def register(sub):
     p.add_argument('--vertical', action='store_true')
     p.add_argument('--dry-run', action='store_true', help='stop after shots.toml compiles')
     p.add_argument('--timeout', type=int, default=1800, help='seconds for the take (default 1800)')
+    readable(p)
     p.set_defaults(run=cmd_make)

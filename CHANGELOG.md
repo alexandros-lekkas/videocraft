@@ -14,6 +14,10 @@
   voices and characters whose synthesized lines measure under 3 semitones apart (`voice/pitch.py`, cached per line);
   each suggests a free preset by measured pitch. docs/VOICE.md lists every Qwen3 and Kokoro preset's measured pitch.
   The story pipeline no longer gives two bible characters one preset.
+- `story read <script.toml|story>`: a fresh model reads the film's dialogue and picture cues cold, as a first-time
+  viewer, and writes `story-read.md` with a 1-10 "makes sense" score and line-by-line fixes (missing setup, one
+  character with two names, sentences split across shots, non sequiturs, jokes that do not land). `story build` and
+  `make` run it and revise the shots with its fixes when it scores under 8; a production needs 8 to film.
 - `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
   painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
   filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,
