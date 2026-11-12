@@ -11,7 +11,7 @@ time = 6000
 
 [[world.stage]]
 do = "command"
-commands = ["fill 8 100 -2 32 100 22 minecraft:smooth_stone", "fill 8 101 -2 32 101 22 minecraft:air",
+commands = ["fill 8 100 -2 32 100 22 minecraft:smooth_stone",
             "setblock 26 101 16 minecraft:hay_block", "setblock 14 101 4 minecraft:hay_block",
             "summon minecraft:goat 20.5 101 10.5 {NoAI:1b,Silent:1b,Rotation:[90f,0f],Tags:[\"subject\"]}"]
 
