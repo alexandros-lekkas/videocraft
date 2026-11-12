@@ -15,6 +15,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class PuppetExtractMixin {
 	@Inject(method = "extractRenderState(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;F)V", at = @At("TAIL"))
 	private void videocraft$linkPuppet(Entity entity, EntityRenderState state, float partialTicks, CallbackInfo info) {
-		((PuppetState) state).videocraft$puppet(Puppets.of(entity));
+		var puppet = Puppets.of(entity);
+		((PuppetState) state).videocraft$puppet(puppet);
+		// Shot preparation draws a puppet without ticking it, and a mannequin only takes its finished skin lookup in its tick.
+		if (puppet != null && entity instanceof ClientMannequinAccess m && m.videocraft$skinLookup() != null && m.videocraft$skinLookup().isDone()) {
+			m.videocraft$skinLookup().getNow(java.util.Optional.empty()).ifPresent(m::videocraft$setSkin);
+			m.videocraft$setSkinLookup(null);
+		}
 	}
 }

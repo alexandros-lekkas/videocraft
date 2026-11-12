@@ -275,7 +275,9 @@ public final class Actions {
 		Puppet p = puppet(params, shot);
 		var sound = p.sound(params.string("sound", "ambient"), params.where());
 		float volume = (float) params.number("volume", p.soundVolume());
-		float pitch = (float) params.number("pitch", p.living().getVoicePitch());
+		// Vanilla's voice pitch formula, but drawn from the take's seed (the entity's own random is not), so takes match.
+		float vanilla = (p.random().nextFloat() - p.random().nextFloat()) * 0.2f + (p.living().isBaby() ? 1.5f : 1f);
+		float pitch = (float) params.number("pitch", vanilla);
 		p.play(sound, volume, pitch);
 		return done();
 	}

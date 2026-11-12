@@ -18,7 +18,8 @@
     "actor.LivingEntityAccess",
     "actor.MobAccess",
     "actor.FoxAccess",
-    "actor.ItemEntityAccess"
+    "actor.ItemEntityAccess",
+    "actor.ClientMannequinAccess"
   ],
   "injectors": {
     "defaultRequire": 1
