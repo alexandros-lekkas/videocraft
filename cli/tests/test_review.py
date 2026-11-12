@@ -114,6 +114,17 @@ class Images(unittest.TestCase):
         self.assertEqual(raw[1:4], bytes((10, 20, 30)))       # background at (0, 0)
         self.assertIn(bytes((255, 0, 0)), raw)               # ink
 
+    def test_select_expression_is_shallow(self):
+        self.assertEqual(packet.select_expr([5]), 'eq(n,5)')
+        self.assertEqual(packet.select_expr([3, 1, 2, 9]), '(between(n,1,3)+eq(n,9))')
+        deep = packet.select_expr(range(0, 4000, 3))
+        depth = max_depth = 0
+        for ch in deep:
+            depth += ch == '('
+            max_depth = max(max_depth, depth)
+            depth -= ch == ')'
+        self.assertLess(max_depth, 16)
+
     def test_strip_frames(self):
         self.assertEqual(packet.strip_frames(1), [0])
         self.assertEqual(packet.strip_frames(30, tiles=4), [0, 10, 20, 29])

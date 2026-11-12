@@ -24,13 +24,33 @@ CONTACT_FPS = 4
 CONTACT_COLS, CONTACT_ROWS = 6, 8
 
 
+def select_expr(frames):
+    """An ffmpeg select expression true on exactly these frames. Runs of consecutive frames become between(); the sum
+    is a balanced tree, because ffmpeg's parser nests a flat a+b+c+... chain and refuses one of about a hundred terms."""
+    terms, frames = [], sorted(set(frames))
+    i = 0
+    while i < len(frames):
+        j = i
+        while j + 1 < len(frames) and frames[j + 1] == frames[j] + 1:
+            j += 1
+        terms.append(f'eq(n,{frames[i]})' if i == j else f'between(n,{frames[i]},{frames[j]})')
+        i = j + 1
+
+    def tree(t):
+        if len(t) == 1:
+            return t[0]
+        mid = len(t) // 2
+        return f'({tree(t[:mid])}+{tree(t[mid:])})'
+    return tree(terms) if terms else '0'
+
+
 def grab(video, frames, size, ffmpeg=None):
     """{frame: RGB24 bytes} for the given frame numbers of a video, scaled to size."""
     frames = sorted(set(int(f) for f in frames if f >= 0))
     if not frames:
         return {}
     w, h = size
-    expr = '+'.join(f'eq(n,{f})' for f in frames)
+    expr = select_expr(frames)
     cmd = [ffmpeg or tools.ffmpeg(), '-v', 'error', '-nostdin', '-i', str(video), '-an',
            '-vf', f"select='{expr}',scale={w}:{h}:flags=area,format=rgb24", '-fps_mode', 'passthrough', '-f', 'rawvideo', '-']
     data = subprocess.run(cmd, capture_output=True, check=True).stdout
@@ -131,7 +151,7 @@ def build(it, rubric_ref=None, reviewers=None, every=None, say=print):
     for c in clips:
         for f in range(c['out_start'], c['out_start'] + c['out_frames']):
             shot_of[f] = c
-    strip_picks = {c['index']: [c['out_start'] + o for o in strip_frames(c['out_frames'], every=every)] for c in clips}
+    strip_picks = {c['index']: [c['out_start'] + o for o in strip_frames(c['out_frames'], every=every)] for c in clips if c['kind'] == 'shot'}
     hard, soft = timeline.boundaries(clips)
     joins = sorted(set(hard) | set(soft))
     cut_picks = {j: [f for f in range(j - 3, j + 3) if 0 <= f < total] for j in joins}
@@ -147,6 +167,8 @@ def build(it, rubric_ref=None, reviewers=None, every=None, say=print):
 
     files = {'strips': [], 'contact': [], 'cuts': []}
     for c in clips:
+        if c['index'] not in strip_picks:      # black gaps: the cut pairs and contact sheets show them
+            continue
         name = c['shot'] or 'black'
         picks = strip_picks[c['index']]
         header = (f'{c["index"] + 1:02d} {name}',
