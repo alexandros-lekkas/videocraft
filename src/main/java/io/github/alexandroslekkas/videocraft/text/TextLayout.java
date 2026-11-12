@@ -24,6 +24,8 @@ public final class TextLayout {
 	public static final int CAP = 7, LINE = 11;
 	/** The smallest capital height that counts as shown at phone width (DESIGN.md section 5). */
 	public static final double MIN_CAP = 44;
+	/** The smallest font scale whose capitals are at least {@link #MIN_CAP} (7 per font pixel: 7, i.e. 49 px, not 42). */
+	public static final int MIN_SCALE = (int) Math.ceil(MIN_CAP / CAP);
 
 	private final int frameWidth, frameHeight;
 	private final double scale;

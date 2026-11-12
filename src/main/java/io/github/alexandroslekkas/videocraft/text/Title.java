@@ -96,13 +96,13 @@ final class Title extends Message {
 		float titleH = 0, subH = 0;
 		if (!titleWords.isEmpty()) {
 			int largest = TextLayout.fontScale(titleCap);
-			titleFit = TextLayout.fit(titleWords, Ink::width, space, width, 2, largest, Math.min(largest, TextLayout.fontScale(TextLayout.MIN_CAP)), true, titleBreaks);
+			titleFit = TextLayout.fit(titleWords, Ink::width, space, width, 2, largest, Math.min(largest, TextLayout.MIN_SCALE), true, titleBreaks);
 			if (titleFit == null) throw new IllegalArgumentException(params.where() + ": the title does not fit on two lines inside the safe area; shorten it");
 			titleH = (titleFit.lineCount() - 1) * TextLayout.LINE * titleFit.fontScale() + TextLayout.CAP * titleFit.fontScale();
 		}
 		if (!subWords.isEmpty()) {
 			int largest = TextLayout.fontScale(subCap);
-			subFit = TextLayout.fit(subWords, Ink::width, space, width, 2, largest, Math.min(largest, TextLayout.fontScale(TextLayout.MIN_CAP)), false, subBreaks);
+			subFit = TextLayout.fit(subWords, Ink::width, space, width, 2, largest, Math.min(largest, TextLayout.MIN_SCALE), false, subBreaks);
 			if (subFit == null) throw new IllegalArgumentException(params.where() + ": the subtitle does not fit on two lines inside the safe area; shorten it");
 			subH = (subFit.lineCount() - 1) * TextLayout.LINE * subFit.fontScale() + TextLayout.CAP * subFit.fontScale();
 			if (titleFit != null) gap = 4.5f * subFit.fontScale();

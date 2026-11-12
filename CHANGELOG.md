@@ -6,6 +6,15 @@
   painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
   filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,
   `length` and `fade`, so a long sound plays under one stretch of the cut; lint knows a placed set by its `as`.
+- The mix is mastered to -2 dBTP (was -1): the AAC encode of the master overshoots the mix by 0.8-0.9 dB, so a
+  -1.0 mix measured -0.5 dBTP in `master.mp4`.
+- `clips cut --method reshoot` keeps actors' skins: a relative `skin` path is taken as the take resolved it, not
+  relative to the run's copy of the script (the vertical take failed with "no skin PNG").
+- Text never shrinks under 44 px: the smallest font scale for titles, cards, captions and lower thirds rounds up (7, 49 px), not
+  to the nearest (6, 42 px), so a long card line wraps instead of shrinking under the minimum.
+- The benchmark film's second climb (`examples/nibs-vs-duke.toml`, log in `docs/benchmarks/nibs-vs-duke-log.md`):
+  near-continuous voice (67% of the runtime at 3 words a second), the reference's camera language from the
+  side-by-side, Minecraft sounds and a mood-picked track, bigger acting beats; rounds 7-9, best 0012 at 6.61.
 - Sounds by meaning, Minecraft first: a committed catalog of all 1991 sound events and 92 music tracks of 26.3 (names,
   tags, measured lengths, tempo, entries and loops; no audio), a comedy palette (`palette = "drumroll"`), `tag = "pop"`
   on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
