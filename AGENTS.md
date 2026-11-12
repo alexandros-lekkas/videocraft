@@ -161,8 +161,8 @@ They protect the owner's machine and game. They are not preferences.
   and riding pose switch the model in one frame; a fox's crouch and a goat's head-lower are already interpolated. A
   model is posed twice per frame: in `LivingEntityRenderer.submit` (for its layers) and again in
   `ModelFeatureRenderer.prepareModel` at draw time, so a pose change must wrap both (`PoseBlend`).
-- **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
-  `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
+- **Spawn moved between takes** (vanilla's `respawn_radius`), so `{ anchor = "spawn" }` shifted by a few blocks;
+  the runtime now pins the player to the world spawn point, so the `spawn` anchor is the same in every take of a seed.
 - **Puppets are client-side entities the level never ticks.** `ClientLevel.tickNonPassenger` is skipped for them
   (`PuppetTickMixin`); the puppet runs `commonTick()`, sets the new position, then `tick()` (so vanilla's walk cycle
   measures the distance really moved), on the frame clock, and `PuppetRenderMixin` draws them at the puppet's own

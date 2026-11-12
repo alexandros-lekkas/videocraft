@@ -62,6 +62,9 @@ public final class Actions {
 			if (puppet.living() == null) puppet.frame(shot);
 			return puppet;
 		}
+		// The boot-time plan check (PlanCheck) hands out stand-ins with no world behind them: not an error here,
+		// the real cue checks it. A RuntimeException other than IllegalArgumentException tells PlanCheck to skip.
+		if (!(a instanceof PlayerActor)) throw new IllegalStateException("puppet actions need the world");
 		throw new IllegalArgumentException(p.where() + ": '" + p.string("do") + "' needs a staged actor (kind = \"mob\" or \"mannequin\"); '" + id + "' is the played player, who can walk, run, stop, turn, look, jump, crouch and swing");
 	}
 
