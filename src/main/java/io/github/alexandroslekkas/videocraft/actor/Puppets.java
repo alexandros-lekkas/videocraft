@@ -47,6 +47,7 @@ public final class Puppets {
 		if (voicing && !e.isSilent()) {
 			var level = Minecraft.getInstance().level;
 			if (level != null) level.playLocalSound(e.getX(), e.getY(), e.getZ(), sound, e.getSoundSource(), volume, pitch, false);
+			p.heard(sound);
 		}
 		return true;
 	}

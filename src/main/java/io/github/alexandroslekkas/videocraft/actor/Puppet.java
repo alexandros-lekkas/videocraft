@@ -80,6 +80,9 @@ public final class Puppet implements Actor {
 	private double prevX, prevY, prevZ, prevG, curX, curY, curZ, curG;
 	private float prevBody, curBody, prevHead, curHead, prevPitch, curPitch;
 	private boolean spawned;
+	// Until the script first moves it, a puppet stands on its `at`, whatever staging builds under it meanwhile.
+	private boolean pristine = true;
+	private double spawnY;
 
 	// Scripted state.
 	private final TreeSet<String> states = new TreeSet<>();
@@ -174,6 +177,7 @@ public final class Puppet implements Actor {
 		Vec3 at = shot.position(spec, "at");
 		x = at.x;
 		z = at.z;
+		spawnY = at.y;
 		create(mc, at.y);
 		double yaw = spec.has("facing") ? Actions.facing(this, shot, spec, at) : 0;
 		heading = new Heading(yaw, breed.reach(), new Random(random.nextLong()));
@@ -240,7 +244,12 @@ public final class Puppet implements Actor {
 			}
 		}
 		boolean recording = shot.recording();
-		foot.step(groundAt(x, z, foot.y(), false), TICK, recording);
+		if (pristine) {
+			double g = groundAt(x, z, spawnY, true);
+			if (!Double.isNaN(g) && Math.abs(g - foot.y()) > 1e-4) foot.place(g);
+		} else {
+			foot.step(groundAt(x, z, foot.y(), false), TICK, recording);
+		}
 		boolean scripted = heading.looking() || heading.turning() || activeHeadGesture();
 		life.step(TICK, !scripted, walking);
 		double chin = !Double.isNaN(chinOverride) ? chinOverride : (strutting() ? breed.chin() : breed.chin() * 0.3);
@@ -357,6 +366,12 @@ public final class Puppet implements Actor {
 	void play(SoundEvent event, float volume, float pitch) {
 		Vec3 h = head();
 		entity.level().playLocalSound(h.x, h.y, h.z, event, entity.getSoundSource(), volume, pitch, false);
+		heard(event);
+	}
+
+	/** Notes a sound the puppet made in the game log (the audio workstream's sounds.csv is the record the mix reads). */
+	void heard(SoundEvent event) {
+		VideocraftLog.LOGGER.info("VIDEOCRAFT actor {} sound {} at {}s", id, event.location(), String.format(Locale.ROOT, "%.3f", now));
 	}
 
 	// ---- Ground ----
@@ -391,7 +406,11 @@ public final class Puppet implements Actor {
 			if (state.isAir()) continue;
 			VoxelShape shape = state.getCollisionShape(level, pos);
 			if (shape.isEmpty()) continue;
-			double top = by + shape.max(net.minecraft.core.Direction.Axis.Y);
+			// Feet go on what is drawn: a fence or a wall collides at 1.5 blocks but is drawn 1 block high.
+			double height = shape.max(net.minecraft.core.Direction.Axis.Y);
+			VoxelShape drawn = state.getShape(level, pos);
+			if (!drawn.isEmpty()) height = Math.min(height, drawn.max(net.minecraft.core.Direction.Axis.Y));
+			double top = by + height;
 			if (top <= from + 1e-6) return top;
 		}
 		return Double.NaN;
@@ -401,6 +420,7 @@ public final class Puppet implements Actor {
 
 	/** Walk along {@code points} ({x, z}), starting from where it is. */
 	void walk(List<double[]> points, double speed, String gait, double accel, double arrive) {
+		pristine = false;
 		List<double[]> all = new ArrayList<>();
 		all.add(new double[] {x, z});
 		all.addAll(points);
@@ -414,6 +434,7 @@ public final class Puppet implements Actor {
 	void halt(double seconds) { if (stride != null) stride.stop(seconds); }
 
 	void place(Vec3 at, double yaw) {
+		pristine = false;
 		x = at.x;
 		z = at.z;
 		stride = null;
@@ -432,7 +453,7 @@ public final class Puppet implements Actor {
 
 	void lookBack() { heading.look(Double.NaN, 0); }
 
-	void hop(double height, double seconds) { foot.hop(height, seconds); }
+	void hop(double height, double seconds) { pristine = false; foot.hop(height, seconds); }
 
 	void chin(double degrees) { chinOverride = degrees; }
 
