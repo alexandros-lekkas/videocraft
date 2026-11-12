@@ -13,6 +13,10 @@
   moments from words, key words, outline beats and jokes, marks, sounds and loudness, never cutting mid-word; `clips
   cut` makes 9:16 shorts by re-shooting the range at 1080x1920 (`[shot.vertical]`) or re-framing the master with a
   look-ahead operator; `clips pack` writes titles, hashtags and a thumbnail frame.
+- Sets (`docs/SETS.md`): places to film written as data in `sets/`, built by a stdlib builder into checked vanilla
+  commands with marks a script uses as anchors; `[[world.set]]`; `sets list/ops/build/preview/new/skin`. Shipped:
+  `market-lane` (ten stretches dressed for a one-block-high wide lens: `kerb`, `bunting`, lane `paint`), `barn-stage`
+  (lit night interior, rail seats, note blocks, trophy), `black-stage` (cards on black), `examples/sets.toml`.
 - Camera rigs for the benchmark: `lead` (the lead track), `chase`, `track`, `dolly`, `crane`, `locked`, `two_shot`,
   `face`, with `fov` (or eased `[from, to]`), seeded `drift`, block avoidance and positions on actors; shot keys
   `preroll`, `time`, `weather`; `world.preset` (`flat`, `void`) and `world.save` from `cache/worlds/`; batched,

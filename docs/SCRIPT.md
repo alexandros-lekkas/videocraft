@@ -27,6 +27,7 @@ workstream in brackets.
 | `settle` | `4.0` | Seconds after arrival before staging, and then until every section in view is drawn. |
 | `preset` | `default` | For a seed world: `default`, `flat` (grass to the horizon) or `void` (nothing but a small platform at the origin); `flat` and `void` have no structures, so they make stages [a]. |
 | `[[world.stage]]` | | Cues (below) run once before the first shot, never recorded. |
+| `[[world.set]]` | | A set from `sets/` (`name`, `at` [0, 230, 0], `rotate`, `mirror`, `as`): built at compile time and staged before the script's own stage cues; its marks become anchors `<set>:<mark>` (docs/SETS.md) [sets]. |
 
 On arrival the world is made to hold still: mob spawning, random ticks (leaf decay, crops), fire spread, vines,
 raids, traders and advancement toasts are off, new chunks generate without their animals, and the player is put on
@@ -175,6 +176,12 @@ word with its `frame` and `box`.
 `[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival. Or on an actor,
 where it stands when the position is read: `{ actor = "nibs", offset = [x, y, z] }` (world axes) or
 `{ actor = "nibs", front = 3, right = 0.5, up = 1.2 }` (along the way it faces).
+
+A set's marks ([docs/SETS.md](SETS.md)), resolved when the script compiles: `{ anchor = "market-lane:stall-red",
+offset = [0, 0, 1] }` (a point; a path's first point, `….end` its last; a camera's eye, `….look` its target),
+`{ path = "market-lane:shot-01", from = 0, to = 1, reverse = false }` (a path's points, for `walk`, `glide` …),
+`{ yaw = "barn-stage:rail-1" }` (a point's facing) and, as a camera, `{ view = "barn-stage:cam-wide" }` (a `fixed`
+rig at that camera mark; other keys override it) [sets].
 
 ## Camera rigs
 

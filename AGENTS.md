@@ -192,6 +192,11 @@ They protect the owner's machine and game. They are not preferences.
   centre 60 % in a fifth of its frames, at 0.3 s in none.
 - **argparse:** a positional named `run` in a command group overwrites `set_defaults(run=…)` (TypeError: 'str'
   object is not callable); give it another `dest` and `metavar='run'`.
+- **A low wide lens sees 3-10 blocks of a set.** At one block up with a 105° lens, a lead track's frame is the road
+  and whatever stands within a few blocks of the walker; set dressing further off never shows (docs/SETS.md).
+- **Forceload is 256 chunks a command** and fails on chunks already forced ("No chunks were marked"); a set's box is
+  hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
+  only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
 ## Working with agents
 

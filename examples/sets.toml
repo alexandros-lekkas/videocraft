@@ -1,0 +1,52 @@
+# Sets: a script filmed in a set from sets/ (docs/SETS.md), placed by [[world.set]] and reached through its marks.
+#   bin/videocraft run examples/sets.toml
+# A stand-in walks up the market at the start of market-lane, then past the produce stall, on lead tracks at one
+# block up with a 105° lens (the benchmark's framing), then a straight-on look at the Talent Night poster. The
+# stand-in is the runtime's rig-check subject; a character is an actor with a `walk` cue on the same path mark.
+name = "sets"
+seed = 11
+description = "A set from sets/, its path marks walked on lead tracks, and a camera mark"
+
+[world]
+seed = "videocraft"
+
+[[world.set]]
+name = "market-lane"
+at = [0, 230, 0]
+
+[[world.stage]]
+do = "stand_in"
+id = "walker"
+place = { anchor = "market-lane:shot-01" }
+facing = -90
+
+[[shot]]
+name = "market"
+duration = 5.0
+preroll = 1.0
+camera = { rig = "lead", subject = "walker", distance = 4.5, height = 1.0, pitch = 5, fov = 105 }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "walker"
+speed = 1.6
+path = { path = "market-lane:shot-01" }
+
+[[shot]]
+name = "produce"
+duration = 4.0
+preroll = 1.0
+camera = { rig = "lead", subject = "walker", distance = 4.5, height = 1.0, pitch = 5, fov = 105 }
+
+[[shot.cue]]
+at = -1.0
+do = "glide"
+actor = "walker"
+speed = 1.6
+path = { path = "market-lane:shot-04" }
+
+[[shot]]
+name = "poster"
+duration = 2.0
+camera = { view = "market-lane:poster" }

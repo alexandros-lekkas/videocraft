@@ -113,8 +113,14 @@ final class Commands {
 				int[] a = area;
 				if (waited++ == 0) {
 					pending = server.submit(() -> {
-						String e = run(server, at, "forceload add " + a[0] + " " + a[1] + " " + a[2] + " " + a[3]);
-						if (e != null && !e.contains("already")) error = where + ": forceload failed: " + e;
+						// Vanilla forceloads at most 256 chunks a command, and fails on chunks already forced: a big
+						// area (a set) goes in 16x16-chunk pieces, and "no chunks were marked" means already loaded.
+						for (int x = a[0] >> 4; x <= a[2] >> 4 && error == null; x += 16) {
+							for (int z = a[1] >> 4; z <= a[3] >> 4 && error == null; z += 16) {
+								String e = run(server, at, "forceload add " + (x << 4) + " " + (z << 4) + " " + (Math.min(a[2] >> 4, x + 15) << 4) + " " + (Math.min(a[3] >> 4, z + 15) << 4));
+								if (e != null && !e.contains("already") && !e.contains("No chunks were marked")) error = where + ": forceload failed: " + e;
+							}
+						}
 						return 0;
 					});
 					return false;
