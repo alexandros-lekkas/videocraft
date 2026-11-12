@@ -21,6 +21,7 @@
     "actor.PuppetStateMixin",
     "actor.PuppetExtractMixin",
     "actor.PuppetTintMixin",
+    "actor.PuppetWoolMixin",
     "actor.MannequinPoseMixin",
     "actor.MannequinSeatMixin",
     "actor.EntityAccess",

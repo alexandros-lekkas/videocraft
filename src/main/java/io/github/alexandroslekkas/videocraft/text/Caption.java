@@ -84,7 +84,7 @@ final class Caption extends Message {
 			}
 		}
 		if (words.isEmpty()) throw new IllegalArgumentException(where + ": the caption has no words");
-		double last = -1;
+		double last = Double.NEGATIVE_INFINITY;
 		for (Word w : words) {
 			if (Double.isNaN(w.at())) continue;
 			if (w.at() < last) throw new IllegalArgumentException(where + ": word times must not go backwards (\"" + w.text() + "\" at " + w.at() + ")");
@@ -165,7 +165,8 @@ final class Caption extends Message {
 				if (i > 0) f = Math.max(f, wordFrames[i - 1] + 1);
 				next += stagger;
 			}
-			wordFrames[i] = Math.max(startFrame, f);
+			// A word timed before the cue (a caption carried over a cut) is on screen from the first frame, already landed.
+			wordFrames[i] = !whole && !Double.isNaN(w.at()) && w.at() < 0 ? Math.min(f, startFrame - 1) : Math.max(startFrame, f);
 		}
 		endFrame = holdEnd(shownFrame());
 	}

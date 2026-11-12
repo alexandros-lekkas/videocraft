@@ -89,7 +89,7 @@ public final class Puppet implements Actor {
 	final List<Gesture> gestures = new ArrayList<>();
 	private double flapUntil = -1, chinOverride = Double.NaN;
 	private final List<Prop> props = new ArrayList<>();
-	private int tint = -1;
+	private int tint = -1, wool = -1;
 	private Identifier texture;
 
 	// In the air (fly, hover, swarm, land): where the flight puts it, and how its body banks and pitches.
@@ -234,6 +234,7 @@ public final class Puppet implements Actor {
 			living.refreshDimensions();
 		}
 		tint = Looks.tint(spec);
+		wool = Looks.wool(spec);
 		if (texture == null) texture = Skins.mobTexture(id, spec);
 		Looks.after(this, living, spec);
 		if (living instanceof net.minecraft.world.entity.animal.bee.Bee bee && spec.bool("angry", false)) bee.setPersistentAngerEndTime(Long.MAX_VALUE / 4);
@@ -663,6 +664,9 @@ public final class Puppet implements Actor {
 	public boolean airborne() { return flying(); }
 
 	public int tintColor() { return tint; }
+
+	/** A sheep's wool colour from {@code wool = "#rrggbb"} (ARGB), or -1 (its dye colour's). */
+	public int woolColor() { return wool; }
 
 	/** The model's own texture from {@code texture = "x.png"}, or null (the entity's). */
 	public Identifier texture() { return texture; }

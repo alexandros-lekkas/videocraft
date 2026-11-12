@@ -70,6 +70,14 @@ final class Looks {
 		for (String s : spec.strings("states")) p.state(s, true, spec.where() + ".states");
 	}
 
+	/** {@code wool = "#rrggbb"} → a sheep's wool colour beyond the sixteen dyes (ARGB), or -1 (its dye's). */
+	static int wool(Params spec) {
+		if (!spec.has("wool")) return -1;
+		String t = spec.string("wool").trim();
+		if (!t.matches("#[0-9a-fA-F]{6}")) throw new IllegalArgumentException(spec.where() + ": wool is \"#rrggbb\", not '" + t + "'");
+		return 0xFF000000 | Integer.parseInt(t.substring(1), 16);
+	}
+
 	/** {@code tint = "#rrggbb"} → an ARGB multiplier for the model, or -1 (none). */
 	static int tint(Params spec) {
 		if (!spec.has("tint")) return -1;

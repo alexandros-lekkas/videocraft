@@ -14,7 +14,8 @@ and the shot's duration is set by the line's `fit`:
            leave `duration` out
   cut-on   the shot ends on the onset of the word `cut_on`, so the next cut lands on it; the rest of the caption
            carries into the next shot (script order) while the voice plays on over the cut
-  none     the duration is left as written
+  none     the duration is left as written; a line that runs past the shot's end carries its whole caption into
+           the next shot(s), the words already said settled, the rest popping on their onsets
 
 Lines are packed: the first line of a shot starts at its `at`; every later line (fit extend or cut-on) follows the
 previous one after `gap` (GAP, 0.12 s; the previous line's `pause_after`, or the line's own `gap`, sets it), and an
@@ -144,10 +145,11 @@ def _speaker(cue, ch):
     return sp
 
 
-def _caption(line, at, words, actor, cue, ch, first):
-    """A caption cue for `words` [(display, start)] at shot time `at`."""
+def _caption(line, at, words, actor, cue, ch, first, settled=False):
+    """A caption cue for `words` [(display, start)] at shot time `at`. `settled`: words before the cue keep their
+    negative times (the caption carried over a cut: words said in the shot before are on screen, already landed)."""
     cap = {'do': 'caption', 'at': round(at, 4), 'actor': actor, 'voiced': line.cue.get('id') or line.where,
-           'words': [{'w': d, 'at': round(max(0.0, s), 4)} for d, s in words]}
+           'words': [{'w': d, 'at': round(s if settled else max(0.0, s), 4)} for d, s in words]}
     sp = _speaker(cue, ch)
     if sp:
         cap['speaker'] = sp
@@ -188,16 +190,25 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
     queue = list(lines)   # in script order; a line's cue may be a normalised copy (cut_on without fit)
     shots = raw.get('shot') or []
     carry = None
+    # A caption never carries over a black gap of the edit (into the shot after the dip).
+    order = [c for c in (edit.get('clip') or []) if isinstance(c, dict)]
+    before_black = {order[i - 1].get('shot') for i, c in enumerate(order) if i and 'black' in c}
     for si, shot in enumerate(shots):
         sname = shot.get('name')
         new, prev_end, need_end, cut = [], None, 0.0, None
         prev_gap = GAP
+        written = float(shot.get('duration') or 0)
+        onward = None   # a fit = "none" caption that runs past this shot too
         if carry:
             new.append(carry['caption'])
-            need_end = max(need_end, carry['end'] + carry['tail'])
+            if carry.get('extend', True):
+                need_end = max(need_end, carry['end'] + carry['tail'])
             prev_end = carry['end']   # the shot's first line waits for the carried words
             prev_gap = carry['pause_after']
-            carry['entry']['carried_to'] = sname
+            carry['entry'].setdefault('carried_to', sname)
+            if not carry.get('extend', True):
+                carry['entry'].setdefault('carried_through', []).append(sname)
+                onward = _carry_on(carry, written, si + 1 < len(shots) and sname not in before_black)
             carry = None
         n = 0
         for cue in shot.get('cue') or []:
@@ -256,6 +267,19 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                         carry['caption']['words'][0]['at'] = 0.0
             elif fit == 'extend':
                 need_end = max(need_end, end + tail)
+            elif fit == 'none' and written > 0 and si + 1 < len(shots) and c.get('carry', True) and sname not in before_black:
+                # A line written to run over the cut (the shot keeps its length): its caption goes on in the next
+                # shot(s), the whole line, the words already said there settled and the rest popping on their onsets;
+                # a line that ends just before the cut stays up there for the rest of LINGER.
+                k = next((i for i, (d, s) in enumerate(words) if at + s >= written - 1e-9), None)
+                if k is not None or end + LINGER > written + 1e-9:
+                    if k is not None:
+                        shown = words[:k]
+                    cap = _caption(line, 0.0, [(d, at + s - written) for d, s in words], actor, c, ch, False, settled=True)
+                    if k is None and 'hold' not in cap:
+                        cap['hold'] = round(end - (at + words[-1][1]) + LINGER, 4)
+                    carry = {'caption': cap, 'end': end - written, 'tail': tail, 'entry': entry, 'extend': False,
+                             'pause_after': float(c.get('pause_after', GAP))}
             if shown and c.get('caption', True) is not False:
                 new.append(_caption(line, at, shown, actor, c, ch, True))
             bark = c.get('bark', ch.bark)
@@ -268,8 +292,9 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
             if r.get('file'):
                 voice.append({'file': entry['file'], 'shot': sname, 'at': round(at, 4), 'gain': float(c.get('gain', 0.0))})
             report.append(entry)
+        if carry is None:
+            carry = onward
         shot['cue'] = new
-        written = float(shot.get('duration') or 0)
         if cut is not None:
             dur = cut['frame'] / fps
             late = [cc for cc in new if isinstance(cc.get('at'), (int, float)) and cc['at'] > dur + 1e-9 and cc.get('do') != 'sound']
@@ -286,6 +311,28 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
     edit['dialogue'] = report
     _table(report, engine, log)
     return raw
+
+
+LINGER = 0.8   # seconds a finished line's caption stays up after its last word when a cut comes first
+
+
+def _carry_on(carry, written, more):
+    """The carried caption of a fit = "none" line trimmed to the words that start inside this shot; returns the carry
+    into the shot after when words remain past this one's end (a line over a run of short shots) or the line ended
+    less than LINGER before it (its caption then holds to LINGER after the last word), else None."""
+    cap = carry['caption']
+    if written <= 0 or not more:
+        return None
+    k = next((i for i, w in enumerate(cap['words']) if w['at'] >= written - 1e-9), None)
+    if k is None and carry['end'] + LINGER <= written + 1e-9:
+        return None
+    words = cap['words']
+    if k is not None:
+        cap['words'] = words[:k]
+    nxt = {**cap, 'words': [{**w, 'at': round(w['at'] - written, 4)} for w in words]}
+    if k is None and 'hold' not in nxt:
+        nxt['hold'] = round(carry['end'] - words[-1]['at'] + LINGER, 4)
+    return {**carry, 'caption': nxt, 'end': carry['end'] - written}
 
 
 def _table(report, engine, log):
@@ -305,14 +352,17 @@ def lint_spoken(problems, resolved):
     """Lint's reading rules are for text read without sound (max(1.2 s, 0.5 + 0.3 s a word) after the caption is
     complete, at most 2.5 words a second). A caption the voice speaks is a subtitle: the viewer hears it as it pops,
     so those become notes, unless the caption is up for less than SPOKEN_MIN in all."""
-    voiced = {}
+    voiced, line_up = {}, {}
     for shot in resolved.get('shot') or []:
         cues = shot.get('cue') or []
         for k, c in enumerate(cues):
             if c.get('do') == 'caption' and c.get('voiced'):
                 later = [x['at'] for x in cues if x.get('do') in ('caption', 'title', 'card', 'lower_third') and x['at'] > c['at']]
                 end = min(later + [float(shot.get('duration') or 0)])
-                voiced[f'shot {shot.get("name")}.cue[{k}]'] = end - c['at'] - c['words'][0]['at']
+                up = end - c['at'] - max(0.0, c['words'][0]['at'])
+                voiced[f'shot {shot.get("name")}.cue[{k}]'] = c['voiced']
+                line_up[c['voiced']] = line_up.get(c['voiced'], 0.0) + up   # a caption carried over cuts: all its shots
+    voiced = {where: line_up[v] for where, v in voiced.items()}
     out = []
     for p in problems:
         up = voiced.get(p.get('where'))

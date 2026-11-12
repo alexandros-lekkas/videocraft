@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `wool = "#rrggbb"` on a sheep actor: wool of any colour, not only the sixteen dyes.
+- A `say` line with `fit = "none"` that runs over its shot's end keeps its caption on screen across the cut (and
+  over a run of short shots): the whole line, the words said before the cut already landed, the rest popping on time.
 - The mix balances by measurement, by default: dialogue is king. Each bus is measured in LUFS; the voice at −16
   before the master, the bed at −24 LUFS between lines and ducked under each line as deep as it needs to sit 18 LU
   under the voice (down 50 ms before the first word), game tracks 2 dB lower, effects held under the voice, music
