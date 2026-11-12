@@ -9,40 +9,67 @@ frames.csv (the camera of each frame), and edit.json:
     [edit] audio = "game" | "original" | "none"      original: no byte of game audio (synth bed, stand-ins, voice)
     [edit.music] source = "auto" (mood: a game track by mood when there are assets and game audio, else the synth bed
                  in that mood) | "synth" (style or mood, bpm, key, seed) | "game" (track, start); gain (dB), at,
-                 fade_in, fade_out, through_black, duck (dB under voice)
+                 fade_in, fade_out, through_black, duck (the least dB the bed ducks under a line; default -6)
     [[edit.sfx]] shot + at (or time), id | tag | palette | library, source, gain (dB), pan, pitch: a sound placed by
                  the edit itself (a sting on a cut), Minecraft first, the original library in original-only exports
     [[edit.music.cue]] shot, at (or time = seconds in the cut), do = out | in | drop | thin | full | hit, fade, length, gain
     [edit.mix] sfx (dB), voice (dB), duck = ["entity.goat.screaming.*", "tag:scream", …] (sound effects the bed ducks
-               under; `tag:<tags>` matches events the catalog tags so), lift = {pattern = dB}
+               under; `tag:<tags>` matches events the catalog tags so), lift = {pattern = dB}; the balance:
+               voice_level (-16 LUFS), music_level (-24 LUFS between lines), music_under_voice (-18 LU), game_trim
+               (-2 dB on a game track), sfx_ceiling (-3 LU re the voice), sfx_under_line (-6 LU re the line)
     edit.voice = [{ file, shot, at, gain }]           written by the dialogue resolver; `at` in seconds of the shot
 
 Every logged sound is placed at the output time of its frame through the timeline (trims, speed, black gaps), played at
 its pitch as playback rate, attenuated by distance from that frame's camera (the game's linear model: 1 - d / range)
 and panned by its bearing from the camera's yaw. A sound that started before a cut-in is skipped unless it is long or
 looping (then it joins part-way through); every sound stops at the end of its clip. Music categories the game itself
-started are ignored. Then the master: -14 LUFS integrated, true peak at most -1 dBTP (loudness.py). cut/audio.json
-lists every placed event (source, output time, frame, gain, pan) and every skipped one with the reason.
+started are ignored.
+
+The balance (dialogue is king), set in LUFS by measuring each bus (balance.py): the voice bus to voice_level; the
+effects held under the voice (sfx_ceiling everywhere, sfx_under_line under a line); the bed so that after the
+master's gain it plays at music_level between lines; then the bed ducks under each line as deep as that line needs
+for the bed's loudest moment under it to sit music_under_voice below the line's voice (never less than `duck`),
+down 50 ms before the first word (60 ms linear attack), held 0.25 s through gaps, released over 0.4 s. Then the
+master: -14 LUFS integrated, true peak at most -2 dBTP (loudness.py). cut/audio.json lists every placed event
+(source, output time, frame, gain, pan), every skipped one with the reason, and `balance`: voice over music per line,
+the music between lines, the effects' loudest (measure, lint and the review read it).
 """
 import csv
 import fnmatch
 import json
 import math
 import os
+import subprocess
 import time
 from array import array
 from dataclasses import dataclass, asdict
 from itertools import repeat
 from pathlib import Path
 
-from videocraft.audio import assets, catalog, dsp, library, loudness, resolve, sfx, synth
+from videocraft.audio import assets, balance, catalog, dsp, library, loudness, resolve, sfx, synth
 from videocraft.audio import timeline as tl
+from videocraft import tools
 from videocraft.paths import ROOT
 
 SR = dsp.SR
 BLOCK = 480  # 10 ms: the resolution of ducking and level curves
-MUSIC_REF_DB = -22.0  # bed RMS before `gain`; voice lines are levelled to VOICE_REF_DB
+MUSIC_REF_DB = -22.0  # bed RMS before `gain` (a first levelling; build() then sets it in LUFS); lines: VOICE_REF_DB
 VOICE_REF_DB = -17.0
+# The balance (dialogue is king; the owner found the films' music too loud). Levels in LUFS of the master, where the
+# voice is about VOICE_LUFS short-term: the bed between lines at MUSIC_LEVEL, under a line MUSIC_UNDER_VOICE LU below
+# it (the duck goes as deep as each line needs, at least DUCK); a game track gets GAME_TRIM on top (they are mastered
+# hot: dense and bright where speech lives). [edit.mix] voice_level, music_level, music_under_voice, game_trim override.
+VOICE_LUFS = -16.0
+MUSIC_LEVEL = -24.0
+MUSIC_UNDER_VOICE = -18.0
+GAME_TRIM = -2.0
+DUCK = -6.0           # dB: the least the bed goes down under a line ([edit.music] duck); deeper wherever it must
+SFX_CEILING = -3.0    # LU re the voice level: effects never louder than this (momentary), [edit.mix] sfx_ceiling
+SFX_UNDER_LINE = -6.0 # LU re the line's voice: effects under a line, [edit.mix] sfx_under_line
+DUCK_FLOOR = -40.0    # dB: the most
+MARGIN = 1.0          # LU kept spare under the target
+ATTACK, LOOKAHEAD, RELEASE, HOLD = 0.06, 0.05, 0.4, 0.25   # seconds: the duck's shape (duck_curve)
+HIT_DB = 4.0          # a music `hit` (crash + kick) sits this far over the bed's RMS
 FADE_STOP = int(0.004 * SR)  # a sound cut at its clip's end fades over 4 ms instead of clicking
 
 
@@ -356,35 +383,79 @@ def render_voice(placed, n):
         level = math.sqrt(sum(x * x for x in levels) / len(levels)) if levels else 0
         norm = dsp.from_db(VOICE_REF_DB) / level if level > 0 else 1.0
         dsp.add_into(bus, buf, dsp.seconds_to_samples(p.time), p.gain * norm)
+        p.length = len(buf) / SR
     return bus
 
 
-def duck_curve(n, keys, depth_db, attack=0.04, release=0.35, lookahead=0.03):
-    """Per-block gain for the bed: `depth_db` (negative) wherever a key is active, smoothed, starting a little early.
-    `keys` are (bus, threshold) or intervals [(start_s, stop_s, depth_db)]."""
+def duck_curve(n, keys, depth_db, attack=None, release=None, lookahead=None, hold=None):
+    """Per-block gain for the bed: down by `depth_db` (negative) wherever a key is active, or by an interval's own
+    depth. `keys` are buses (active where a 10 ms block's RMS is over 0.003) or intervals [(start_s, stop_s, depth_db)].
+
+    The shape: a depth holds `hold` seconds after its key ends (so the bed does not swell between words or between
+    packed lines); it is reached `lookahead` seconds before the key starts, ramping linearly in dB over `attack`
+    seconds before that (the bed is down before the first word); it recovers with a one-pole release of `release`
+    seconds."""
+    attack = ATTACK if attack is None else attack
+    release = RELEASE if release is None else release
+    lookahead = LOOKAHEAD if lookahead is None else lookahead
+    hold = HOLD if hold is None else hold
     blocks = n // BLOCK + 1
     target = [0.0] * blocks
     for key in keys:
         if isinstance(key, tuple) and len(key) == 3:
             a, b, d = key
-            for i in range(max(0, int(a * SR / BLOCK)), min(blocks, int(b * SR / BLOCK) + 1)):
+            for i in range(max(0, int(a * SR / BLOCK)), min(blocks, int(math.ceil(b * SR / BLOCK)))):
                 target[i] = min(target[i], d)
         else:
             for i, level in enumerate(dsp.block_rms(key, BLOCK)):
                 if level > 0.003 and i < blocks:
                     target[i] = min(target[i], depth_db)
-    shift = int(lookahead * SR / BLOCK)
-    target = target[shift:] + [target[-1]] * shift
-    ka = 1 - math.exp(-BLOCK / (attack * SR))
+    h = int(round(hold * SR / BLOCK))
+    if h:
+        held = [min(target[max(0, i - h):i + 1]) for i in range(blocks)]
+    else:
+        held = target
+    a_blocks = max(1, int(round(attack * SR / BLOCK)))
+    lead = int(round(lookahead * SR / BLOCK))
+    span = a_blocks + lead
+    pre = []
+    for i in range(blocks):
+        g = held[i]
+        for k in range(1, span + 1):
+            if i + k >= blocks:
+                break
+            t = held[i + k]
+            if t < 0:
+                g = min(g, t * min(1.0, (span - k) / a_blocks))
+        pre.append(g)
     kr = 1 - math.exp(-BLOCK / (release * SR))
     g, out = 0.0, []
-    for t in target:
-        g += (ka if t < g else kr) * (t - g)
+    for t in pre:
+        g = t if t < g else g + kr * (t - g)
         out.append(dsp.from_db(g))
     return out
 
 
-def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
+def line_ducks(spans, voice_readings, music_readings, under, least, floor=DUCK_FLOOR):
+    """Interval keys [(start, end, depth)] that put the bed `under` LU (negative) below each line: the line's voice
+    loudness (power mean of its momentary readings) against the loudest momentary reading of the undocked bed under
+    it, with MARGIN LU to spare; never shallower than `least` dB, never deeper than `floor`."""
+    keys = []
+    for a, b, *_ in spans:
+        v = balance.power_mean([r[1] for r in balance.inside(voice_readings, a, b)])
+        mr = [r[1] for r in balance.inside(music_readings, a, b)]
+        m = max(mr) if mr else balance.FLOOR
+        if v <= balance.FLOOR or m <= balance.FLOOR:
+            keys.append((a, b, least))
+            continue
+        need = (v + under - MARGIN) - m
+        keys.append((a, b, max(floor, min(least, need))))
+    return keys
+
+
+def music_bus(it, timeline, edit, mode, n, picture, report):
+    """The bed, levelled by RMS (MUSIC_REF_DB + gain), with its cues, fades and hits, silent over black unless
+    `through_black`; not yet ducked (build() levels it in LUFS and ducks it)."""
     music = edit.get('music')
     if not music:
         return None
@@ -493,19 +564,23 @@ def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
             rs = dsp.scaled(r[:span], norm)
             dsp.multiply(rs, env[:span])
             dsp.add_into(right, rs, offset)
-    for t in hits:
-        at = dsp.seconds_to_samples(t)
-        for buf, g in ((sfx.crash(), 0.7), (sfx.kick(), 0.9)):
-            dsp.add_into(left, buf, at, g * norm * 3)
-            dsp.add_into(right, buf, at, g * norm * 3)
-    # Ducking under voice and marked effects, then the picture (silence over black gaps, fades with the picture).
-    depth = float(music.get('duck', -9))
-    curve = duck_curve(n, duck_keys(depth), depth)
-    env = dsp.block_curve_to_samples(curve, BLOCK, n)
+    if hits:
+        # A hit is levelled against the bed's own reference, not the track's normalization (a quiet track's norm
+        # once put hits at +1 LUFS momentary, and the limiter squashed the whole mix under them).
+        crash, kick = sfx.crash(), sfx.kick()
+        ref = dsp.from_db(MUSIC_REF_DB + float(music.get('gain', 0)) + HIT_DB)
+        hit = dsp.zeros(max(len(crash), len(kick)))
+        dsp.add_into(hit, crash, 0, 0.7)
+        dsp.add_into(hit, kick, 0, 0.9)
+        level = dsp.rms(hit, 0, min(len(hit), int(0.3 * SR)))
+        hg = ref / level if level > 0 else 0.0
+        for t in hits:
+            at = dsp.seconds_to_samples(t)
+            dsp.add_into(left, hit, at, hg)
+            dsp.add_into(right, hit, at, hg)
     if not music.get('through_black'):
-        dsp.multiply(env, picture)
-    dsp.multiply(left, env)
-    dsp.multiply(right, env)
+        dsp.multiply(left, picture)
+        dsp.multiply(right, picture)
     report['music']['level_db'] = round(MUSIC_REF_DB + float(music.get('gain', 0)), 1)
     return left, right
 
@@ -637,10 +712,92 @@ def render_edit_sfx(placed, buffers, n):
     return left, right
 
 
-def build(it, original=None, keep_raw=False, name='audio'):
+def _shifted(readings, db):
+    return [(t, m + db if m > balance.FLOOR else m, x + db if x > balance.FLOOR else x) for t, m, x in readings]
+
+
+def _cfg(mixcfg, key, default):
+    v = mixcfg.get(key)
+    return default if v is None else float(v)
+
+
+def sfx_keys(readings, voice_level, spans, ceiling, under_line, voice_readings=()):
+    """Interval keys [(start, end, dB)] that hold the effects bus under `ceiling` LU re the voice level everywhere and
+    `under_line` LU re each line's own voice while it speaks: each momentary reading over its limit pulls its 400 ms
+    window down by the excess."""
+    limits = []
+    for a, b, *_ in spans:
+        v = balance.power_mean([r[1] for r in balance.inside(voice_readings, a, b)]) if voice_readings else voice_level
+        limits.append((a, b, (v if v > balance.FLOOR else voice_level) + under_line))
+    keys = []
+    for t, m, _ in readings:
+        if m <= balance.FLOOR:
+            continue
+        w0 = t - balance.WINDOW
+        limit = voice_level + ceiling
+        for a, b, lim in limits:
+            if w0 < b and t > a:
+                limit = min(limit, lim)
+        if m > limit:
+            keys.append((w0, t, limit - m))
+    return keys
+
+
+def level_buses(voice, sfx_pair, music, mixcfg, musiccfg, report, spans=()):
+    """The gains that set the balance in LUFS: the voice bus to `voice_level` (+ [edit.mix] voice dB); the bed so
+    that, after the master's gain (estimated from voice + effects), it plays at `music_level` (+ [edit.music] gain,
+    + GAME_TRIM for a game track) between lines. Returns the gains, the targets and the voice's and the undocked
+    bed's momentary readings (for line_ducks)."""
+    voice_level = _cfg(mixcfg, 'voice_level', VOICE_LUFS) + float(mixcfg.get('voice', 0) or 0)
+    music_level = _cfg(mixcfg, 'music_level', MUSIC_LEVEL)
+    under = -abs(_cfg(mixcfg, 'music_under_voice', MUSIC_UNDER_VOICE))
+    game_trim = _cfg(mixcfg, 'game_trim', GAME_TRIM) if (report.get('music') or {}).get('source') == 'game' else 0.0
+    least = min(0.0, float(musiccfg.get('duck', DUCK)))
+    out = {'voice_gain': 1.0, 'music_gain': 1.0, 'voice_readings': [], 'music_readings': [], 'voice_level': voice_level,
+           'music_level': music_level, 'music_under_voice': under, 'under': under, 'least': least, 'game_trim': game_trim}
+    if voice is not None:
+        v = balance.loudness(voice)
+        if v['integrated'] is not None and v['integrated'] > balance.FLOOR:
+            out['voice_gain'] = dsp.from_db(voice_level - v['integrated'])
+            out['voice_readings'] = _shifted(v['readings'], voice_level - v['integrated'])
+    # Effects just under the voice: a ceiling over the whole cut, lower under a line.
+    if dsp.peak(sfx_pair[0]) > 0 or dsp.peak(sfx_pair[1]) > 0:
+        ceiling, under_line = _cfg(mixcfg, 'sfx_ceiling', SFX_CEILING), _cfg(mixcfg, 'sfx_under_line', SFX_UNDER_LINE)
+        keys = sfx_keys(balance.loudness(*sfx_pair)['readings'], voice_level, spans, ceiling, under_line, out['voice_readings'])
+        if keys:
+            n = len(sfx_pair[0])
+            env = dsp.block_curve_to_samples(duck_curve(n, keys, 0.0, attack=0.02, lookahead=0.01, hold=0.05, release=0.3), BLOCK, n)
+            dsp.multiply(sfx_pair[0], env)
+            dsp.multiply(sfx_pair[1], env)
+        out['sfx_limited'] = {'stretches': len(keys), 'deepest_db': round(min((k[2] for k in keys), default=0.0), 1),
+                              'ceiling': ceiling, 'under_line': under_line}
+    # The master's gain, estimated from what is there before the bed (the bed adds a few tenths of a dB).
+    est = None
+    if voice is not None:
+        vs_l, vs_r = array('f', sfx_pair[0]), array('f', sfx_pair[1])
+        dsp.add_into(vs_l, voice, 0, out['voice_gain'])
+        dsp.add_into(vs_r, voice, 0, out['voice_gain'])
+        est = balance.loudness(vs_l, vs_r)['integrated']
+    elif dsp.peak(sfx_pair[0]) > 0:
+        est = balance.loudness(*sfx_pair)['integrated']
+    master_gain = loudness.TARGET - est if est is not None and est > balance.FLOOR else 0.0
+    out['master_gain_estimate'] = round(master_gain, 2)
+    if music is not None:
+        m = balance.loudness(*music)
+        if m['integrated'] is not None and m['integrated'] > balance.FLOOR:
+            want = music_level + float(musiccfg.get('gain', 0) or 0) + game_trim - master_gain
+            out['music_gain'] = dsp.from_db(want - m['integrated'])
+            out['music_readings'] = m['readings']
+            report['music']['loudness'] = {'measured': m['integrated'], 'target': round(want + master_gain, 1),
+                                           'gain_db': round(want - m['integrated'], 2), 'game_trim': game_trim}
+    return out
+
+
+def build(it, original=None, keep_raw=False, name='audio', stems=False):
     """Mixes and masters the iteration's sound track into cut/<name>.wav (report cut/<name>.json); returns its path, or
     None for no audio. The cut asks for name = "audio-original" (original=True) beside the game mix for exports with
-    `audio = "original"`."""
+    `audio = "original"`. `stems`: also cut/<name>-stems/{voice,music,sfx}.wav, each at the master's gain (no limiter),
+    so a person can listen to (or measure) what sits over what."""
     started = time.time()
     plan, edit = it.plan(), it.edit()
     mode = _mode(edit, original)
@@ -664,27 +821,41 @@ def build(it, original=None, keep_raw=False, name='audio'):
 
     voices = place_voice(it, timeline, edit)
     voice = render_voice(voices, n) if voices else None
-    if voice is not None:
-        voice = dsp.scaled(voice, dsp.from_db(float(mixcfg.get('voice', 0))))
 
     edit_placed, edit_buffers = place_edit_sfx(it, timeline, edit, mode)
     if edit_placed:
         el, er = render_edit_sfx(edit_placed, edit_buffers, n)
         dsp.add_into(sfx_l, el, 0)
         dsp.add_into(sfx_r, er, 0)
+    sfx_l, sfx_r = dsp.scaled(sfx_l, sfx_gain), dsp.scaled(sfx_r, sfx_gain)
 
-    def duck_keys(depth):
-        keys = [voice] if voice is not None else []
+    if sfx_gain == 1.0:
+        sfx_l, sfx_r = array('f', sfx_l), array('f', sfx_r)   # level_buses limits them in place
+    music = music_bus(it, timeline, edit, mode, n, picture, report)
+    spans = balance.speech_spans(voices, edit.get('dialogue'))
+    levels = level_buses(voice, (sfx_l, sfx_r), music, mixcfg, edit.get('music') or {}, report, spans)
+    if voice is not None:
+        voice = dsp.scaled(voice, levels['voice_gain'])
+    if music is not None:
+        music = (dsp.scaled(music[0], levels['music_gain']), dsp.scaled(music[1], levels['music_gain']))
+        keys = []
+        if voice is not None:
+            keys = line_ducks(spans, levels['voice_readings'], _shifted(levels['music_readings'], dsp.db(levels['music_gain'])),
+                              levels['under'], levels['least'])
+        depth = levels['least']
         for p in placed:
             if p.duck:
                 keys.append((p.time, p.time + 0.6, max(depth, -6.0)))
         for p in edit_placed:
             keys.append((p.time, p.time + 0.6, max(depth, -6.0)))
-        return keys
+        curve = duck_curve(n, keys, depth)
+        env = dsp.block_curve_to_samples(curve, BLOCK, n)
+        dsp.multiply(music[0], env)
+        if music[1] is not music[0]:
+            dsp.multiply(music[1], env)
+        report['music']['ducks'] = [{'start': round(a, 3), 'end': round(b, 3), 'db': round(d, 1)} for a, b, d in keys]
 
-    music = music_bus(it, timeline, edit, mode, n, picture, duck_keys, report)
-
-    left, right = dsp.scaled(sfx_l, sfx_gain), dsp.scaled(sfx_r, sfx_gain)
+    left, right = array('f', sfx_l), array('f', sfx_r)
     if voice is not None:
         dsp.add_into(left, voice, 0)
         dsp.add_into(right, voice, 0)
@@ -698,6 +869,22 @@ def build(it, original=None, keep_raw=False, name='audio'):
     measured = loudness.master(raw, out)
     if not keep_raw:
         raw.unlink(missing_ok=True)
+    pictured = [(c.out_start / timeline.fps, c.out_end / timeline.fps) for c in timeline.clips if c.kind != 'black']
+    report['balance'] = balance.measure(voice, music, (sfx_l, sfx_r), float(measured.get('gain_db') or 0.0), spans, pictured)
+    report['balance']['targets'] = {k: levels[k] for k in ('voice_level', 'music_level', 'music_under_voice', 'least', 'game_trim')}
+    if levels.get('sfx_limited'):
+        report['balance']['sfx']['limited'] = levels['sfx_limited']
+    if stems:
+        folder = it.cut / f'{name}-stems'
+        folder.mkdir(exist_ok=True)
+        g = float(measured.get('gain_db') or 0.0)
+        for stem, pair in (('voice', (voice, voice) if voice is not None else None), ('music', music), ('sfx', (sfx_l, sfx_r))):
+            if pair is not None:
+                tmp = folder / f'.{stem}.f32'
+                dsp.write_f32(tmp, *pair)
+                subprocess.run([tools.ffmpeg(), '-y', '-loglevel', 'error', '-f', 'f32le', '-ar', str(SR), '-ac', '2', '-i', str(tmp),
+                                '-af', f'volume={g:.3f}dB', '-c:a', 'pcm_f32le', str(folder / f'{stem}.wav')], check=True)
+                tmp.unlink()
     gaps = []
     for c in timeline.clips:
         if c.kind == 'black' and c.out_frames >= 6:

@@ -241,6 +241,8 @@ class MakeTests(StoryCase):
         answers['Stage 5 of 5'] = model_length_fixture('goat-brag')
 
         def fake(prompt, images=(), schema=None, model=None):
+            if 'A cold read' in prompt:   # story read: the script makes sense
+                return '{"score": 9, "understood": "A goat brags.", "issues": []}'
             return next(v for k, v in answers.items() if k in prompt)
 
         from videocraft.story import commands

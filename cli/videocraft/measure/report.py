@@ -64,6 +64,8 @@ def write_report(m, path, title='', plan=None):
         L.append('No audio stream.')
     L.append('')
 
+    L += balance_lines(m.get('balance'))
+
     dl = m.get('dialogue')
     if dl:
         L += ['## Dialogue pace', '']
@@ -110,3 +112,34 @@ def write_report(m, path, title='', plan=None):
     if m.get('warnings'):
         L += ['## Look at', ''] + [f'- {w}' for w in m['warnings']] + ['']
     Path(path).write_text('\n'.join(L))
+
+
+def balance_lines(b):
+    """The "Mix balance" section (cut/audio.json `balance`, also in the review's sound sheet): what sits over what."""
+    if not b:
+        return []
+    v, mu, sx, r = b.get('voice') or {}, b.get('music') or {}, b.get('sfx') or {}, b.get('ratio') or {}
+    L = ['## Mix balance', '',
+         'Measured on the mix\'s own buses at the master\'s gain (the master alone cannot tell voice from music); '
+         'LUFS from 400 ms momentary readings, a line\'s value the power mean of the readings inside it.', '',
+         f'- Voice: short-term median **{_fmt(v.get("short_term_median"), " LUFS")}** (max {_fmt(v.get("short_term_max"))}), '
+         f'integrated {_fmt(v.get("integrated"))}.',
+         f'- Music: **{_fmt(mu.get("under_voice"), " LUFS")} under lines**, **{_fmt(mu.get("between_lines"), " LUFS")} between lines** '
+         f'(95th percentile {_fmt(mu.get("between_lines_p95"))}).',
+         f'- Voice over music: median **{_fmt(r.get("median"), " LU")}**, least **{_fmt(r.get("min"), " LU")}**; '
+         + (f'**{len(r["close"])} line(s) under {r.get("warn_under"):g} LU**: {", ".join(map(str, r["close"]))}.' if r.get('close')
+            else f'no line under {_fmt(r.get("warn_under"))} LU.'),
+         f'- Effects: loudest momentary {_fmt(sx.get("momentary_max"), " LUFS")}, integrated {_fmt(sx.get("integrated"))}'
+         + (f'; held under the voice in {sx["limited"]["stretches"]} reading(s), at most {sx["limited"]["deepest_db"]} dB' if sx.get('limited') else '') + '.']
+    t = b.get('targets')
+    if t:
+        L.append(f'- Targets: voice {t.get("voice_level")} LUFS before the master, music {t.get("music_level")} LUFS between lines, '
+                 f'{t.get("music_under_voice")} LU under the voice, the duck at least {t.get("least")} dB'
+                 + (f', game track trim {t.get("game_trim")} dB' if t.get('game_trim') else '') + '.')
+    if b.get('lines'):
+        L += ['', '| Line | Character | Start | Voice | Music | Effects | Voice over music |', '|:--|:--|--:|--:|--:|--:|--:|']
+        for l in b['lines']:
+            L.append(f'| {l["id"]} | {l.get("character") or "-"} | {_tc(l["start"])} | {_fmt(l["voice"])} | {_fmt(l["music"])} | '
+                     f'{_fmt(l.get("sfx"))} | {_fmt(l.get("ratio"))}' + (' **close**' if l.get('id') in (r.get('close') or []) else '') + ' |')
+    L.append('')
+    return L

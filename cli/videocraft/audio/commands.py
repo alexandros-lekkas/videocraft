@@ -24,6 +24,7 @@ def register(sub):
     m.add_argument('iteration')
     m.add_argument('--original', action='store_true', help='no game audio: synth bed, synthesized stand-ins, voice')
     m.add_argument('--mux', action='store_true', help='also put the audio into cut/master.mp4 (video stream copied)')
+    m.add_argument('--stems', action='store_true', help='also cut/audio-stems/{voice,music,sfx}.wav at the master\'s gain')
     m.set_defaults(run=cmd_mix)
     s = asub.add_parser('synth', help='render the original chiptune bed to a wav')
     s.add_argument('-o', '--output', required=True)
@@ -61,16 +62,22 @@ def cmd_mix(args):
     from videocraft import store, tools
     from videocraft.audio import mix
     it = store.open_iteration(args.iteration)
-    out = mix.build(it, original=args.original or None)
+    out = mix.build(it, original=args.original or None, stems=args.stems)
     if out is None:
         say('No audio: [edit] audio = "none"')
         return 0
-    report = json.loads((it.cut / 'audio.json').read_text())
+    report = json.loads((out.with_suffix('.json')).read_text())
     lo = report['loudness']
     say(f'AUDIO    {out}')
     say(f'LOUDNESS {lo["integrated"]:.1f} LUFS integrated, true peak {lo["true_peak"]:.1f} dBTP, LRA {lo["lra"]:.1f} LU')
     say(f'EVENTS   {len(report["events"])} placed, {len(report["skipped"])} skipped, {len(report["voice"])} voice; mode {report["mode"]}; '
         f'{report["build_seconds"]:.1f} s')
+    b = report.get('balance') or {}
+    if b:
+        r, mu, vo = b.get('ratio') or {}, b.get('music') or {}, b.get('voice') or {}
+        say(f'BALANCE  voice {vo.get("short_term_median")} LUFS short-term; music {mu.get("under_voice")} under lines, '
+            f'{mu.get("between_lines")} between; voice over music median {r.get("median")} LU, least {r.get("min")} LU'
+            + (f'; under {r.get("warn_under")} LU: {", ".join(map(str, r["close"]))}' if r.get('close') else ''))
     for g in report['black_gaps']:
         say(f'GAP      {g["time"]:.2f} s for {g["seconds"]:.2f} s: {g["integrated"]:.1f} LUFS')
     if args.mux:

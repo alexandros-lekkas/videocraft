@@ -27,7 +27,8 @@ person can read and edit and git can diff, and each one is drafted from the stag
 bin/videocraft story new "<premise>" [--id ID] [--format short|episode|long] [--vertical] [--reference "<form>"] [--through shots]
 bin/videocraft story draft <stage> <story> [--note "…"]        # regenerate a stage from the stages before it
 bin/videocraft story revise <stage> <story> --note "…"         # a new revision of the current one with the note applied
-bin/videocraft story build <story>                             # draft shots.toml; compile + lint; repair up to 3 times
+bin/videocraft story build <story>                             # draft shots.toml; compile + lint; repair up to 3 times; read it cold
+bin/videocraft story read <script.toml|story>                  # a fresh model reads the dialogue cold: story-read.md, score 1-10
 bin/videocraft story show <story> [stage] [--rev N]            # the stages (current revision, stale marks) or one text
 bin/videocraft story diff <story> <stage> [r1 r2]              # unified diff, default the last two revisions
 bin/videocraft story lock <story> <stage> <rev>                # choose another revision
@@ -41,6 +42,25 @@ Every stage command takes `--from-file <file>` (lock in a hand-written draft, no
 revision without choosing it) and `--repairs N`. Exit codes: 0 done, 1 a stage failed its checks (the problems are
 printed, one fix each), 2 no model or a usage error. `make` stops at the first stage that fails and says which;
 without `--dry-run` it ends with `videocraft run`'s own `RESULT` lines.
+
+### The cold read: does it make sense?
+
+The owner, after watching the films: "read the script, it does not make sense". The writer model that drafted the
+premise, bible and outline knows what every line means; a viewer does not. `story read` gives a fresh model only
+what reaches the screen and the speakers, in cut order (`[[edit.clip]]`, black gaps included): per shot its name,
+camera, `note`, action cues, sounds and on-screen text, and every line as `Name [id]: line` (the name is the
+caption's speaker tag; a cut-on line is marked where it carries over the cut). Never the premise, bible, outline or
+the script's `description`. The reader (`cli/videocraft/story/prompts/read.md`, JSON by schema) flags lines that do
+not make sense, a joke or reveal with no setup, a character called by two names (or two by one), a sentence split
+across shots that reads wrong, non sequiturs and jokes that do not land, each with its shot, the line quoted and a
+fix to paste in; and scores how well the film makes sense to a first-time viewer, 1 to 10.
+
+It writes `story-read.md` (score, what the viewer understood, the issues by severity, the transcript it read) and
+`story-read.json`: into the story's folder for a story, `runs/<name>/story-read/` for a script file, or `--out`.
+**A production needs 8 before it films.** `story build` and `make` run it after the shots stage passes; under 8
+they revise `shots.toml` with the read's fixes as the note and read again (`--read-rounds N`, default 1), and then
+stop (exit 1) if it still scores under 8. `--no-read` skips it. `story read` exits 0 at 8 or more (`--min`), 1
+under, 2 without a model.
 
 ## Where the files are
 
