@@ -6,7 +6,9 @@
 metrics.json keys are stable (add, never rename): master, expectedFrames, checks, pass, take (format; runs only),
 picture (shots, cut statistics, black, frozen, duplicated frames at cuts), cut_check (detected cuts against the
 cut's own boundaries; runs only), loudness (null without audio), camera and framing (per shot, from frames.csv and
-actors.csv), text (DESIGN.md section 5 rules from text.json), warnings (what a reviewer should look at).
+actors.csv), text (DESIGN.md section 5 rules from text.json), dialogue (words a second per line, the share of the
+runtime with a voice, the longest silences and dead air, from voice.json and cut/audio.json; runs with say lines
+only), warnings (what a reviewer should look at).
 `checks` decides PASS: only the format, so a weak but correct cut still passes; the rest is for review and lint.
 Owned by workstream (d).
 """
@@ -15,7 +17,7 @@ import subprocess
 from pathlib import Path
 
 from videocraft import timeline as tl, tools
-from videocraft.measure import camera, loudness, text, video
+from videocraft.measure import camera, dialogue, loudness, text, video
 from videocraft.measure.report import write_report
 
 VERSION = 2
@@ -107,6 +109,12 @@ def _warnings(m):
     for p in (m.get('text') or {}).get('problems', []):
         if p['rule'] != 'reading_one_word':
             w.append(f'text {p["rule"]} in shot {p["shot"]} at frame {p["frame"]}: "{p["text"]}" {p["detail"]}')
+    dl = m.get('dialogue') or {}
+    for g in dl.get('dead_air', []):
+        w.append(f'dead air {g["start"]:.2f}-{g["end"]:.2f} s ({g["seconds"]:.2f} s without a voice between {g["after"]} and {g["before"]})')
+    for l in dl.get('slow_lines', []):
+        if not l['slow_style']:
+            w.append(f'slow line {l["id"]}: {l["wps"]:.2f} words a second (under {dialogue.SLOW_WPS})')
     ld = m.get('loudness')
     if ld and ld.get('true_peak') is not None and ld['true_peak'] > -1.0:
         w.append(f'true peak {ld["true_peak"]} dBFS (over -1)')
@@ -125,6 +133,34 @@ def _moving_frames(clips, cams, total, covered=None):
             src = (c.get('src_in') or 0) + round((f - c['out_start']) * (c.get('speed') or 1))
             out[f] = moves and not any(a <= src < b for a, b in hidden)
     return out
+
+
+def _dialogue(it, total):
+    """Dialogue pace in the cut: each line where the mix placed it (cut/audio.json), its words from voice.json."""
+    vf, af = it.path / 'voice.json', it.cut / 'audio.json'
+    if not vf.exists() or not af.exists():
+        return None
+    entries = json.loads(vf.read_text())
+    placed = {}
+    for v in json.loads(af.read_text()).get('voice', []):
+        placed.setdefault((v.get('shot'), Path(v.get('file', '')).name), []).append(float(v['time']))
+    fps = it.plan()['output']['fps']
+    segments = [{'start': c['out_start'] / fps, 'end': (c['out_start'] + c['out_frames']) / fps,
+                 'kind': 'black' if c['kind'] == 'black' else 'shot', 'shot': c.get('shot')} for c in tl.clips(it)]
+    lines, shots = [], set()
+    for e in entries:
+        times = placed.get((e.get('shot'), Path(e.get('file') or '').name))
+        if not times or not e.get('words'):
+            continue
+        shots.add(e['shot'])
+        if e.get('carried_to'):
+            shots.add(e['carried_to'])
+        w = e['words']
+        lines.append({'id': e['id'], 'character': e.get('character'), 'shot': e['shot'], 'start': round(times[0] + w[0]['start'], 3),
+                      'end': round(times[0] + w[-1]['end'], 3), 'words': len(w),
+                      'wps': e.get('wps') if e.get('wps') is not None else dialogue.wps(w), 'beat': bool(e.get('beat')),
+                      'style': e.get('style')})
+    return dialogue.summary(lines, segments, shots, total) if lines else None
 
 
 def measure(it):
@@ -159,6 +195,7 @@ def measure(it):
                'cut_check': {'expected': hard, 'soft': soft, 'matched': len(matched), 'missed': missed, 'extra': extra},
                'loudness': loudness.measure(master) if vid['audio'] else None,
                'camera': cams, 'framing': framing, 'text': texts}
+    metrics['dialogue'] = _dialogue(it, vid['seconds'])
     cards = {}
     for t in texts['items']:
         if t['kind'] == 'card':     # a full-frame card hides the camera: a still picture under it is right

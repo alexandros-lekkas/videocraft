@@ -64,6 +64,24 @@ def write_report(m, path, title='', plan=None):
         L.append('No audio stream.')
     L.append('')
 
+    dl = m.get('dialogue')
+    if dl:
+        L += ['## Dialogue pace', '']
+        L.append(f'**{len(dl["lines"])} voiced line(s)**; a voice for **{dl["voice_seconds"]:.2f} s** of {dl["runtime"]:.2f} s '
+                 f'(**{dl["voice_share"]:.0%}** of the runtime); median **{_fmt(dl["median_wps"] and round(dl["median_wps"], 2))} words a second** '
+                 f'(lines of 3 words or more; slow under 2.6, the default pace 3.2); first word at {_tc(dl["lead_in"])}.')
+        dead = dl.get('dead_air') or []
+        L.append(f'Dead air (over 0.8 s without a voice inside dialogue): '
+                 + (', '.join(f'{_tc(g["start"])}-{_tc(g["end"])} ({g["seconds"]:.2f} s)' for g in dead) if dead else 'none') + '.')
+        if dl.get('longest_silences'):
+            L.append('Longest silences between lines: ' + ', '.join(
+                f'{g["seconds"]:.2f} s at {_tc(g["start"])} ({g["after"]} to {g["before"]}{", " + g["excused"] if g["excused"] else ""})'
+                for g in dl['longest_silences']) + '.')
+        L += ['', '| Line | Character | Shot | Start | Words | Words/s |', '|:--|:--|:--|--:|--:|--:|']
+        for l in dl['lines']:
+            L.append(f'| {l["id"]} | {l["character"]} | {l["shot"]} | {_tc(l["start"])} | {l["words"]} | {"-" if l["wps"] is None else f"{l['wps']:.2f}"}'
+                     + (' (beat)' if l.get('beat') else '') + (f' ({l["style"]})' if l.get('style') else '') + ' |')
+        L.append('')
     if m.get('camera'):
         L += ['## Camera and framing', '', '| Shot | Rig | Speed med/max (b/s) | Vertical jerk p95 (b/s³) | Turn p95 (°/s) | Subject x med (min-max) | Height med | Size change | Flags |',
               '|:--|:--|--:|--:|--:|:--|--:|--:|:--|']

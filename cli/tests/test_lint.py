@@ -73,3 +73,96 @@ class Registries(unittest.TestCase):
                                      {'name': 'b', 'duration': 1, 'camera': {'rig': 'mymod:spin'}}]}
         rigs = [p for p in lint.lint(raw) if p['rule'] == 'unknown_rig']
         self.assertEqual([(p['severity'], p['where']) for p in rigs], [('warn', 'shot a.camera')])
+
+
+class VoicedAndFast(unittest.TestCase):
+    """The rules that make voiced, brisk dialogue the default: unvoiced_text, slow_line, dead_air."""
+
+    CAST = {'character': [{'id': 'nibs', 'voice': 'ryan'}, {'id': 'duke', 'voice': 'aiden'}]}
+
+    def setUp(self):
+        import os
+        self.saved = os.environ.get('VIDEOCRAFT_VOICE')
+        os.environ['VIDEOCRAFT_VOICE'] = 'estimate'
+
+    def tearDown(self):
+        import os
+        if self.saved is None:
+            os.environ.pop('VIDEOCRAFT_VOICE', None)
+        else:
+            os.environ['VIDEOCRAFT_VOICE'] = self.saved
+
+    @staticmethod
+    def shot(name, cues, duration=None):
+        s = {'name': name, 'camera': {'rig': 'fixed', 'eye': [0, 70, 0], 'at': [0, 70, 5]}, 'cue': cues}
+        if duration is not None:
+            s['duration'] = duration
+        return s
+
+    def rules(self, raw, rule):
+        return [p for p in lint.lint(raw) if p['rule'] == rule]
+
+    def test_unvoiced_text_in_a_script_with_a_cast(self):
+        raw = {'name': 'x', 'cast': self.CAST, 'shot': [self.shot('a', [
+            {'do': 'say', 'actor': 'nibs', 'text': 'Hey there, it is me.', 'at': 0.2},
+            {'do': 'caption', 'at': 2.5, 'text': 'I am the best jumper'},
+            {'do': 'card', 'at': 4.0, 'title': 'a card says what it likes'},
+            {'do': 'caption', 'at': 4.5, 'text': 'Snacks.'}], duration=6.0)]}
+        hits = self.rules(raw, 'unvoiced_text')
+        self.assertEqual([(p['severity'], p['where']) for p in hits], [('warn', 'shot a.cue[1]')])
+        self.assertIn('voice it with `say`', hits[0]['message'])
+        # a cast with no say lines yet: still warned; no cast: captions are a silent film's business
+        raw['shot'][0]['cue'].pop(0)
+        self.assertEqual(len(self.rules(raw, 'unvoiced_text')), 1)
+        raw.pop('cast')
+        self.assertEqual(self.rules(raw, 'unvoiced_text'), [])
+
+    def test_slow_line(self):
+        raw = {'name': 'x', 'cast': self.CAST, 'shot': [self.shot('a', [
+            {'do': 'say', 'actor': 'nibs', 'text': 'Best jumper in the whole valley.', 'pace': 0, 'speed': 0.6},
+            {'do': 'say', 'actor': 'duke', 'text': 'That was a yawn.', 'style': 'deadpan', 'pace': 0, 'speed': 0.6},
+            {'do': 'say', 'actor': 'duke', 'text': 'Best jumper in the whole valley.'}])]}
+        hits = self.rules(raw, 'slow_line')
+        self.assertEqual([(p['severity'], p['where']) for p in hits], [('warn', 'line a-1'), ('info', 'line a-2')])
+
+    def test_dead_air_inside_dialogue_but_not_over_black_beats_or_action(self):
+        def raw(**second):
+            return {'name': 'x', 'cast': self.CAST, 'shot': [
+                self.shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'Hey there, it is me.', 'at': 0.2}], duration=4.0),
+                self.shot('b', [{'do': 'say', 'actor': 'duke', 'text': 'Well, hello to you.', 'at': 0.1, **second}])]}
+        hits = self.rules(raw(), 'dead_air')
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0]['where'], 'line b-1')
+        self.assertEqual(self.rules(raw(beat=True), 'dead_air'), [])
+        black = raw()
+        black['edit'] = {'clip': [{'shot': 'a'}, {'black': 0.5}, {'shot': 'b'}]}
+        self.assertEqual(self.rules(black, 'dead_air'), [])
+        action = raw()
+        action['shot'].insert(1, self.shot('jump', [{'do': 'jump', 'actor': 'player', 'at': 0.1}], duration=1.0))
+        self.assertEqual(self.rules(action, 'dead_air'), [])
+        # packed lines in one shot leave no dead air
+        packed = {'name': 'x', 'cast': self.CAST, 'shot': [self.shot('a', [
+            {'do': 'say', 'actor': 'nibs', 'text': 'Hey there, it is me.', 'at': 0.2},
+            {'do': 'say', 'actor': 'duke', 'text': 'Well, hello to you.', 'at': 4.0}])]}
+        self.assertEqual(self.rules(packed, 'dead_air'), [])
+
+    def test_the_talk_example_is_voiced_and_fast(self):
+        problems = lint.lint(script.load(ROOT / 'examples/talk.toml'))
+        self.assertFalse([p for p in problems if p['severity'] in ('error', 'warn')], problems)
+
+
+class DialogueMeasures(unittest.TestCase):
+    def test_summary_share_silences_and_dead_air(self):
+        from videocraft.measure import dialogue
+        lines = [{'id': 'a', 'start': 0.5, 'end': 2.5, 'words': 7, 'wps': 3.5},
+                 {'id': 'b', 'start': 2.7, 'end': 4.0, 'words': 3, 'wps': 2.3},
+                 {'id': 'c', 'start': 6.0, 'end': 7.0, 'words': 3, 'wps': 3.0, 'beat': False},
+                 {'id': 'd', 'start': 9.0, 'end': 9.5, 'words': 2, 'wps': 4.0}]
+        segments = [{'start': 0, 'end': 5, 'kind': 'shot', 'shot': 's1'}, {'start': 5, 'end': 8, 'kind': 'shot', 'shot': 's2'},
+                    {'start': 8, 'end': 8.5, 'kind': 'black', 'shot': None}, {'start': 8.5, 'end': 10, 'kind': 'shot', 'shot': 's3'}]
+        s = dialogue.summary(lines, segments, {'s1', 's2', 's3'}, 10.0)
+        self.assertAlmostEqual(s['voice_seconds'], 4.8)
+        self.assertAlmostEqual(s['voice_share'], 0.48)
+        self.assertEqual([g['seconds'] for g in s['longest_silences']], [2.0, 2.0, 0.2])
+        self.assertEqual([(g['after'], g['before']) for g in s['dead_air']], [('b', 'c')])   # c-d crosses black
+        self.assertEqual(s['slow_lines'], [{'id': 'b', 'wps': 2.3, 'slow_style': False}])

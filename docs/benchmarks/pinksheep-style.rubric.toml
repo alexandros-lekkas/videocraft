@@ -18,9 +18,9 @@ measures = "No PinkSheep character, skin, rival, voice, audio, music, jokes, tit
 id = "pacing"
 name = "Pacing match"
 measures = "Shot count, length distribution, rhythm"
-anchor_5 = "20 to 24 shots in 60 to 75 s, or 30 shots but evenly spaced at about 2.5 s each: no long opening, no montage, the rhythm is mechanical"
-anchor_9 = "28 to 32 shots; median 2.3 to 3.0 s; a 5 to 7 s opening; one montage of at least five shots under 0.6 s; no shot over 7.5 s; the cutting speeds up on the brag and slows into the flashback"
-numbers = ["picture.shot_stats", "picture.shots", "picture.black", "cut_check"]
+anchor_5 = "20 to 24 shots in 60 to 75 s, or 30 shots but evenly spaced at about 2.5 s each: no long opening, no montage, the rhythm is mechanical; or dialogue that drags: lines under 2.6 words a second, a second or more of dead air between lines"
+anchor_9 = "28 to 32 shots; median 2.3 to 3.0 s; a 5 to 7 s opening; one montage of at least five shots under 0.6 s; no shot over 7.5 s; the cutting speeds up on the brag and slows into the flashback; dialogue brisk (median 3.0 to 3.8 words a second) and near-continuous, no dead air over 0.8 s except at the dips and deliberate beats"
+numbers = ["picture.shot_stats", "picture.shots", "picture.black", "cut_check", "dialogue"]
 
 [[criterion]]
 id = "camera"
@@ -66,9 +66,9 @@ numbers = ["text"]
 id = "sound"
 name = "Sound"
 measures = "Music bed, effects, mix"
-anchor_5 = "A music bed only, or effects that are late or missing on visible actions; uneven loudness"
-anchor_9 = "Bed under everything, ducked under character sounds; every visible action that should make a sound makes it on the right frame; silence used deliberately at the dips; master at -14 LUFS (plus or minus 1) with no clipping"
-numbers = ["loudness"]
+anchor_5 = "A music bed only, or effects that are late or missing on visible actions; uneven loudness; the story told in silent captions (a voice for under half the runtime) or slow, gappy voice lines"
+anchor_9 = "Bed under everything, ducked under character sounds; every visible action that should make a sound makes it on the right frame; silence used deliberately at the dips; master at -14 LUFS (plus or minus 1) with no clipping; every line of dialogue and narration voiced, brisk (about 3.2 words a second), a voice for most of the runtime, and on-screen writing that matters read aloud"
+numbers = ["loudness", "dialogue"]
 
 [[criterion]]
 id = "technical"
@@ -113,14 +113,14 @@ id = "pacing"
 name = "Pacing reviewer"
 criteria = ["pacing", "comedic_timing", "energy"]
 images = ["contact", "cuts"]
-focus = "Compare the shot table and histogram with the reference's (30 shots, median 2.6 s, a 6-7 s opening, a six-shot montage under 0.6 s, dips to black before each reveal). Check that cuts land on key words."
+focus = "Compare the shot table and histogram with the reference's (30 shots, median 2.6 s, a 6-7 s opening, a six-shot montage under 0.6 s, dips to black before each reveal). Check that cuts land on key words. Judge dialogue pace from the dialogue numbers (report.md, Dialogue pace): words a second per line (slow under 2.6; brisk is 3.0-3.8), the share of the runtime with a voice, and every dead-air stretch over 0.8 s; name the lines and stretches to fix."
 
 [[role]]
 id = "sound"
 name = "Sound reviewer"
 criteria = ["sound"]
 images = ["sound", "strips"]
-focus = "You cannot hear. Judge from the sound sheet (sound.md: every effect, voice word and music cue on its master frame, and what is heard per shot), the loudness charts and the strips: effects on the frames of their visible actions, the bed ducked under voice, silence at the dips, the master level; and the shot list's sound column."
+focus = "You cannot hear. Judge from the sound sheet (sound.md: every effect, voice word and music cue on its master frame, and what is heard per shot), the loudness charts and the strips: effects on the frames of their visible actions, the bed ducked under voice, silence at the dips, the master level; and the shot list's sound column. Judge the voice too, from the dialogue numbers: the share of the runtime with a voice (most of it, in a comedy short), words a second per line, dead air between lines, and whether text that matters (captions, signs, posts) is spoken or only shown."
 
 [[role]]
 id = "technical"
