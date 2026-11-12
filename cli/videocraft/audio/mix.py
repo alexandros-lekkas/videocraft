@@ -7,10 +7,14 @@ Called by the picture edit (cli/videocraft/edit) after it has written cut/timeli
 frames.csv (the camera of each frame), and edit.json:
 
     [edit] audio = "game" | "original" | "none"      original: no byte of game audio (synth bed, stand-ins, voice)
-    [edit.music] source = "synth" (style, bpm, key, seed) | "game" (track, start); gain (dB), at, fade_in, fade_out,
-                 through_black, duck (dB under voice)
+    [edit.music] source = "auto" (mood: a game track by mood when there are assets and game audio, else the synth bed
+                 in that mood) | "synth" (style or mood, bpm, key, seed) | "game" (track, start); gain (dB), at,
+                 fade_in, fade_out, through_black, duck (dB under voice)
+    [[edit.sfx]] shot + at (or time), id | tag | palette | library, source, gain (dB), pan, pitch: a sound placed by
+                 the edit itself (a sting on a cut), Minecraft first, the original library in original-only exports
     [[edit.music.cue]] shot, at (or time = seconds in the cut), do = out | in | drop | thin | full | hit, fade, length, gain
-    [edit.mix] sfx (dB), voice (dB), duck = ["entity.goat.screaming.*", …] (sound effects the bed ducks under)
+    [edit.mix] sfx (dB), voice (dB), duck = ["entity.goat.screaming.*", "tag:scream", …] (sound effects the bed ducks
+               under; `tag:<tags>` matches events the catalog tags so), lift = {pattern = dB}
     edit.voice = [{ file, shot, at, gain }]           written by the dialogue resolver; `at` in seconds of the shot
 
 Every logged sound is placed at the output time of its frame through the timeline (trims, speed, black gaps), played at
@@ -31,7 +35,7 @@ from dataclasses import dataclass, asdict
 from itertools import repeat
 from pathlib import Path
 
-from videocraft.audio import assets, dsp, loudness, sfx, synth
+from videocraft.audio import assets, catalog, dsp, library, loudness, resolve, sfx, synth
 from videocraft.audio import timeline as tl
 from videocraft.paths import ROOT
 
@@ -58,6 +62,7 @@ class Placed:
     stop: float = 0.0      # seconds in the cut where it is cut off
     looping: bool = False
     duck: bool = False
+    stand_in: str = ''     # the original library sound playing instead of a game event (original-only mode)
 
     def to_json(self):
         d = asdict(self)
@@ -124,19 +129,51 @@ def spatial(cam, pos, rng, relative):
 
 class Sounds:
     """Sound buffers for placed events: game files (decoded assets) or synthesized ones. In original mode a game file
-    is never asked for: the test suite checks that by replacing assets.decode with a function that fails."""
+    is never asked for: the test suite checks that by replacing assets.decode with a function that fails.
 
-    def __init__(self, mode):
+    Original mode swaps each game sound for an original one: note-block notes for tones at the logged pitch (sfx.py);
+    a sound a tagged cue played for its palette's or tag's library sound (`hints` from the plan: once per palette,
+    the extra steps of a sequence or roll are dropped); any other event for its catalog stand-in
+    (catalog/minecraft.toml `original`), else the old generic stand-ins; else it is left out."""
+
+    def __init__(self, mode, hints=None):
         self.mode = mode
+        self.hints = hints or {}
         self.rate_cache = {}
+
+    def stand_in(self, row):
+        """(library name or '', reason): the original sound for a game event in original mode."""
+        event = row['event']
+        name = event.split(':', 1)[-1]
+        hint = resolve.match_hint(self.hints, row.get('shot'), event, row.get('frame', 0)) if 'shot' in row else None
+        if hint:
+            original, part = hint
+            return (original, 'hint') if part == 0 else ('', 'a later step of a palette sequence (its original plays once)')
+        if name.startswith('block.note_block.'):
+            return '', ''
+        lib = catalog.original_of(event)
+        return (lib, 'catalog') if lib else ('', '')
 
     def buffer(self, row):
         """(source, mono buffer at rate 1) or (None, reason)."""
         event = row['event']
+        if event.startswith('videocraft:lib/'):
+            name = event.split('/', 1)[1]
+            try:
+                return 'synth', library.render(name)
+            except library.UnknownSound:
+                return None, f'no original library sound {name}'
         if event.startswith('videocraft:'):
             buf = sfx.synth_event(event.split(':', 1)[1])
             return ('synth', buf) if buf is not None else (None, 'unknown synthesized event')
         if self.mode == 'original':
+            lib = row.get('stand_in')
+            if lib is None:
+                lib, why = self.stand_in(row)
+                if not lib and why:
+                    return None, why
+            if lib:
+                return 'stand-in', library.render(lib)
             buf = sfx.stand_in(event)
             return ('stand-in', buf) if buf is not None else (None, 'no original stand-in')
         if not row['file']:
@@ -155,6 +192,14 @@ class Sounds:
 LIFT = {'*.step': 9.0}
 
 
+def matches(name, event, pattern):
+    """An event id against a `[edit.mix]` pattern: a glob on the id, or `tag:<tags>` (the catalog's tags)."""
+    if pattern.startswith('tag:'):
+        row = catalog.event(name)
+        return bool(row) and all(t in row.get('tags', ()) for t in catalog.parse_tags(pattern[4:]))
+    return fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(event, pattern)
+
+
 def place_sfx(it, timeline, sounds, duck_patterns=(), lift=None):
     placed, skipped = [], []
     lifts = [(pat, dsp.from_db(float(db))) for pat, db in {**LIFT, **(lift or {})}.items()]
@@ -171,11 +216,17 @@ def place_sfx(it, timeline, sounds, duck_patterns=(), lift=None):
             if row['category'] == 'music':
                 skipped.append({**base, 'reason': 'music the game started'})
                 continue
+            row = {**row, 'shot': shot}
+            stand_in, why = sounds.stand_in(row) if sounds.mode == 'original' and not row['event'].startswith('videocraft:') else ('', '')
+            row['stand_in'] = stand_in if stand_in or not why else None
             source, buf = sounds.buffer(row)
             if source is None:
                 skipped.append({**base, 'reason': buf})
                 continue
             rate = max(0.5, min(2.0, row['pitch'] or 1.0))
+            if stand_in:
+                # A library sound is made at its own pitch: a tagged cue's suggested pitch was for the game sound.
+                rate = 1.0 if why == 'hint' else max(0.85, min(1.2, rate))
             length = math.inf if row['looping'] else len(buf) / SR / rate
             shown = False
             for c in clips:
@@ -197,12 +248,13 @@ def place_sfx(it, timeline, sounds, duck_patterns=(), lift=None):
                     continue
                 name = row['event'].split(':', 1)[-1]
                 for pat, g in lifts:
-                    if fnmatch.fnmatch(name, pat) or fnmatch.fnmatch(row['event'], pat):
+                    if matches(name, row['event'], pat):
                         gain *= g
                         break
-                duck = any(fnmatch.fnmatch(name, p) or fnmatch.fnmatch(row['event'], p) for p in duck_patterns)
+                duck = any(matches(name, row['event'], p) for p in duck_patterns)
                 placed.append(Placed(source=source, event=row['event'], file=row['file'], shot=shot, frame=f, clip=c.index, time=t,
-                                     offset=offset, gain=gain, pan=pan, rate=rate, stop=c.out_end / fps, looping=row['looping'], duck=duck))
+                                     offset=offset, gain=gain, pan=pan, rate=rate, stop=c.out_end / fps, looping=row['looping'], duck=duck,
+                                     stand_in=stand_in or ''))
             if not shown and not any(c.contains(f) or f < c.src_in for c in clips):
                 skipped.append({**base, 'reason': 'trimmed out of the cut'})
             elif not shown:
@@ -214,10 +266,10 @@ def place_sfx(it, timeline, sounds, duck_patterns=(), lift=None):
 def render_sfx(placed, sounds, n):
     left, right = dsp.zeros(n), dsp.zeros(n)
     for p in placed:
-        source, buf = sounds.buffer({'event': p.event, 'file': p.file})
+        source, buf = sounds.buffer({'event': p.event, 'file': p.file, 'stand_in': p.stand_in})
         if source is None:
             continue
-        played = sounds.at_rate((p.event, p.file), buf, p.rate)
+        played = sounds.at_rate((p.event, p.file, p.stand_in), buf, p.rate)
         start = dsp.seconds_to_samples(p.offset)
         at = dsp.seconds_to_samples(p.time)
         stop_at = dsp.seconds_to_samples(p.stop)
@@ -337,36 +389,36 @@ def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
     if not music:
         return None
     music = dict(music)
-    source = music.get('source') or ('game' if music.get('track') else 'synth')
     fps = timeline.fps
     start_at = float(music.get('at', 0))
     length = max(0.0, timeline.seconds - start_at) + 0.5
-    if source == 'game' and mode == 'original':
-        report['notes'].append('original audio: the game music track is replaced by the synth bed')
-        source = 'synth'
+    seed = int(music.get('seed', it.plan().get('seed', 1)))
+    source, track, style, key, why = choose_music(music, mode, length, seed, report)
     if source == 'synth':
         skip = float(music.get('start', 0))  # seconds into the bed (past its two-bar intro, say)
-        bed = synth.render(length + skip, style=music.get('style', 'upbeat'), bpm=music.get('bpm'), key=music.get('key'),
-                           seed=int(music.get('seed', it.plan().get('seed', 1))))
+        bed = synth.render(length + skip, style=style, bpm=music.get('bpm'), key=key, seed=seed)
         first = dsp.seconds_to_samples(skip)
         stems = {k: (v[first:],) * 2 for k, v in bed.stems.items()}  # mono stems: the same array left and right
         beat = bed.beat
         report['music'] = {'source': 'synth', 'style': bed.style, 'bpm': bed.bpm, 'key': bed.key, 'start': skip, 'at': start_at}
-    elif source == 'game':
-        track = music.get('track')
-        if not track:
-            raise SystemExit('[edit.music] source = "game" needs track = "<sound file or event>" (e.g. "music/game/wet_hands")')
-        name = track.split(':', 1)[1] if track.startswith('minecraft:') else track
+    else:
+        name = catalog.bare(track)
         files = assets.event_files(name) if '/' not in name else []
         file = files[0] if files else name
+        row = catalog.tracks().get(file, {})
         left, right = assets.decode(file, 2)
-        start = dsp.seconds_to_samples(float(music.get('start', 0)))
-        left, right = left[start:start + dsp.seconds_to_samples(length)], right[start:start + dsp.seconds_to_samples(length)]
+        start_s = float(music['start']) if 'start' in music else float(row.get('entry', 0)) if music.get('mood') else 0.0
+        left, right, looped = _fit_track(left, right, dsp.seconds_to_samples(start_s), dsp.seconds_to_samples(length), row.get('loops') or [])
         stems = {'track': (left, right)}
-        beat = 60.0 / float(music.get('bpm', 120))
-        report['music'] = {'source': 'game', 'file': file, 'start': float(music.get('start', 0)), 'at': start_at}
-    else:
-        raise SystemExit(f'[edit.music] source = "{source}": one of synth, game')
+        measured = row.get('bpm') if row.get('pulse', 0) >= 0.15 else None
+        beat = 60.0 / float(music.get('bpm') or measured or 120)
+        report['music'] = {'source': 'game', 'file': file, 'start': start_s, 'at': start_at, 'bpm': round(60.0 / beat, 1)}
+        if looped:
+            report['music']['loop'] = looped
+    if why:
+        report['music']['picked'] = why
+    if music.get('mood'):
+        report['music']['mood'] = music['mood']
 
     # Level the bed: its RMS (all stems) to the reference, then the script's gain.
     total = dsp.zeros(len(next(iter(stems.values()))[0]))
@@ -458,6 +510,117 @@ def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
     return left, right
 
 
+def choose_music(music, mode, length, seed, report):
+    """(source "synth" | "game", track, style, key, why) for [edit.music].
+
+    Without `source`: "game" when a track is named, "synth" when only a style is (as before), else "auto". Auto
+    prefers Minecraft: a game track picked by mood from the music map (catalog/music.toml) when the export may use game
+    audio and the assets are there; otherwise the synth bed in the mood's style. An original-only mix plays the synth
+    bed in the style of the mood of the track it replaces."""
+    source = music.get('source') or ('game' if music.get('track') else 'synth' if music.get('style') and not music.get('mood') else 'auto')
+    if source not in ('auto', 'synth', 'game'):
+        raise SystemExit(f'[edit.music] source = "{source}": one of auto, synth, game')
+    mood = music.get('mood')
+    if mood is not None and mood not in synth.MOODS:
+        raise SystemExit(f'[edit.music] mood = "{mood}": one of {", ".join(synth.MOODS)}')
+    if source == 'game' and not music.get('track'):
+        raise SystemExit('[edit.music] source = "game" needs track = "<sound file or event>" (e.g. "music/game/wet_hands"), '
+                         'or source = "auto" with a mood')
+    track, why = music.get('track'), ''
+    if source == 'auto':
+        mood = mood or 'upbeat'
+        if mode == 'game' and assets.available():
+            picked = resolve.pick_track(mood, seconds=length, bpm=music.get('bpm'), seed=seed, exclude=tuple(music.get('exclude') or ()),
+                                        vocals=bool(music.get('vocals')), rank=int(music.get('rank', 0)))
+            if picked:
+                track, row, why = picked[0], picked[1], f'{mood}: {picked[0]} ({picked[2]})'
+                source = 'game'
+        if source == 'auto':
+            source = 'synth'
+            report['notes'].append(f'music: no game track for {mood} ({"original audio" if mode != "game" else "no game assets"}): '
+                                   f'the synth bed in the {mood} style')
+    if source == 'game' and mode == 'original':
+        row = catalog.tracks().get(catalog.bare(track), {})
+        mood = mood or (row.get('mood') or ['upbeat'])[0]
+        report['notes'].append(f'original audio: the game music track is replaced by the synth bed ({mood})')
+        source = 'synth'
+    style, key = music.get('style'), music.get('key')
+    if source == 'synth' and not style:
+        style, mood_key = synth.style_for(mood or 'upbeat', music.get('bpm'))
+        key = key or mood_key
+    return source, track, style or 'upbeat', key, why
+
+
+def _fit_track(left, right, start, need, loops):
+    """The track from `start` for `need` samples; when it runs out first, the measured loop (b back to a) repeats
+    with a 60 ms crossfade. Returns (left, right, loop or None)."""
+    left, right = left[start:], right[start:]
+    if len(left) >= need or not loops:
+        return left[:need], right[:need], None
+    a, b = (dsp.seconds_to_samples(t) - start for t in loops[0][:2])
+    if a < 0 or b <= a or b > len(left):
+        return left[:need], right[:need], None
+    x = int(0.06 * SR)
+    outs = []
+    for ch in (left, right):
+        out = array('f', ch[:b])
+        while len(out) < need:
+            seg = ch[a:b]
+            for i in range(min(x, len(seg), len(out))):
+                k = i / x
+                out[len(out) - x + i] = out[len(out) - x + i] * (1 - k) + seg[i] * k
+            out.extend(seg[x:])
+        outs.append(out[:need])
+    return outs[0], outs[1], [round(loops[0][0], 2), round(loops[0][1], 2)]
+
+
+def place_edit_sfx(it, timeline, edit, mode):
+    """[[edit.sfx]]: sounds the edit places itself, not logged by the take: (placed, buffers by index). Game audio
+    first (a deterministic variant of the event, from the local assets), the original library in original mode or
+    when the catalog has no Minecraft sound for it."""
+    placed, buffers = [], []
+    fps = timeline.fps
+    for i, entry in enumerate(edit.get('sfx') or []):
+        where = f'edit.sfx[{i}]'
+        try:
+            event, lib, pitch, volume = resolve.edit_sfx_sound(entry, where)
+        except (resolve.SoundError, library.UnknownSound) as e:
+            raise SystemExit(str(e)) from e
+        if 'time' in entry:
+            t = float(entry['time'])
+        else:
+            clips = timeline.shot_clips(entry.get('shot'))
+            if not clips:
+                raise SystemExit(f'{where}: shot = "{entry.get("shot")}" is not in the cut (or give time = <seconds in the cut>)')
+            frame = int(round(float(entry.get('at', 0)) * fps))
+            clip = next((c for c in clips if c.contains(frame)), clips[0])
+            t = clip.out_frame(frame) / fps
+        gain = dsp.from_db(float(entry.get('gain', 0))) * volume
+        if event and mode == 'game':
+            files = assets.event_files(event)
+            if files:
+                file = files[sfx.hash_name(f'{it.plan().get("seed", 1)}:{i}:{event}') % len(files)]
+                buffers.append(assets.decode(file, 1))
+                placed.append(Placed(source='game', event=f'minecraft:{event}', file=file, shot=entry.get('shot') or '', frame=-1, clip=-1,
+                                     time=t, gain=gain, pan=float(entry.get('pan', 0)), rate=max(0.5, min(2.0, pitch)), stop=timeline.seconds))
+                continue
+        if not lib:
+            raise SystemExit(f'{where}: no original sound for it in an original-only mix; give library = "<name>" too')
+        buffers.append(library.render(lib))
+        placed.append(Placed(source='synth', event=f'videocraft:lib/{lib}', file='', shot=entry.get('shot') or '', frame=-1, clip=-1, time=t,
+                             gain=gain, pan=float(entry.get('pan', 0)), rate=1.0 if event else max(0.5, min(2.0, pitch)), stop=timeline.seconds,
+                             stand_in=lib if event else ''))
+    return placed, buffers
+
+
+def render_edit_sfx(placed, buffers, n):
+    left, right = dsp.zeros(n), dsp.zeros(n)
+    for p, buf in zip(placed, buffers):
+        played = dsp.resample(buf, p.rate)
+        _add_panned(left, right, played, dsp.seconds_to_samples(p.time), p.gain, p.pan)
+    return left, right
+
+
 def build(it, original=None, keep_raw=False, name='audio'):
     """Mixes and masters the iteration's sound track into cut/<name>.wav (report cut/<name>.json); returns its path, or
     None for no audio. The cut asks for name = "audio-original" (original=True) beside the game mix for exports with
@@ -473,7 +636,7 @@ def build(it, original=None, keep_raw=False, name='audio'):
     timeline = tl.load(it)
     n = dsp.seconds_to_samples(timeline.seconds)
     mixcfg = edit.get('mix') or {}
-    sounds = Sounds(mode)
+    sounds = Sounds(mode, resolve.original_hints(plan) if mode == 'original' else None)
     report = {'mode': mode, 'fps': timeline.fps, 'seconds': timeline.seconds, 'notes': []}
 
     placed, skipped = place_sfx(it, timeline, sounds, mixcfg.get('duck') or (), mixcfg.get('lift'))
@@ -488,11 +651,19 @@ def build(it, original=None, keep_raw=False, name='audio'):
     if voice is not None:
         voice = dsp.scaled(voice, dsp.from_db(float(mixcfg.get('voice', 0))))
 
+    edit_placed, edit_buffers = place_edit_sfx(it, timeline, edit, mode)
+    if edit_placed:
+        el, er = render_edit_sfx(edit_placed, edit_buffers, n)
+        dsp.add_into(sfx_l, el, 0)
+        dsp.add_into(sfx_r, er, 0)
+
     def duck_keys(depth):
         keys = [voice] if voice is not None else []
         for p in placed:
             if p.duck:
                 keys.append((p.time, p.time + 0.6, max(depth, -6.0)))
+        for p in edit_placed:
+            keys.append((p.time, p.time + 0.6, max(depth, -6.0)))
         return keys
 
     music = music_bus(it, timeline, edit, mode, n, picture, duck_keys, report)
@@ -520,7 +691,8 @@ def build(it, original=None, keep_raw=False, name='audio'):
     report.update({
         'file': out.name, 'sample_rate': SR, 'channels': 2, 'loudness': measured, 'black_gaps': gaps,
         'events': [p.to_json() for p in placed], 'voice': [p.to_json() for p in voices], 'skipped': skipped,
-        'game_assets_used': any(p.source == 'game' for p in placed) or report.get('music', {}).get('source') == 'game',
+        'edit_sfx': [p.to_json() for p in edit_placed],
+        'game_assets_used': any(p.source == 'game' for p in placed + edit_placed) or report.get('music', {}).get('source') == 'game',
         'build_seconds': round(time.time() - started, 2),
     })
     (it.cut / f'{name}.json').write_text(json.dumps(report, indent=2) + '\n')

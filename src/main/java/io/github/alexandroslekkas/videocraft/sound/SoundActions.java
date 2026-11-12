@@ -235,6 +235,8 @@ public final class SoundActions {
 		Identifier event = Identifier.tryParse(id.contains(":") ? id : "minecraft:" + id);
 		if (event == null) throw new IllegalArgumentException(p.where() + ": '" + id + "' is not a sound id");
 		if (event.getNamespace().equals("videocraft")) {
+			// videocraft:lib/<name>: an original library sound; the compiler checked the name (cli/videocraft/audio/library).
+			if (event.getPath().startsWith(Synth.LIBRARY) && event.getPath().length() > Synth.LIBRARY.length()) return event;
 			if (!Synth.EVENTS.contains(event.getPath()))
 				throw new IllegalArgumentException(p.where() + ": no synthesized sound '" + id + "'; known: videocraft:" + String.join(", videocraft:", Synth.EVENTS));
 			return event;

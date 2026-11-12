@@ -157,6 +157,7 @@ At most three takes run on one machine at once (one per checkout), each on its o
 | [docs/DESIGN.md](docs/DESIGN.md) | Architecture, the mod/CLI boundary, the run store, the extension point, status |
 | [docs/SCRIPT.md](docs/SCRIPT.md) | The shot script: every key, action and camera rig |
 | [docs/VOICE.md](docs/VOICE.md) | Dialogue: the cast file, engines, word timings, cutting on words |
+| [docs/SOUNDS.md](docs/SOUNDS.md) | Sounds by meaning: the Minecraft sound and music map, the comedy palette, the original library |
 | [docs/SETS.md](docs/SETS.md) | Sets as data, their marks, the build vocabulary, skins |
 | [docs/STORY.md](docs/STORY.md) | Premise to shot script: story, series, make |
 | [docs/CLIPS.md](docs/CLIPS.md) | Long form (assemble) and vertical shorts (clips) |
