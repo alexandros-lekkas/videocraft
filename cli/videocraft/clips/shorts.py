@@ -15,6 +15,7 @@ re-shot, a bitmap-font band when re-framed).
 import copy
 import json
 import re
+import statistics
 import subprocess
 from pathlib import Path
 
@@ -90,7 +91,7 @@ def _map_push(push, width, height):
     return push
 
 
-def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60, from_start=False):
+def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60, from_start=False, auto=None):
     """The vertical re-shoot of `pieces` ([(segment, src_in, src_out, frames)]) as a script dict."""
     width, height = plan['output']['width'], plan['output']['height']
     needed = [s.shot for s, *_ in pieces if s.kind == 'shot']
@@ -106,6 +107,8 @@ def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0
         if shot.get('name') not in needed:
             continue
         shot = copy.deepcopy(shot)
+        if (auto or {}).get(shot['name']):
+            shot['camera'] = copy.deepcopy(auto[shot['name']])
         cam_ = shot.get('camera') or {}
         if pull != 1.0:
             for key in SIZE_KEYS:
@@ -154,13 +157,49 @@ def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0
     return out
 
 
-def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False):
-    """Takes the vertical script; returns (picture path, vertical iteration, notes)."""
+def auto_vertical(plan, raw, m, pieces):
+    """{shot: camera} for `fixed` shots (with no [shot.vertical] camera) whose staged subject leaves the vertical
+    window of the landscape frame in over a tenth of the range: a locked-off camera cannot hold it in 9:16, so the
+    re-shoot pans from the same eye (`locked` on the subject), as an operator shooting vertical would."""
+    width, height = m.width, m.height
+    half = reframe.crop_size(width, height)[0] / 2
+    staged = {a.get('id') for a in plan.get('actors', [])}
+    out = {}
+    for seg, src_in, src_out, _ in pieces:
+        if seg.kind != 'shot' or seg.shot in out:
+            continue
+        raw_shot = next((s for s in raw.get('shot', []) if s.get('name') == seg.shot), {})
+        camera = raw_shot.get('camera') or {}
+        if camera.get('rig') != 'fixed' or ((raw_shot.get('vertical') or {}).get('camera')) or 'eye' not in camera:
+            continue
+        xs, primary = subject_xs(seg, plan, raw_shot, None, width, height)
+        if primary not in staged:
+            continue
+        seen = [f for f in range(src_in, src_out) if xs.get(f)]
+        outside = sum(1 for f in seen if abs(xs[f][0] - width / 2) > 0.8 * half)
+        if seen and outside > 0.1 * len(seen):
+            locked = {'rig': 'locked', 'eye': camera['eye'], 'subject': primary, 'lag': 0.5,
+                      'look': round(0.55 * cam.height_of(primary, plan), 2)}
+            for key in ('fov', 'fov_ease', 'drift'):
+                if key in camera:
+                    locked[key] = camera[key]
+            out[seg.shot] = locked
+    return out
+
+
+def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False, notes=None):
+    """Takes the vertical script; returns (picture path, vertical iteration)."""
     raw = script_.load(it.path / 'script.toml') if (it.path / 'script.toml').exists() else script_.load(it.path / 'script.json')
     plan, edit = it.plan(), it.edit()
     timeline = json.loads((it.cut / 'timeline.json').read_text()) if (it.cut / 'timeline.json').exists() else {'clips': []}
     name = re.sub(r'[^a-z0-9_-]', '-', f'{plan["name"][:39]}-vertical')
-    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps, from_start)
+    auto = auto_vertical(plan, raw, m, pieces)
+    for shot, camera in auto.items():
+        line = f'shot {shot}: fixed -> locked on {camera["subject"]} (it leaves a 9:16 window of the landscape frame)'
+        say('  re-shoot: ' + line)
+        if notes is not None:
+            notes.append(line)
+    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps, from_start, auto)
     path = folder / 'vertical.json'
     path.write_text(json.dumps(vs, indent=2) + '\n')
     script_.compile_script(script_.load(path), str(path))   # fails here, not in the game, if the vertical script is wrong
@@ -202,22 +241,34 @@ def subject_xs(seg, plan, raw_shot, subject, width, height):
             if p and 0 <= p[0] <= 1:
                 out[int(r['frame'])] = [p[0] * width]
         return out, f'point {point}'
-    who = [hint] if isinstance(hint, str) else []
+    named = [hint] if isinstance(hint, str) else []
     subjects = (shot.get('camera') or {}).get('subjects')
-    if not who and isinstance(subjects, list):           # a two-shot: both, so the layout can tell they are apart
-        who += [str(x) for x in subjects]
-    main = cam.subject_of(shot) if not who else None     # the rig's subject (follow rigs: the player)
+    if not named and isinstance(subjects, list):         # a two-shot: both, so the layout can tell they are apart
+        named += [str(x) for x in subjects]
+    main = cam.subject_of(shot) if not named else None   # the rig's subject (follow rigs: the player)
     if main:
-        who.append(main)
-    who += [str(a['actor']) for a in actors if str(a['actor']) not in who]
-    if not who:
+        named.append(main)
+    who = list(dict.fromkeys(named + [str(a['actor']) for a in actors]))
+    tracks = {}
+    for w in who:
+        seen = {n: v for n, v in cam.subject_track(frames, actors, w, cam.height_of(w, plan), aspect)
+                if v is not None and 0 <= v[0] <= 1 and 0 <= v[1] <= 1}
+        if seen:
+            tracks[w] = seen
+    if not tracks:
         return {}, None
+    size = {w: statistics.median(v[2] for v in t.values()) for w, t in tracks.items()}
+    total = max(1, len(frames))
+    # The primary: the named subject when it is in frame a third of the time, else the actor biggest in frame.
+    primary = next((w for w in named if w in tracks and len(tracks[w]) >= total / 3), None) or max(size, key=size.get)
+    # Others count (for "two subjects too far apart") only when named, or near the primary's size in frame.
+    others = [w for w in tracks if w != primary and (w in named or size[w] >= 0.5 * size[primary])]
     out = {}
-    for k, w in enumerate(dict.fromkeys(who)):
-        for n, v in cam.subject_track(frames, actors, w, cam.height_of(w, plan), aspect):
-            if v is not None and 0 <= v[0] <= 1 and 0 <= v[1] <= 1:
+    for w in [primary] + others:
+        for n, v in tracks[w].items():
+            if w == primary or n in out:
                 out.setdefault(n, []).append(v[0] * width)
-    return out, who[0]
+    return out, primary
 
 
 def text_boxes(seg, src_in, src_out):
@@ -350,6 +401,13 @@ def audio_slice(master, start, seconds, out_wav, has_audio):
                     '-af', f'apad,atrim=0:{seconds:.6f},afade=t=in:d={fade},afade=t=out:st={max(0.0, seconds - fade):.6f}:d={fade}',
                     '-ac', '2', '-ar', '48000', '-f', 'f32le', str(raw)], check=True)
     result = loudness.master(raw, out_wav)
+    gain, passes = result.get('gain_db', 0.0), result.get('passes', 1)
+    while result.get('before') is not None and abs(loudness.TARGET - result['integrated']) > 0.3 and passes < 8:
+        # A peaky slice (one loud hit over a quiet bed) needs more passes than the master's three to settle.
+        gain = min(40.0, gain + loudness.TARGET - result['integrated'])
+        loudness._render(raw, out_wav, gain, loudness.CEILING)
+        passes += 1
+        result = {**loudness.measure(out_wav), 'gain_db': round(gain, 2), 'passes': passes, 'before': result['before']}
     raw.unlink()
     return result
 
@@ -417,7 +475,7 @@ def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', sub
     vit, plan, cw = None, None, None
     if chosen == 'reshoot':
         try:
-            picture, vit = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout, from_start)
+            picture, vit = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout, from_start, record['notes'])
             record['reshoot'] = str(vit.path)
         except (RuntimeError, script_.ScriptError, SystemExit) as err:
             if method == 'reshoot':

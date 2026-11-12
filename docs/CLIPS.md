@@ -62,7 +62,7 @@ win by size), a strong payoff in its last 1.5 s, a setup at its start, cut densi
 Overlapping candidates (over half of the shorter) are suppressed. `clips/moments.json` holds the ranked moments
 (`n`, `start`, `end`, `frames`, `score`, `reasons`, `title`, `cold`, `hook`, `shots`) and every event it scored. A
 master shorter than `--min` is one moment, the whole of it. A moment is **cold** when it neither starts the video
-nor starts on a setup beat; a cold moment gets a hook.
+nor starts on a setup beat; a cold moment gets a hook (from its joke, beat or line; none when it has only sounds).
 
 ## Vertical shorts: `clips cut`
 
@@ -75,7 +75,10 @@ taken again at 1080x1920 from the same script, so the performance is the same an
 the vertical frame itself. Per shot, `[shot.vertical]` adjusts the camera for 9:16 (below); `--pull` scales every
 rig's `radius`, `distance` and `min_distance`; only the shots in the range are taken, or with `--from-start` every
 shot from the first up to the last one needed (when a shot leaves state the next one starts from); captions without a `size` get 77 (the default is 63); screen
-positions (`x`, `y` of a keycap or other text) keep their place in the frame. The edit is the same edit cut to the
+positions (`x`, `y` of a keycap or other text) keep their place in the frame. A `fixed` shot (with no `[shot.vertical]` camera) whose
+staged subject leaves the 9:16 window of the landscape frame in over a tenth of the range is re-shot as `locked` on
+that subject from the same eye: a locked-off vertical frame cannot hold a subject that crosses a wide one, so the
+camera pans, as an operator shooting vertical would (`clip.json` notes say which shots). The edit is the same edit cut to the
 range: each clip's `in`/`out` frames, its speed, look and frame; push-in points are mapped into the vertical frame;
 a fade is kept only where the range keeps that clip's edge. The vertical take is an ordinary iteration of
 `runs/<name>-vertical/` (its script is `clips/<n>/vertical.json`). Its text is checked against the vertical safe
@@ -100,7 +103,7 @@ greatest speed and acceleration; `subject_in_crop` passes at 98 %.
 
 Both methods: the sound is the master's own mix over exactly the same frames (the vertical take is the same
 performance), faded 15 ms at both ends and re-mastered to −14 LUFS (`loudness` is checked unless the source is
-silent). A short never dips to black at its end: it ends on the payoff plus a beat, so it loops. A cold moment's
+silent; a peaky slice gets up to eight passes). A short never dips to black at its end: it ends on the payoff plus a beat, so it loops. A cold moment's
 hook (`--hook` to set it, `--hook none` to drop it) is drawn in the first second: in the game as a `title` at the
 top when re-shot (the next caption replaces it, one message at a time), as a bitmap-font band when re-framed.
 

@@ -317,7 +317,13 @@ def title_of(moment, evs):
     lines = [e for e in inside if e['kind'] == 'line']
     keyed = [e for e in lines if any(k['kind'] == 'key' and k['t'] >= e['t'] and k['t'] <= e.get('end', e['t']) for k in inside)]
     pick = (keyed or lines)
-    return pick[-1]['what'] if pick else 'Moment'
+    if pick:
+        return pick[-1]['what']
+    sounds = [e for e in inside if e['kind'] == 'sound']
+    if sounds:    # "entity.goat.screaming.ambient" -> "Goat screaming"
+        words = [w for w in max(sounds, key=lambda e: e['weight'])['what'].split('.') if w not in ('entity', 'block', 'ambient', 'minecraft:entity')]
+        return ' '.join(words[:2]).replace('_', ' ').capitalize()
+    return 'Moment'
 
 
 def cold(moment, evs, cuts, total):
@@ -328,7 +334,11 @@ def cold(moment, evs, cuts, total):
 
 
 def hook_of(moment, evs):
-    """The hook card text for a cold start: the beat or joke it pays off, short."""
+    """The hook card text for a cold start: the joke, beat or line it pays off, short; None when it has none of
+    those (a sound's name is no hook)."""
+    inside = [e for e in evs if moment['start'] - 0.5 <= e['t'] <= moment['end'] + 0.5]
+    if not any(e['kind'] in ('joke', 'beat_start', 'line') for e in inside):
+        return None
     name = title_of(moment, evs)
     words = re.sub(r'[*"]', '', name).split()
     return ' '.join(words[:6])
