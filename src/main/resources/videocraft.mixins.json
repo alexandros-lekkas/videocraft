@@ -5,7 +5,20 @@
   "client": [
     "ClockMixin",
     "CameraMixin",
-    "ParkedPlayerMixin"
+    "ParkedPlayerMixin",
+    "actor.PuppetTickMixin",
+    "actor.PuppetRenderMixin",
+    "actor.PuppetSoundMixin",
+    "actor.PuppetStateMixin",
+    "actor.PuppetExtractMixin",
+    "actor.PuppetTintMixin",
+    "actor.MannequinPoseMixin",
+    "actor.MannequinSeatMixin",
+    "actor.EntityAccess",
+    "actor.LivingEntityAccess",
+    "actor.MobAccess",
+    "actor.FoxAccess",
+    "actor.ItemEntityAccess"
   ],
   "injectors": {
     "defaultRequire": 1
