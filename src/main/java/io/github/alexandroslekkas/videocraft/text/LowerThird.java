@@ -56,8 +56,10 @@ final class LowerThird extends Message {
 		float travel = (x1 - x0 + 60) * (float) (1 - in) * (side.equals("left") ? -1 : 1);
 		float alpha = (float) Math.min(1, in * 1.6);
 		float pad = 2.8f * roleK, bar = 1.8f * k;
-		ink.box(x0 + travel, y0, x1 + travel, y1, Ink.fade(0xB0101418, alpha));
 		float barX = side.equals("left") ? x0 : x1 - bar;
+		// The panel and the bar never overlap: fills in one GUI stratum are not drawn in a guaranteed order.
+		float panel0 = side.equals("left") ? x0 + bar : x0, panel1 = side.equals("left") ? x1 : x1 - bar;
+		ink.box(panel0 + travel, y0, panel1 + travel, y1, Ink.fade(0xB0101418, alpha));
 		ink.box(barX + travel, y0, barX + bar + travel, y1, Ink.fade(accent, alpha));
 		float tx = (side.equals("left") ? x0 + bar : x0) + pad + travel;
 		ink.text(name, tx, y0 + pad, k, 1, Ink.WHITE, alpha, true);
