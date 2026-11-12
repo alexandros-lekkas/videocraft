@@ -25,7 +25,7 @@ import java.util.Locale;
 /**
  * The actor actions of the shot script (docs/SCRIPT.md, "Actors"). Each validates its parameters when its cue comes
  * and fails the take with the script location otherwise. They act on puppets ({@code kind = "mob"} or {@code
- * "mannequin"} actors); the played player's actions are the last part of workstream (b).
+ * * "mannequin"} actors) and, for walk, turn, look, jump, crouch and swing, on the played player.
  */
 public final class Actions {
 	private Actions() {}
@@ -229,7 +229,7 @@ public final class Actions {
 			@Override
 			public boolean frame(ShotContext s) {
 				frames++;
-				if (follow) { p.turn(yawTo(p, s, params, "to"), pace); return false; }
+				if (follow) { p.retarget(yawTo(p, s, params, "to")); return false; }
 				if (frames < 6 || p.turning()) return false;
 				if (mark != null) s.mark(mark);
 				return true;

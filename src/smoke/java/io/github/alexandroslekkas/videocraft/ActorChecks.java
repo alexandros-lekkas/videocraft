@@ -131,6 +131,24 @@ public final class ActorChecks {
 		w.turn(-170, 1);
 		for (int i = 0; i < 60; i++) w.step(DT, 0, 0, 0);
 		PlanChecks.check(Math.abs(w.body() - 190) < 0.5, "turns take the short way: " + w.body());
+		// A person's about-turn: the head never whips faster than its cap, and the turn still settles.
+		Heading p = new Heading(-90, 60, new Random(4));
+		p.limits(380, 260);
+		p.turn(90, 1);
+		double fastest = 0, lastHead = p.head(), lastBody = p.body(), fastestBody = 0, lastSpeed = 0, jolt = 0;
+		for (int i = 0; i < 80; i++) {
+			p.step(DT, 0, 0, 0);
+			double speed = Math.abs(p.head() - lastHead) / DT;
+			jolt = Math.max(jolt, speed - lastSpeed);
+			lastSpeed = speed;
+			fastest = Math.max(fastest, speed);
+			fastestBody = Math.max(fastestBody, Math.abs(p.body() - lastBody) / DT);
+			lastHead = p.head();
+			lastBody = p.body();
+		}
+		PlanChecks.check(fastest <= 380 + 1e-6 && fastestBody <= 380 + 1e-6, "a calm turn's head is held to its cap: " + fastest + " deg/s");
+		PlanChecks.check(Math.abs(Path.wrap(p.body() - 90)) < 0.5, "a capped turn still settles: " + p.body());
+		PlanChecks.check(jolt <= 380 * 7 * DT + 1e-6, "a head gets going over a few ticks, not one: " + jolt + " deg/s in a tick");
 	}
 
 	static void life() {

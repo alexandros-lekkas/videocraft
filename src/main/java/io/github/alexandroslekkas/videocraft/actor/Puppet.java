@@ -181,6 +181,9 @@ public final class Puppet implements Actor {
 		create(mc, at.y);
 		double yaw = spec.has("facing") ? Actions.facing(this, shot, spec, at) : 0;
 		heading = new Heading(yaw, breed.reach(), new Random(random.nextLong()));
+		// A person turns their head at most about 400 degrees a second, an animal a little quicker; a bird snaps.
+		if (breed == Breed.HUMAN) heading.limits(380, 260);
+		else if (breed.temper() != Life.Temper.BUSY) heading.limits(520, 360);
 		foot.place(orElse(groundAt(x, z, at.y, true), at.y));
 		snapshot();
 		snapshot();
@@ -447,6 +450,8 @@ public final class Puppet implements Actor {
 
 	void turn(double yaw, double pace) { heading.turn(yaw, pace); }
 
+	void retarget(double yaw) { heading.retarget(yaw); }
+
 	boolean turning() { return heading.turning(); }
 
 	void look(double yaw, double pitch) { heading.look(yaw, pitch); }
@@ -588,7 +593,10 @@ public final class Puppet implements Actor {
 	String stateLabel() {
 		StringBuilder b = new StringBuilder(walking() ? gait : foot.air() ? "air" : "idle");
 		for (String s : states) b.append('+').append(s);
-		for (Gesture g : gestures) if (g.weight(now) > 0) b.append('+').append(g.kind.name().toLowerCase(Locale.ROOT));
+		for (Gesture g : gestures) {
+			String name = g.kind.name().toLowerCase(Locale.ROOT);
+			if (g.weight(now) > 0 && !states.contains(name)) b.append('+').append(name);
+		}
 		return b.toString();
 	}
 

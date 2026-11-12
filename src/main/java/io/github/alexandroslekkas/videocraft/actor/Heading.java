@@ -16,6 +16,10 @@ public final class Heading {
 	private double lookYaw = Double.NaN, lookPitch;
 	private double bodyWait;
 	private double reach;
+	// The fastest a head and a body turn (degrees a second, at pace 1): a person's calm turn never whips round.
+	private double headMax = Double.POSITIVE_INFINITY, bodyMax = Double.POSITIVE_INFINITY, pace = 1;
+	// And how quickly they get going (degrees a second squared): a head starts a turn over a few ticks, not one.
+	private double headAccel = Double.POSITIVE_INFINITY, bodyAccel = Double.POSITIVE_INFINITY;
 
 	public Heading(double yaw, double reach, Random random) {
 		this.random = random;
@@ -42,6 +46,15 @@ public final class Heading {
 		bodyOmega = pace * (9.5 - Math.min(3.5, size / 40)) * (0.88 + random.nextDouble() * 0.24);
 		headOmega = pace * 17 * (0.9 + random.nextDouble() * 0.2);
 		bodyWait = (0.06 + random.nextDouble() * 0.1) / pace;
+		this.pace = pace;
+	}
+
+	/**
+	 * Moves the goal of a turn under way (a moving target) without starting it again: the delay and the speed stay,
+	 * and the goal moves the short way from where it was, so a target passing behind never flips the turn's direction.
+	 */
+	public void retarget(double yaw) {
+		bodyGoal = bodyGoal + Path.wrap(yaw - bodyGoal);
 	}
 
 	/** While walking: the body follows the direction of travel without the delay of a turn in place. */
@@ -49,6 +62,7 @@ public final class Heading {
 		bodyGoal = body + Path.wrap(yaw - body);
 		bodyOmega = omega;
 		bodyWait = 0;
+		pace = 1;
 	}
 
 	/** Point the head at a world yaw and pitch (clamped to the reach of the neck); NaN yaw: back to the body. */
@@ -58,6 +72,14 @@ public final class Heading {
 	}
 
 	public void headSpeed(double omega) { headOmega = omega; }
+
+	/** Caps the angular speed of the head and of the body, in degrees a second at pace 1 (a snap turn raises them). */
+	public void limits(double head, double body) {
+		headMax = head;
+		bodyMax = body;
+		headAccel = head * 7;
+		bodyAccel = body * 5;
+	}
 
 	public void reach(double degrees) { reach = degrees; }
 
@@ -73,7 +95,7 @@ public final class Heading {
 	public void step(double dt, double idleYaw, double idlePitch, double chin) {
 		if (bodyWait > 0) bodyWait -= dt;
 		else {
-			double[] b = spring(body, bodyV, bodyGoal, bodyOmega, dt);
+			double[] b = capped(body, bodyV, spring(body, bodyV, bodyGoal, bodyOmega, dt), bodyMax * pace, bodyAccel * pace * pace, dt);
 			body = b[0];
 			bodyV = b[1];
 		}
@@ -87,7 +109,7 @@ public final class Heading {
 			wantPitch = lookPitch + chin * 0.3;
 		}
 		wantYaw = head + Path.wrap(wantYaw - head);
-		double[] h = spring(head, headV, wantYaw, headOmega, dt);
+		double[] h = capped(head, headV, spring(head, headV, wantYaw, headOmega, dt), headMax * pace, headAccel * pace * pace, dt);
 		head = h[0];
 		headV = h[1];
 		double rel = Path.wrap(head - body);
@@ -95,6 +117,20 @@ public final class Heading {
 		double[] p = spring(pitch, pitchV, Math.max(-60, Math.min(60, wantPitch)), pitchOmega, dt);
 		pitch = p[0];
 		pitchV = p[1];
+	}
+
+	/**
+	 * A spring step {value, velocity} from {@code x} moving at {@code v}, held to at most {@code max} degrees a second
+	 * and to speeding up by at most {@code accel} a second squared (slowing down is the spring's own, so it never
+	 * overshoots).
+	 */
+	static double[] capped(double x, double v, double[] step, double max, double accel, double dt) {
+		double mean = (step[0] - x) / dt, want = mean;
+		// Speeding up (or reversing) is limited; slowing down is the spring's own.
+		boolean faster = mean * v < 0 || Math.abs(mean) > Math.abs(v);
+		if (faster && Math.abs(mean - v) > accel * dt) want = v + Math.copySign(accel * dt, mean - v);
+		if (Math.abs(want) > max) want = Math.copySign(max, want);
+		return want == mean ? step : new double[] {x + want * dt, want};
 	}
 
 	/** The exact step of a critically damped spring: {value, velocity}. */
