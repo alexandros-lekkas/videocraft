@@ -54,7 +54,17 @@ def is_silent(edit, silent=None):
     return str(edit.get('audio', '')).lower() in ('none', 'silent', 'off')
 
 
-def cut(it, silent=None, exports=True) -> Path:
+VIDEO_PRESETS = ('x-1080p60', 'readme-720p30')
+
+
+def wants_original(edit, original_audio=None, exports=True):
+    """Whether the cut also mixes cut/audio-original.wav: `--original-audio`, or an export with audio = "original"."""
+    return bool(original_audio) or (exports and any(str(e.get('audio', '')).lower() == 'original' for e in edit.get('export') or []))
+
+
+def cut(it, silent=None, exports=True, original_audio=None) -> Path:
+    """original_audio: also write master-original-audio.mp4 and an `-original-audio` copy of every video export, with
+    the sound track that holds no game audio (cut/audio-original.wav); cut/audio.wav stays the game mix."""
     ffmpeg = tools.ffmpeg()
     plan, edit = it.plan(), it.edit()
     started = time.time()
@@ -64,8 +74,9 @@ def cut(it, silent=None, exports=True) -> Path:
     width, height, fps = timeline['width'], timeline['height'], timeline['fps']
 
     # The audio mix runs while the picture encodes; it reads timeline.json, written above.
-    audio = {'path': None, 'error': None}
+    audio = {'path': None, 'error': None, 'original': None}
     worker = None
+    second = wants_original(edit, original_audio, exports)
     if not is_silent(edit, silent):
         try:
             from videocraft.audio import mix
@@ -75,6 +86,10 @@ def cut(it, silent=None, exports=True) -> Path:
             def build():
                 try:
                     audio['path'] = mix.build(it)
+                    if second and audio['path']:
+                        # The game mix keeps cut/audio.wav; the original one never overwrites it.
+                        audio['original'] = (audio['path'] if mix._mode(edit, None) == 'original'
+                                             else mix.build(it, original=True, name='audio-original'))
                 except SystemExit as e:
                     audio['error'] = str(e.code)
                 except Exception as e:  # the picture still gets cut; the report names the audio problem
@@ -119,14 +134,25 @@ def cut(it, silent=None, exports=True) -> Path:
     else:
         picture.replace(out)
     written = {'master': out.name}
+    orig = audio['original']
+    if orig:
+        alt = it.cut / 'master-original-audio.mp4'
+        subprocess.run([ffmpeg, '-y', '-loglevel', 'error', '-i', str(out), '-i', str(orig), '-map', '0:v', '-map', '1:a',
+                        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-af', 'apad', '-t', f'{seconds:.6f}', '-movflags', '+faststart', str(alt)],
+                       check=True)
+        written['master-original-audio'] = alt.name
     poster = exports_.export({'preset': 'poster'}, out, it.cut, width, height, fps, seconds, bool(wav))
     written['poster'] = poster.name
     if exports:
         for spec in edit.get('export') or []:
             path = exports_.export(spec, out, it.cut, width, height, fps, seconds, bool(wav))
-            written[spec.get('name', spec['preset'])] = path.name
+            name = spec.get('name', spec['preset'])
+            written[name] = path.name
+            if orig and spec['preset'] in VIDEO_PRESETS and (original_audio or str(spec.get('audio', '')).lower() == 'original'):
+                path = exports_.export(spec, out, it.cut, width, height, fps, seconds, True, audio_file=orig, suffix='-original-audio')
+                written[f'{name}-original-audio'] = path.name
     record = {'master': out.name, 'poster': poster.name, 'frames': timeline['frames'], 'seconds': seconds,
-              'audio': str(wav) if wav else None, 'audio_error': audio['error'],
+              'audio': str(wav) if wav else None, 'audio_error': audio['error'], 'audio_original': str(orig) if orig else None,
               'silent': is_silent(edit, silent), 'exports': written, 'clips': edit['clip'], 'cut_seconds': round(time.time() - started, 1)}
     (it.cut / 'cut.json').write_text(json.dumps(record, indent=2) + '\n')
     if audio['error']:

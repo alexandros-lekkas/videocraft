@@ -70,7 +70,7 @@ class Placed:
 
 
 def _mode(edit, original):
-    """game | original | none. `original=True` (or VIDEOCRAFT_AUDIO=original, for `cut --original-audio`) wins."""
+    """game | original | none. `original=True` (or VIDEOCRAFT_AUDIO=original: the whole cut with no game audio) wins."""
     if original or os.environ.get('VIDEOCRAFT_AUDIO', '').strip().lower() == 'original':
         return 'original'
     mode = edit.get('audio', 'game')
@@ -458,8 +458,10 @@ def music_bus(it, timeline, edit, mode, n, picture, duck_keys, report):
     return left, right
 
 
-def build(it, original=None, keep_raw=False):
-    """Mixes and masters the iteration's sound track into cut/audio.wav; returns its path, or None for no audio."""
+def build(it, original=None, keep_raw=False, name='audio'):
+    """Mixes and masters the iteration's sound track into cut/<name>.wav (report cut/<name>.json); returns its path, or
+    None for no audio. The cut asks for name = "audio-original" (original=True) beside the game mix for exports with
+    `audio = "original"`."""
     started = time.time()
     plan, edit = it.plan(), it.edit()
     mode = _mode(edit, original)
@@ -503,8 +505,8 @@ def build(it, original=None, keep_raw=False):
         dsp.add_into(left, music[0], 0)
         dsp.add_into(right, music[1], 0)
 
-    raw = it.cut / '.audio-mix.f32'
-    out = it.cut / 'audio.wav'
+    raw = it.cut / f'.{name}-mix.f32'
+    out = it.cut / f'{name}.wav'
     dsp.write_f32(raw, left, right)
     measured = loudness.master(raw, out)
     if not keep_raw:
@@ -521,5 +523,5 @@ def build(it, original=None, keep_raw=False):
         'game_assets_used': any(p.source == 'game' for p in placed) or report.get('music', {}).get('source') == 'game',
         'build_seconds': round(time.time() - started, 2),
     })
-    (it.cut / 'audio.json').write_text(json.dumps(report, indent=2) + '\n')
+    (it.cut / f'{name}.json').write_text(json.dumps(report, indent=2) + '\n')
     return out

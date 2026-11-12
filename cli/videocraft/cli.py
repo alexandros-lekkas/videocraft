@@ -132,7 +132,7 @@ def _report(it, verdict, detail, started, video=None):
 
 def cmd_cut(args):
     from videocraft.edit.cut import cut
-    say(str(cut(store.open_iteration(args.iteration))))
+    say(str(cut(store.open_iteration(args.iteration), original_audio=getattr(args, 'original_audio', False))))
     return 0
 
 
@@ -334,6 +334,7 @@ def build_parser():
     p.set_defaults(run=cmd_run)
     p = sub.add_parser('cut')
     p.add_argument('iteration')
+    p.add_argument('--original-audio', action='store_true', help='also write -original-audio copies of the master and video exports (no game audio)')
     p.set_defaults(run=cmd_cut)
     p = sub.add_parser('measure', help='measure an iteration, or any video file with --video')
     p.add_argument('iteration', nargs='?')

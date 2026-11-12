@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and
+  `master-original-audio.mp4` beside the game-audio files, from a second mix in `cut/audio-original.wav`; the game
+  mix in `cut/audio.wav` is never overwritten.
 - A walk carried over a cut ends cleanly on the next shot's first movement cue (`turn`, `state`, `pose` brake it in
   0.25 s, a turn follows once it stands; `place` and `walk` replace it), and a `place` rewrites that frame's
   `actors.csv` row, which was logged at the old walk's spot.
