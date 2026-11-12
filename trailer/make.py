@@ -129,6 +129,22 @@ def timeline(spec, layout):
             sc['lines'] = sorted(lines, key=lambda l: l['t'])
             story = find_line(data_lines(spec['data']['make']), '^STORY')
             sc['footer'] = sc['footer'].format(story=story.split()[1] if story else '?')
+        if sc['type'] == 'chat':
+            for m in sc['messages']:
+                if m['kind'] != 'tool':
+                    continue
+                lines = []
+                for l in m['lines']:
+                    text = l.get('text') or find_line(data_lines(spec['data'][l.get('data', 'make')]), l['match'])
+                    if text is not None:
+                        lines.append({'t': l['t'], 'text': text})
+                m['lines'] = lines
+        if sc['type'] == 'monitor':
+            for c in sc['clips']:
+                c['track'] = shot_track(c['run'], c['in'], c['dur'] * c.get('step', 1))
+                c['shot'] = c['track'].pop('shot')
+        if sc['type'] == 'timeline':
+            sc.update(edit_data('nibs-vs-duke/0012'))
         if sc['type'] == 'voice':
             v = json.loads((DATA / spec['data']['voice']).read_text(encoding='utf-8'))
             sc['peaks'] = v['peaks']
@@ -136,7 +152,8 @@ def timeline(spec, layout):
             sc['voice_len'] = v['seconds']
             sc['line_id'] = v['id']
             sc['line_info'] = sc['line_info'].format(**v)
-            sc['cut'] = v.get('cut')
+            if v.get('cut'):
+                sc['cut'] = v['cut']
             check = data_lines(spec['data']['voice_check'])
             sc['lines'] = [{'t': sc['check_at'] - 0.6, 'text': '$ ' + sc['check_command'], 'typed': True, 'cps': 40}]
             for i, m in enumerate(sc['check']):
@@ -163,6 +180,75 @@ def timeline(spec, layout):
         'ffmpeg': tools.ffmpeg(), 'colors': spec['colors'], 'media': media(spec), 'scenes': scenes,
         'chapters': spec.get('chapter', []), 'logo': logo_quads(),
     }
+
+
+def read_csv(path):
+    import csv
+    with open(path, newline='', encoding='utf-8') as f:
+        return list(csv.DictReader(f))
+
+
+def shot_track(run, master_in, seconds):
+    """What the recording monitor shows over a clip of a run's cut: the shot and its frame numbers, the camera's
+    top-view path and yaw (frames.csv) and every actor's position (actors.csv), sampled every 2nd frame (30 Hz)."""
+    rd = ROOT / 'runs' / run
+    tl = json.loads((rd / 'cut' / 'timeline.json').read_text(encoding='utf-8'))
+    fps = tl['fps']
+    frames, cam, actors, shot = [], [], {}, None
+    cache = {}
+    for k in range(int(seconds * 30) + 1):
+        m = round((master_in + k / 30) * fps)
+        clip = next((c for c in tl['clips'] if c['kind'] == 'shot' and c['out_start'] <= m < c['out_start'] + c['out_frames']), None)
+        if clip is None:
+            continue
+        shot = shot or clip['shot']
+        if clip['shot'] not in cache:
+            sd = rd / 'take' / 'shots' / clip['shot']
+            fr = {int(r['frame']): r for r in read_csv(sd / 'frames.csv')}
+            ac = {}
+            if (sd / 'actors.csv').exists():
+                for r in read_csv(sd / 'actors.csv'):
+                    ac.setdefault(int(r['frame']), []).append(r)
+            cache[clip['shot']] = (fr, ac)
+        fr, ac = cache[clip['shot']]
+        f = clip['src_in'] + round((m - clip['out_start']) * clip.get('speed', 1.0))
+        row = fr.get(f) or fr[max(fr)]
+        frames.append(f)
+        cam.append([round(float(row['cam_x']), 2), round(float(row['cam_z']), 2), round(float(row['cam_yaw']), 1)])
+        for a in ac.get(f, []):
+            actors.setdefault(a['actor'], []).append([round(float(a['x']), 2), round(float(a['z']), 2)])
+    pts = [p[:2] for p in cam] + [p for ps in actors.values() for p in ps]
+    xs, zs = [p[0] for p in pts], [p[1] for p in pts]
+    pad = max(2.0, 0.12 * max(max(xs) - min(xs), max(zs) - min(zs)))
+    n = len(cache[shot][0])
+    return {'shot': shot, 'f': frames, 'c': cam, 'n': n, 'b': [min(xs) - pad, min(zs) - pad, max(xs) + pad, max(zs) + pad],
+            'a': [{'id': k, 'p': v} for k, v in actors.items() if k != 'player']}
+
+
+def edit_data(run):
+    """The edit of a finished run, as the timeline scene draws it: clips, voice lines, every sound effect, the music
+    cues, the bed's duck under voice, and the cuts that land on a word."""
+    rd = ROOT / 'runs' / run
+    tl = json.loads((rd / 'cut' / 'timeline.json').read_text(encoding='utf-8'))
+    edit = json.loads((rd / 'edit.json').read_text(encoding='utf-8'))
+    audio = json.loads((rd / 'cut' / 'audio-original.json').read_text(encoding='utf-8'))
+    fps = tl['fps']
+    clips = [[c['out_start'] / fps, c['out_frames'] / fps, c.get('shot') or '', c['kind']] for c in tl['clips']]
+    secs = {d['file']: d['seconds'] for d in edit['dialogue']}
+    voice = [[round(v['time'], 3), round(secs.get(v['file'], 1.0), 3)] for v in audio['voice']]
+    cuts = []
+    for dl in edit['dialogue']:
+        if dl.get('cut_on'):
+            i = next(i for i, c in enumerate(tl['clips']) if c.get('shot') == dl['shot'])
+            c = tl['clips'][i]
+            cuts.append([round((c['out_start'] + c['out_frames']) / fps, 3), dl['cut_on']['word']])
+    return {'seconds': tl['frames'] / fps, 'clips': clips, 'voice': voice, 'cuts': cuts,
+            'sfx': [round(e['time'], 3) for e in audio['events']],
+            'music_cues': [[c['time'], c['do']] for c in audio['music'].get('cues', [])],
+            'duck_db': float(edit.get('music', {}).get('duck', -9)),
+            'facts': f'{run.replace("/", " · ")}  timeline.json\n{len(clips)} clips · {tl["frames"] / fps:.2f} s\n'
+                     f'{len(voice)} voiced lines · {len(audio["events"])} sound events\n'
+                     f'{len(cuts)} cuts on a spoken word'}
 
 
 # ---------------------------------------------------------------- picture
@@ -223,6 +309,14 @@ def read_wav(path):
     return buf[0::2], buf[1::2]
 
 
+def read_wav_part(path, start, dur):
+    p = subprocess.run([tools.ffmpeg(), '-v', 'error', '-ss', f'{start:.4f}', '-t', f'{dur:.4f}', '-i', str(path), '-vn',
+                        '-f', 'f32le', '-ar', str(SR), '-ac', '2', '-'], capture_output=True, check=True)
+    buf = array.array('f')
+    buf.frombytes(p.stdout)
+    return buf[0::2], buf[1::2]
+
+
 def env_gain(points, n):
     """Per-sample linear gain from [(seconds, dB)] keyframes (None or -inf = silent), linear in dB between them."""
     pts = sorted((float(t), (-120.0 if db is None else float(db))) for t, db in points)
@@ -263,8 +357,8 @@ def sound(spec):
     events = list(a.get('sfx', [])) + scene_sounds(spec)
     # Typing: one soft click per character of the typed command (two alternating seeds, a little level wobble).
     for sc in spec['scene']:
-        if sc['type'] == 'make':
-            cmd = '$ ' + sc['command']
+        if sc['type'] in ('make', 'chat'):
+            cmd = '$ ' + (sc.get('command') or sc['prompt'])
             for k in range(2, len(cmd)):
                 if cmd[k] == ' ':
                     continue
@@ -273,6 +367,18 @@ def sound(spec):
     for e in events:
         mono = library.render(e['sound'], e.get('seed', 1))
         place(left, right, mono, e['t'], e.get('db', -12), e.get('pan', 0.0))
+    for v in a.get('film', []):
+        f = ROOT / v['file']
+        l, r = read_wav_part(f, v['start'], v['dur'])
+        fade = int(v.get('fade', 0.2) * SR)
+        g = 10 ** (v.get('db', 0) / 20)
+        start = int(v['t'] * SR)
+        for i in range(len(l)):
+            e = min(1.0, i / fade, (len(l) - i) / fade) * g
+            j = start + i
+            if 0 <= j < n:
+                left[j] += l[i] * e
+                right[j] += r[i] * e
     for v in a.get('voice', []):
         f = ROOT / v['file']
         if not f.exists():
@@ -298,6 +404,18 @@ def scene_sounds(spec):
     for sc in spec['scene']:
         if sc['type'] == 'make':
             out += [{'t': n['t'], 'sound': 'pop-high', 'db': -19, 'seed': 1 + i % 3} for i, n in enumerate(sc['nodes'])]
+        if sc['type'] == 'chat':
+            for m in sc['messages']:
+                if m['kind'] == 'tool':
+                    out += [{'t': l['t'], 'sound': 'tick', 'db': -25} for l in m['lines']]
+                else:
+                    out.append({'t': m['t'], 'sound': 'pop-high', 'db': -21})
+        if sc['type'] == 'timeline':
+            out += [{'t': sc['slide_at'] + i * 0.15, 'sound': 'tick', 'db': -26} for i in range(12)]
+            ed = edit_data('nibs-vs-duke/0012')
+            out += [{'t': sc['scrub_at'] + sc['scrub_dur'] * c[0] / ed['seconds'], 'sound': 'click', 'db': -16} for c in ed['cuts']]
+        if sc['type'] == 'monitor':
+            out += [{'t': c['at'], 'sound': 'click-soft', 'db': -20} for c in sc['clips'][1:]]
         if sc['type'] == 'determinism':
             # The counter eases out (1 - (1-u)^3): a tick at every 1/16 of the count lands where the count does.
             run, done = sc['run'], sc['done']

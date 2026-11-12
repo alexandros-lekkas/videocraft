@@ -47,7 +47,7 @@ def build(round_dir, spec):
     if v.exists():
         images.append(frames_png(v, [i + 1.0 for i in range(0, int(secs), 2)], (216, 384), 12, pk / '02-contact-9x16.png'))
     starts = sorted({sc['from'] for sc in spec['scene']} | {c['at'] for sc in spec['scene'] for c in sc.get('clips', [])})
-    entrances = [0.6, 3.3, 4.9, 13.2, 15.6] + [s for s in starts if s > 16] + [65.0]
+    entrances = [0.6, 3.5, 4.6, 7.8] + [s for s in starts if s > 8] + [33.0, 59.0]
     for i, t0 in enumerate(sorted(set(entrances))):
         times = [max(0.0, t0 - 0.15) + k * 0.05 for k in range(16)]
         images.append(frames_png(h, times, (480, 270), 4, pk / f'1{i:02d}-strip-16x9-{t0:05.2f}s.png'))
@@ -60,8 +60,8 @@ def build(round_dir, spec):
         '# Facts about the trailer', '',
         f'- 16:9 master: 1920x1080, 60 fps, {secs:.1f} s; 9:16 cut: 1080x1920 (a separate layout, not a crop).',
         f'- Sound (you cannot hear it): an original synthesized bed at 120 bpm (a bar is 2 s; sections start on bars, '
-        f'cuts on beats), original library effects (typing, whooshes, pops, a chime), two real voice lines in the voice '
-        f'section. Master {m["integrated"]:.1f} LUFS, true peak {m["true_peak"]:.1f} dBTP.',
+        f'cuts on beats), original library effects (typing, whooshes, pops, a chime), a real voice line in the voice '
+        f'section, and the finished film\'s own original-audio track while it plays. Master {m["integrated"]:.1f} LUFS, true peak {m["true_peak"]:.1f} dBTP.',
         '- Everything on screen is real: the terminal output was captured from the commands shown, the hashes are the '
         'framemd5 of two takes, the scores are from the benchmark film\'s review rounds; the footage was filmed by '
         'videocraft (in-game captions are the game\'s own text layer, by design: the owner wants that caption style).',
@@ -127,7 +127,13 @@ def main(argv):
              'design; a deep charcoal canvas, one accent colour, generous whitespace, a crisp sans-serif plus a '
              'monospace for code, smooth eased kinetic typography, a terminal that types real commands and prints real '
              'output, full-bleed cuts to real footage made by the tool; no third-party logos; ends on the videocraft '
-             'logo, the repo URL and an unofficial/not-affiliated line.')
+             'logo, the repo URL and an unofficial/not-affiliated line. The owner\'s story for it: open on a prompt typed '
+             'into a generic, code-drawn agent chat (no real product\'s UI or marks) and the agent\'s real videocraft '
+             'output; match-cut into Minecraft and show the agent at work there (a set built block by block, actors '
+             'walking to marks, a camera rig flying, a take recording with REC and a frame counter, captions in the '
+             'game\'s own style, a voice waveform); then the agent editing (the timeline assembling, cuts snapping to '
+             'words, music ducking under lines, reviewer scores, a climb step); the finished film playing; end on the '
+             'command line and the repo URL.')
     for role in args.roles.split(','):
         crits = [c for c in rubric['criterion'] if c['role'] == role]
         out = rd / f'{role}.json'

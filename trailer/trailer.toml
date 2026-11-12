@@ -1,8 +1,8 @@
 # The videocraft launch trailer: timeline, data sources and the trailer's own takes. trailer/README.md says how.
 
-seconds = 68.0
+seconds = 66.0
 fps = 60
-poster = 61.9
+poster = 59.4
 
 # ---------------------------------------------------------------- the trailer's own takes (trailer/footage.py)
 # Footage the finished runs do not have, filmed by videocraft, each with the game's own captions.
@@ -12,29 +12,25 @@ name = "keynote"
 script = "trailer/footage/keynote.toml"
 
 [[footage.take]]
+name = "build"
+run = "trailer-build"
+set = "keynote-stage"
+at = [0, 230, 0]
+staged = 7
+order = [[16, 17], [12, 15], [18, 33], [41, 46], [47, 59], [119, 131], [34, 40], [99, 118], [7, 10]]
+start = 0.6
+span = 5.6
+duration = 7.5
+camera = '{ rig = "dolly", from = [0.5, 262.0, 46.0], to = [0.5, 252.0, 30.0], at = [0.5, 233.0, -8.0], ease = "smooth", fov = 62 }'
+caption = [{ shot = "build", at = 0.8, text = "Building *keynote-stage, block by block." }]
+
+[[footage.take]]
 name = "bees"
 from = "examples/bees.toml"
 run = "trailer-bees"
 caption = [
   { shot = "swarm", at = 0.5, text = "Oh. Hi, *bees.", speaker = "Ben", color = "#9fe0a0" },
   { shot = "swarm", at = 5.7, text = "Okay. *Angry bees.", speaker = "Ben", color = "#9fe0a0" },
-]
-
-[[footage.take]]
-name = "rigs"
-from = "examples/rigs.toml"
-run = "trailer-rigs"
-caption = [
-  { shot = "lead", at = 0.4, text = "*Lead: the camera walks ahead." },
-  { shot = "chase", at = 0.3, text = "*Chase: it follows behind." },
-  { shot = "track", at = 0.3, text = "*Track: alongside, at the same pace." },
-  { shot = "dolly", at = 0.3, text = "*Dolly: a straight move on a rail." },
-  { shot = "crane", at = 0.3, text = "*Crane: up and over the subject." },
-  { shot = "locked", at = 0.3, text = "*Locked: a fixed eye that pans." },
-  { shot = "two-shot", at = 0.3, text = "*Two-shot: both of them in frame." },
-  { shot = "face", at = 0.3, text = "*Face: the cut-in." },
-  { shot = "fixed-zoom", at = 0.3, text = "*Zoom: the lens from 70 to 40." },
-  { shot = "orbit-actor", at = 0.3, text = "*Orbit: a quarter turn around." },
 ]
 
 # ---------------------------------------------------------------- the piece
@@ -61,10 +57,8 @@ warn = "#e06c5a"
 [data]
 make = "make.txt"
 run = "run-story2.txt"
-voice = "voice-talk.json"
+voice = "voice-nibs.json"
 voice_check = "voice-check.txt"
-framemd5 = "framemd5.csv"
-framemd5_meta = "framemd5.json"
 review = "review.json"
 
 # Footage, under runs/ (README.md: which runs, and how each was made). *_v: the tool's own 9:16 re-frames.
@@ -82,151 +76,100 @@ bees_v = "trailer-bees/0001/clips/r1/short-1080x1920.mp4"
 keynote = "trailer-keynote/0002/cut/master.mp4"
 hall_v = "trailer-keynote/0002/clips/r1/short-1080x1920.mp4"
 presenter_v = "trailer-keynote/0002/clips/r2/short-1080x1920.mp4"
-rigs1 = "trailer-rigs/0001/cut/master.mp4"
-rigs2 = "trailer-rigs/0002/cut/master.mp4"
 talk = "talk/0001/cut/master.mp4"
+build = "trailer-build/0001/cut/master.mp4"
+build_v = "trailer-build/0001/clips/r1/short-1080x1920.mp4"
+story_walk_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r2/short-1080x1920.mp4"
+hall_dolly_v = "trailer-keynote/0002/clips/r3/short-1080x1920.mp4"
 
-# At 120 bpm a beat is 0.5 s; sections overlap their neighbours by a few tenths so no frame is ever empty.
+# The story: you ask an agent in a chat; it drafts and films the film inside a hidden Minecraft; it edits, reviews
+# and climbs; the finished film plays; the command line and the repo. Sections overlap so no frame is empty.
 
 [[scene]]
-type = "make"
+type = "chat"
 from = 0.0
-to = 10.2
-title = "videocraft — zsh"
-command = 'bin/videocraft make "a goat challenges a fox to a jump-off" --dry-run'
-command_v = "bin/videocraft make\n  \"a goat challenges a fox to a jump-off\"\n  --dry-run"
-type_at = 0.3
-cps = 26
-enter = 3.1
-dock = 3.6
-exit = 9.6
-header = "One prompt. Every step writes a file you can *read."
-header_v = "One prompt. Every step\nwrites a file you can *read."
-footer = "stories/{story}/      runs/{story}/0002/"
-out = [
-  { t = 3.1, match = '^STORY' },
-  { t = 3.35, match = '^  premise: asking' },
-  { t = 5.75, match = '^RESULT\s+PASS shots.toml' },
-  { t = 6.0, typed = "bin/videocraft run stories/a-goat-challenges-a-fox-to-a-jump-off-2/shots.toml", typed_v = "bin/videocraft run\n  stories/a-goat-challenges-a-fox-to-a-jump-off-2/shots.toml", cps = 75 },
-]
-nodes = [
-  { t = 4.5, name = "premise", file = "premise.md", match = '^STAGE\s+premise' },
-  { t = 4.75, name = "bible", file = "bible.toml", match = '^STAGE\s+bible' },
-  { t = 5.0, name = "outline", file = "outline.md", match = '^STAGE\s+outline' },
-  { t = 5.25, name = "script", file = "script.md", match = '^STAGE\s+script' },
-  { t = 5.5, name = "shot list", file = "shots.toml", match = '^STAGE\s+shots' },
-  { t = 7.25, name = "hidden game", file = "game.log", data = "run", match = '^videocraft \d.*hidden' },
-  { t = 7.6, name = "frames", file = "frames.csv", data = "run", match = 'recording at 1920x1080' },
-  { t = 8.0, name = "cut", file = "master.mp4", data = "run", match = '^RESULT' },
-  { t = 8.35, name = "measure", file = "report.md", data = "run", match = '^VIDEO' },
-  { t = 8.75, name = "review", file = "review/*.json" },
-  { t = 9.1, name = "climb", file = "score.json" },
+to = 8.7
+title = "agent"
+subtitle = "new chat"
+agent_name = "agent"
+placeholder = "Ask the agent to make something…"
+prompt = "make a 60-second comedy short: a goat challenges a fox to a jump-off"
+type_at = 0.5
+cps = 24
+send_at = 3.6
+cut_at = 8.0
+focus = "recording at"
+messages = [
+  { kind = "text", t = 3.95, text = "On it. I'll draft the story with videocraft, then film it in a hidden game." },
+  { kind = "tool", t = 4.7, lines = [
+    { t = 4.7, text = '$ bin/videocraft make "a goat challenges a fox to a jump-off" --dry-run' },
+    { t = 5.0, match = '^STORY' },
+    { t = 5.25, match = '^STAGE\s+premise' },
+    { t = 5.45, match = '^STAGE\s+bible' },
+    { t = 5.65, match = '^STAGE\s+outline' },
+    { t = 5.85, match = '^STAGE\s+script' },
+    { t = 6.05, match = '^STAGE\s+shots' },
+    { t = 6.3, match = '^RESULT\s+PASS shots.toml' },
+  ] },
+  { kind = "tool", t = 6.8, lines = [
+    { t = 6.8, text = "$ bin/videocraft run stories/a-goat-challenges-a-fox-to-a-jump-off-2/shots.toml" },
+    { t = 7.2, data = "run", match = '^videocraft \d.*hidden' },
+    { t = 7.6, data = "run", match = 'shot s01-wide recording at' },
+  ] },
 ]
 
-# The film that prompt made, out of the terminal.
 [[scene]]
-type = "footage"
-from = 9.75
-to = 12.1
+type = "monitor"
+from = 8.1
+to = 23.5
+clock = "fixed 1/60 s clock · the game's own framebuffer"
+map_title = "top view"
+map_legend = "camera (frames.csv) · actors (actors.csv)"
 clips = [
-  { at = 9.75, dur = 2.35, media = "story", in = 49.6, media_v = "story_v", in_v = 0.0, intro = 0.7, intro_from = "terminal", label = "runs/a-goat-challenges-a-fox-to-a-jump-off-2/0002/cut/master.mp4", label_v = "runs/a-goat-…-jump-off-2/0002/cut/master.mp4", tag_v = "the film from that prompt: 25 shots, 55 s\n(one hop height fixed by hand)", tag = "the film from that prompt: 25 shots, 55 s (one hop height fixed by hand)" },
-]
-
-[[scene]]
-type = "title"
-from = 11.95
-to = 14.2
-exit = 13.65
-lines = [
-  { text = "videocraft", y = 0.36, size = 40, t = 12.0, face = "mono", color = "accent", weight = "medium" },
-  { text = "Every shot from a script.", y = 0.49, size = 88, t = 12.15 },
-  { text = "Filmed inside the *game.", y = 0.60, size = 88, t = 12.45 },
-]
-lines_v = [
-  { text = "videocraft", y = 0.33, size = 48, t = 12.0, face = "mono", color = "accent", weight = "medium" },
-  { text = "Every shot", y = 0.42, size = 104, t = 12.15 },
-  { text = "from a script.", y = 0.48, size = 104, t = 12.25 },
-  { text = "Filmed inside", y = 0.57, size = 104, t = 12.45 },
-  { text = "the *game.", y = 0.63, size = 104, t = 12.55 },
-]
-
-[[scene]]
-type = "footage"
-from = 13.6
-to = 28.0
-title_v = "Filmed inside\nthe game."
-clips = [
-  { at = 13.6, dur = 2.4, media = "nibs", in = 1.6, media_v = "lane_v", in_v = 0.0, intro = 0.6, label = 'camera = { rig = "lead", subject = "nibs", fov = 108 }', tag = "a lead track down the market lane  ·  nibs-vs-duke s01" },
-  { at = 16.0, dur = 2.0, media = "bees", in = 22.9, media_v = "bees_v", in_v = 0.08, label = 'do = "swarm", around = "ben", angry = true', tag = "five scripted bees  ·  examples/bees.toml" },
-  { at = 18.0, dur = 2.0, media = "nibs", in = 36.7, media_v = "barn_v", in_v = 0.07, label = '[[edit.look]] frame = { color = "#e8a23a" }', tag = "a framed, graded flashback  ·  nibs-vs-duke s14" },
-  { at = 20.0, dur = 2.0, media = "keynote", in = 1.3, media_v = "hall_v", in_v = 0.1, label = '[[world.set]] name = "keynote-stage"', tag = "a set built from data  ·  sets/keynote-stage.toml" },
-  { at = 22.0, dur = 2.0, media = "nibs", in = 70.07, media_v = "card_v", in_v = 0.0, label = 'eye = { anchor = "black-stage:subject" }', tag = "a character card on the black stage  ·  nibs-vs-duke s29" },
-  { at = 24.0, dur = 2.0, media = "keynote", in = 5.5, media_v = "presenter_v", in_v = 0.08, label = 'kind = "mannequin", skin = "skins/ana.png"', tag = "a player-shaped actor, waving on cue  ·  trailer/footage" },
-  { at = 26.0, dur = 2.0, media = "nibs", in = 65.3, media_v = "challenge_v", in_v = 0.03, label = 'do = "say", actor = "nibs", text = "I *challenge…"', tag = "a voiced line, captioned word by word  ·  nibs-vs-duke s28" },
-]
-
-[[scene]]
-type = "split"
-from = 28.0
-to = 32.2
-header = "One take. Every format."
-header_v = "One take.\nEvery format."
-a = { media = "nibs", in = 61.0, label = "cut/x-1080p60.mp4   1920x1080" }
-b = { media = "short", in = 5.5, label = "clips cut --method reframe   1080x1920", label_v = "clips cut --method reframe" }
-
-[[scene]]
-type = "determinism"
-from = 31.9
-to = 42.2
-panel = 34.6
-run = 35.2
-done = 38.8
-a = "rigs1"
-b = "rigs2"
-a_label = "take 0001"
-b_label = "take 0002"
-header = "Two takes of one script. The same frames."
-header_v = "Two takes.\nThe same frames."
-unit = "frames identical"
-note = "framemd5 of runs/trailer-rigs/0001 and 0002 (examples/rigs.toml with captions); all 10 frames.csv byte-identical"
-note_v = "framemd5 of runs/trailer-rigs/0001 and 0002;\nall 10 frames.csv files byte-identical"
-lines = [
-  { text = "Every frame from the game's own framebuffer.", y = 0.40, size = 64, t = 32.0, weight = "medium" },
-  { text = "A fixed 1/60 s clock.", y = 0.50, size = 64, t = 32.4, weight = "medium" },
-  { text = "*Deterministic.", y = 0.67, size = 132, t = 32.9, weight = "bold" },
-]
-lines_v = [
-  { text = "Every frame from", y = 0.33, size = 76, t = 32.0, weight = "medium" },
-  { text = "the game's own", y = 0.375, size = 76, t = 32.1, weight = "medium" },
-  { text = "framebuffer.", y = 0.42, size = 76, t = 32.2, weight = "medium" },
-  { text = "A fixed 1/60 s clock.", y = 0.50, size = 76, t = 32.4, weight = "medium" },
-  { text = "*Deterministic.", y = 0.62, size = 128, t = 32.9, weight = "bold" },
+  { at = 8.1, dur = 3.7, media = "build", in = 0.0, step = 2, media_v = "build_v", in_v = 0.0, run = "trailer-build/0001", intro = 0.55, intro_from = "chat", label = '[[world.set]] name = "keynote-stage"', tag = "the set going up, its own build commands on camera (2x)", label_v = '[[world.set]] name = "keynote-stage"', tag_v = "the set going up, block by block (2x)" },
+  { at = 11.8, dur = 3.4, media = "story", in = 1.0, media_v = "story_walk_v", in_v = 0.2, run = "a-goat-challenges-a-fox-to-a-jump-off-2/0002", label = 'do = "walk", actor = "lugnut", path = [[17.5, 230, -8.5], …]', label_v = 'do = "walk", actor = "lugnut"', tag = "the goat walks to his mark  ·  the film from that prompt, s01" , tag_v = "to his mark  ·  the film from that prompt" },
+  { at = 15.2, dur = 3.0, media = "keynote", in = 0.3, media_v = "hall_dolly_v", in_v = 0.3, run = "trailer-keynote/0002", label = 'camera = { rig = "dolly", from = [0.5, 241, 21.5], … }', label_v = 'camera = { rig = "dolly", … }', tag = "the camera flies down the aisle  ·  trailer/footage/keynote.toml", tag_v = "the camera flies down the aisle" },
+  { at = 18.2, dur = 2.6, media = "nibs", in = 1.6, media_v = "lane_v", in_v = 0.0, run = "nibs-vs-duke/0012", label = 'camera = { rig = "lead", subject = "nibs", fov = 108 }', tag = "a lead track down the market lane  ·  nibs-vs-duke s01", tag_v = "a lead track  ·  nibs-vs-duke s01" },
+  { at = 20.8, dur = 2.7, media = "bees", in = 22.9, media_v = "bees_v", in_v = 0.08, run = "trailer-bees/0001", label = 'do = "swarm", around = "ben", angry = true', tag = "five bees on scripted paths  ·  examples/bees.toml", tag_v = "five scripted bees  ·  examples/bees.toml" },
 ]
 
 [[scene]]
 type = "voice"
-from = 41.8
-to = 50.2
-header = "Local voices. Captions land on the word."
-header_v = "Local voices. Captions\nland on the word."
+from = 23.3
+to = 29.2
+header = "Local voices. Captions pop on each word."
+header_v = "Local voices. Captions\npop on each word."
 media = "talk"
 in = 0.0
-media_at = 42.3
-media_len = 6.85
-voice_at = 42.3
-cut_label = "cut on *Duke · frame 346"
-label = "do = \"say\", actor = \"nibs\", cut_on = \"Duke\""
+media_at = 23.6
+media_len = 3.65
+voice_at = 23.6
+label = "do = \"say\", actor = \"nibs\", text = \"Hey. It's me. *Nibs. …\""
 line_info = "{engine} · voice {voice} · aligned word by word"
 title = "voice check"
 check_command = "bin/videocraft voice check talk"
-check_at = 47.2
+check_at = 26.9
 check_step = 0.4
-check = ['^CAPTION\s+nibs-1', '^CUT', '^VOICE\s+nibs-1', '^RESULT']
+check = ['^CAPTION\s+nibs-1', '^VOICE\s+nibs-1', '^RESULT']
+
+[[scene]]
+type = "timeline"
+from = 29.0
+to = 40.0
+header = "Then it edits: cuts on words, music under every line."
+header_v = "Then it edits: cuts on\nwords, music under lines."
+media = "nibs"
+media_label = "nibs-vs-duke 0012"
+step = 15
+slide_at = 29.8
+lanes_at = 31.6
+scrub_at = 32.6
+scrub_dur = 6.0
 
 [[scene]]
 type = "review"
-from = 50.0
-to = 59.6
+from = 39.8
+to = 49.1
 header = "Reviewed by agents. Kept only if it scores higher."
 header_v = "Reviewed by agents.\nKept if it scores higher."
 card_title = "nibs-vs-duke · 0012"
@@ -242,44 +185,40 @@ y_min = 6.2
 y_max = 7.0
 y_step = 0.2
 per = 0.28
-quote_at = 55.4
+quote_at = 45.0
 quote = "“Every word starts exactly on its cut frame …\nThis is the best-cut stretch in the film.”"
 quote_v = "“Every word starts exactly on its\ncut frame … This is the best-cut\nstretch in the film.”"
 quote_by = "the pacing reviewer, round 9, on the montage"
 
 [[scene]]
+type = "footage"
+from = 48.9
+to = 56.3
+clips = [
+  { at = 48.9, dur = 7.4, media = "nibs", in = 55.52, media_v = "short", in_v = 0.02, intro = 0.6, label = "nibs-vs-duke  ·  the finished film", tag = "the same premise, climbed for 12 iterations: voiced, scored, cut on words", tag_v = "the same premise, after 12 iterations" },
+]
+
+[[scene]]
 type = "end"
-from = 59.3
-to = 68.0
+from = 56.1
+to = 66.0
 name = "videocraft"
 tagline = "Shot script in. Filmed video out."
 tagline_v = "Shot script in.\nFilmed video out."
 url = "github.com/alexandros-lekkas/videocraft"
-command = "bin/videocraft run examples/hello.toml"
+command = '$ bin/videocraft make "<prompt>"'
 disclaimer = "Unofficial. Not affiliated with Mojang or Microsoft."
 disclaimer_v = "Unofficial. Not affiliated\nwith Mojang or Microsoft."
 
 [[chapter]]
-from = 4.0
-to = 9.6
-n = "01"
-text = "make"
-
-[[chapter]]
-from = 34.6
-to = 41.6
-n = "02"
-text = "frames"
-
-[[chapter]]
-from = 42.0
-to = 49.8
+from = 29.2
+to = 39.6
 n = "03"
-text = "voices"
+text = "edit"
 
 [[chapter]]
-from = 50.0
-to = 59.2
+from = 39.9
+to = 48.7
 n = "04"
 text = "review"
 
@@ -294,81 +233,69 @@ lufs = -14.0
 ceiling = -1.5
 type_db = -16.0
 voice = [
-  { t = 42.6, file = "cache/voice/lines/b7692ba27f26d4478460.pf04ab922d5ee.wav", db = 4.0 },
-  { t = 46.2, file = "cache/voice/lines/ff27fbf757b844a420cc.p699ffb67c6eb.wav", db = 4.0 },
+  { t = 23.9, file = "cache/voice/lines/b7692ba27f26d4478460.pf04ab922d5ee.wav", db = 4.0 },
+]
+# The finished film plays with its own sound (its original-audio export: synth bed, library sounds, its voices).
+film = [
+  { t = 48.9, file = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4", start = 55.52, dur = 7.4, db = 0.0, fade = 0.3 },
 ]
 
 [audio.stems]
-melody = [[0.0, -60], [2.9, -60], [3.1, -9], [4.0, -6], [9.6, -6], [10.0, -3], [41.6, -4], [42.2, -17], [49.6, -17], [50.2, -5], [66.0, -5], [68.0, -60]]
-bass = [[0.0, -60], [3.9, -60], [4.2, -6], [9.6, -6], [10.0, -3], [41.6, -3], [42.2, -18], [49.6, -18], [50.2, -4], [65.5, -4], [68.0, -60]]
-drums = [[0.0, -60], [9.9, -60], [10.0, -2], [31.9, -2], [32.0, -10], [35.1, -10], [35.2, -4], [41.6, -4], [42.0, -60], [49.9, -60], [50.0, -4], [59.2, -4], [59.6, -60]]
+melody = [[0.0, -60], [0.4, -60], [1.2, -12], [3.6, -8], [7.9, -8], [8.1, -3], [23.1, -3], [23.5, -17], [28.8, -17], [29.2, -6], [48.6, -6], [48.9, -30], [56.0, -30], [56.3, -5], [64.0, -5], [66.0, -60]]
+bass = [[0.0, -60], [3.4, -60], [3.8, -8], [7.9, -8], [8.1, -3], [23.1, -3], [23.5, -18], [28.8, -18], [29.2, -5], [48.6, -5], [48.9, -40], [56.0, -40], [56.3, -4], [63.5, -4], [66.0, -60]]
+drums = [[0.0, -60], [8.0, -60], [8.1, -2], [23.1, -2], [23.4, -60], [29.1, -60], [29.2, -7], [39.7, -7], [39.8, -4], [48.6, -4], [48.8, -60], [56.2, -60], [56.3, -6], [59.0, -6], [60.0, -60]]
 
 [[audio.sfx]]
-t = 3.1
+t = 3.6
 sound = "click"
-db = -14
-
-[[audio.sfx]]
-t = 3.55
-sound = "whoosh"
-db = -16
-
-[[audio.sfx]]
-t = 9.7
-sound = "whoosh"
 db = -12
 
 [[audio.sfx]]
-t = 10.0
+t = 3.62
+sound = "pop"
+db = -18
+
+[[audio.sfx]]
+t = 7.95
+sound = "whoosh"
+db = -10
+
+[[audio.sfx]]
+t = 8.1
 sound = "cymbal"
 db = -16
 
 [[audio.sfx]]
-t = 13.55
-sound = "whoosh"
-db = -14
-
-[[audio.sfx]]
-t = 27.9
-sound = "whoosh"
-db = -14
-
-[[audio.sfx]]
-t = 31.9
+t = 23.25
 sound = "whoosh-fast"
 db = -14
 
 [[audio.sfx]]
-t = 34.55
-sound = "whoosh"
-db = -16
-
-[[audio.sfx]]
-t = 38.8
-sound = "success-chime"
-db = -10
-
-[[audio.sfx]]
-t = 41.75
+t = 28.95
 sound = "whoosh-fast"
 db = -14
 
 [[audio.sfx]]
-t = 49.9
+t = 39.75
 sound = "whoosh-fast"
 db = -14
 
 [[audio.sfx]]
-t = 59.3
+t = 48.8
 sound = "whoosh"
 db = -14
 
 [[audio.sfx]]
-t = 59.6
+t = 56.1
+sound = "whoosh"
+db = -14
+
+[[audio.sfx]]
+t = 56.4
 sound = "sparkle"
 db = -12
 
 [[audio.sfx]]
-t = 60.4
+t = 57.3
 sound = "ding"
 db = -16

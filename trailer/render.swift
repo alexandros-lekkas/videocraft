@@ -1058,27 +1058,451 @@ func sceneEnd(_ o: Obj, _ t: Double) {
 			kinetic(l, x: CW / 2, baseline: nameY + (V ? 96 : 76) + CGFloat(i) * 58, size: V ? 46 : 38, weight: .regular,
 				color: C("muted"), t: t, at: from + 1.35 + Double(i) * 0.1, stagger: 0.05)
 		}
-		let ua = outCubic(prog(t, from + 1.8, 0.6))
+		// The command line, typed on, then the repository.
+		let run = s(o, "command")
+		let cf = font(V ? 38 : 40, .medium, .mono)
+		let cy: CGFloat = V ? 1260 : 730
+		let typedN = t < from + 1.8 ? 0 : min(run.count, Int((t - from - 1.8) * 30))
+		if typedN > 0 || t >= from + 1.6 {
+			let shown = String(run.prefix(typedN))
+			let full = width(run, cf)
+			let x0 = CW / 2 - full / 2
+			if shown.hasPrefix("$") {
+				let dw = text("$", x0, cy, cf, C("accent"))
+				text(String(shown.dropFirst()), x0 + dw, cy, cf, C("text"))
+			}
+			if typedN < run.count || Int(t * 2) % 2 == 0 {
+				fill(CGRect(x: x0 + width(shown, cf) + 4, y: cy - 32, width: 20, height: 40), C("accent", 0.9))
+			}
+		}
+		let ua = outCubic(prog(t, from + 3.0, 0.6))
 		let url = s(o, "url")
-		let uf = font(V ? 34 : 32, .medium, .mono)
-		let uy: CGFloat = V ? 1240 : 760
+		let uf = font(V ? 32 : 30, .medium, .mono)
+		let uy: CGFloat = V ? 1380 : 840
 		let uw = width(url, uf)
 		save {
 			setAlpha(ua)
-			let pill = CGRect(x: CW / 2 - uw / 2 - 32, y: uy - 48 + (1 - ua) * 14, width: uw + 64, height: 72)
-			fill(pill, C("panel"), radius: 36)
-			stroke(pill, C("accent", 0.7), radius: 36, width: 1.5)
+			let pill = CGRect(x: CW / 2 - uw / 2 - 32, y: uy - 46 + (1 - ua) * 14, width: uw + 64, height: 68)
+			fill(pill, C("panel"), radius: 34)
+			stroke(pill, C("accent", 0.7), radius: 34, width: 1.5)
 			text(url, CW / 2, uy + (1 - ua) * 14, uf, C("text"), align: 0.5)
-		}
-		let run = s(o, "command")
-		if !run.isEmpty {
-			text(run, CW / 2, uy + (V ? 104 : 88), font(V ? 26 : 24, .regular, .mono), C("muted"), align: 0.5,
-				alpha: outCubic(prog(t, from + 2.3, 0.6)))
 		}
 		let dis = s(o, V ? "disclaimer_v" : "disclaimer").components(separatedBy: "\n")
 		for (i, l) in dis.enumerated() {
-			text(l, CW / 2, (V ? 1470 : 950) + CGFloat(i) * 36, font(V ? 26 : 22, .regular), C("text", 0.6), align: 0.5,
-				alpha: outCubic(prog(t, from + 2.8, 0.8)))
+			text(l, CW / 2, (V ? 1500 : 960) + CGFloat(i) * 36, font(V ? 26 : 22, .regular), C("text", 0.6), align: 0.5,
+				alpha: outCubic(prog(t, from + 3.4, 0.8)))
+		}
+	}
+}
+
+// MARK: - the agent chat
+
+/// Word-wraps proportional text to `maxW` points.
+func wrapText(_ str: String, _ f: CTFont, _ maxW: CGFloat) -> [String] {
+	var out: [String] = []
+	var line = ""
+	for w in str.split(separator: " ") {
+		let cand = line.isEmpty ? String(w) : line + " " + w
+		if width(cand, f) > maxW && !line.isEmpty { out.append(line); line = String(w) } else { line = cand }
+	}
+	if !line.isEmpty { out.append(line) }
+	return out
+}
+
+struct ChatRow { let kind: String; let text: String; let at: Double; let h: CGFloat; let lineIdx: Int }
+let chatRect = V ? CGRect(x: 40, y: 120, width: 1000, height: 1680) : CGRect(x: 210, y: 64, width: 1500, height: 952)
+let chatSans = font(V ? 34 : 33, .regular), chatMono = font(V ? 22 : 24, .regular, .mono)
+let promptH: CGFloat = V ? 150 : 112
+let threadRect = CGRect(x: chatRect.minX + 40, y: chatRect.minY + 74, width: chatRect.width - 80,
+	height: chatRect.height - 74 - promptH - 64)
+
+/// The thread's rows at time `t`: the user's message, the agent's words, and its tool calls (command and output).
+func chatRows(_ o: Obj) -> [ChatRow] {
+	var rows: [ChatRow] = []
+	let sent = d(o, "send_at")
+	let userW = threadRect.width * 0.72
+	for (i, l) in wrapText(s(o, "prompt"), chatSans, userW - 48).enumerated() {
+		rows.append(ChatRow(kind: "user", text: l, at: sent, h: CTFontGetSize(chatSans) * 1.42, lineIdx: i))
+	}
+	rows.append(ChatRow(kind: "gap", text: "", at: sent, h: 26, lineIdx: 0))
+	for m in arr(o, "messages") {
+		let at = d(m, "t")
+		if s(m, "kind") == "text" {
+			rows.append(ChatRow(kind: "who", text: s(o, "agent_name"), at: at, h: 34, lineIdx: 0))
+			for (i, l) in wrapText(s(m, "text"), chatSans, threadRect.width - 40).enumerated() {
+				rows.append(ChatRow(kind: "agent", text: l, at: at + Double(i) * 0.25, h: CTFontGetSize(chatSans) * 1.42, lineIdx: i))
+			}
+			rows.append(ChatRow(kind: "gap", text: "", at: at, h: 18, lineIdx: 0))
+		} else {
+			let cols = Int((threadRect.width - 64) / width("M", chatMono))
+			rows.append(ChatRow(kind: "tooltop", text: "", at: at, h: 22, lineIdx: 0))
+			for (k, l) in arr(m, "lines").enumerated() {
+				for (j, piece) in wrap(s(l, "text"), cols).enumerated() {
+					let shown = (j > 0 && piece.hasPrefix("$ ")) ? " " + piece : piece
+					rows.append(ChatRow(kind: "tool", text: shown, at: d(l, "t"), h: CTFontGetSize(chatMono) * 1.55, lineIdx: k))
+				}
+			}
+			rows.append(ChatRow(kind: "toolbot", text: "", at: at, h: 22, lineIdx: 0))
+			rows.append(ChatRow(kind: "gap", text: "", at: at, h: 18, lineIdx: 0))
+		}
+	}
+	return rows
+}
+/// Where the focus row (the one the match-cut dives into) sits on screen at time t.
+func chatFocus(_ o: Obj, _ t: Double) -> CGRect {
+	let rows = chatRows(o)
+	let (ys, _) = chatLayout(rows, t)
+	let i = rows.lastIndex { $0.kind == "tool" && $0.text.contains(s(o, "focus")) } ?? rows.count - 1
+	return CGRect(x: threadRect.minX + 32, y: ys[i], width: threadRect.width - 64, height: rows[i].h)
+}
+/// The y of every row: rows grow in as they appear, and the thread scrolls so the newest stays above the prompt box.
+func chatLayout(_ rows: [ChatRow], _ t: Double) -> ([CGFloat], CGFloat) {
+	var heights: [CGFloat] = []
+	for r in rows { heights.append(r.h * outCubic(prog(t, r.at, 0.25))) }
+	let total = heights.reduce(0, +)
+	let scroll = max(0, total - threadRect.height)
+	var ys: [CGFloat] = []
+	// From the top, like any chat; once the thread is full it scrolls up under the header.
+	var y = total < threadRect.height ? threadRect.minY + 10 : threadRect.maxY - total
+	for h in heights { ys.append(y); y += h }
+	return (ys, scroll)
+}
+func sceneChat(_ o: Obj, _ t: Double) {
+	let cutAt = d(o, "cut_at")
+	let z = inCubic(prog(t, cutAt, 0.6))
+	let focus = chatFocus(o, min(t, cutAt))
+	let fp = CGPoint(x: focus.midX, y: focus.midY)
+	let rows = chatRows(o)
+	let (ys, _) = chatLayout(rows, t)
+	save {
+		// The match-cut: the whole chat dives into the line where the hidden game starts recording.
+		let k = 1 + z * 7
+		ctx.translateBy(x: fp.x, y: fp.y)
+		ctx.scaleBy(x: k, y: k)
+		ctx.translateBy(x: -fp.x, y: -fp.y)
+		setAlpha(1 - inCubic(prog(t, cutAt + 0.25, 0.35)))
+		let enter = outQuint(prog(t, 0, 0.7))
+		var win = chatRect
+		win.origin.y += (1 - enter) * 30
+		shadow(win, radius: 26, alpha: 0.55)
+		fill(win, C("panel"), radius: 26)
+		stroke(win, C("line"), radius: 26)
+		// The header: a generic agent chat, no product's name or marks.
+		fill(CGRect(x: win.minX + 28, y: win.minY + 28, width: 14, height: 14), C("accent"), radius: 7)
+		text(s(o, "title"), win.minX + 54, win.minY + 42, font(V ? 24 : 21, .semibold, .mono), C("text"))
+		text(s(o, "subtitle"), win.maxX - 28, win.minY + 42, font(V ? 22 : 19, .regular, .mono), C("muted"), align: 1)
+		fill(CGRect(x: win.minX, y: win.minY + 64, width: win.width, height: 1.2), C("line"))
+		// The thread.
+		save {
+			ctx.clip(to: CGRect(x: win.minX, y: win.minY + 66, width: win.width, height: threadRect.maxY - win.minY - 60))
+			// Tool-call boxes first, under their lines; one still printing grows with it.
+			var openTop: Int? = nil
+			let visible = rows.indices.filter { t >= rows[$0].at }
+			let lastBottom = visible.last.map { ys[$0] + rows[$0].h * outCubic(prog(t, rows[$0].at, 0.25)) } ?? 0
+			for i in rows.indices {
+				if rows[i].kind == "tooltop" && t >= rows[i].at { openTop = i }
+				if rows[i].kind == "toolbot", let tp = openTop {
+					let bottom = t >= rows[i].at ? ys[i] + 6 : lastBottom + 10
+					let box = CGRect(x: threadRect.minX, y: ys[tp], width: threadRect.width, height: bottom - ys[tp])
+					fill(box, CGColor(srgbRed: 0.075, green: 0.071, blue: 0.065, alpha: 1), radius: 16)
+					stroke(box, C("line"), radius: 16)
+					openTop = nil
+				}
+			}
+			for (i, r) in rows.enumerated() where t >= r.at {
+				let y = ys[i]
+				let a = outCubic(prog(t, r.at, 0.25))
+				switch r.kind {
+				case "user":
+					let lines = rows.filter { $0.kind == "user" }
+					if r.lineIdx == 0 {
+						let w = lines.map { width($0.text, chatSans) }.max()! + 48
+						let h = CGFloat(lines.count) * r.h + 28
+						let bub = CGRect(x: threadRect.maxX - w, y: y - 4 + (1 - a) * 40, width: w, height: h)
+						fill(bub, C("panel2"), radius: 22)
+						stroke(bub, C("line"), radius: 22)
+					}
+					let w = lines.map { width($0.text, chatSans) }.max()! + 48
+					text(r.text, threadRect.maxX - w + 24, y + r.h * 0.82 + (1 - a) * 40, chatSans, C("text"), alpha: a)
+				case "who":
+					ctx.setFillColor(C("accent", a))
+					ctx.fillEllipse(in: CGRect(x: threadRect.minX, y: y + 8, width: 14, height: 14))
+					text(s(o, "agent_name"), threadRect.minX + 24, y + 21, font(V ? 21 : 19, .semibold, .mono), C("muted"), alpha: a)
+				case "agent":
+					// The agent's words arrive one at a time.
+					let ws = r.text.split(separator: " ")
+					let shown = min(ws.count, Int(max(0, (t - r.at) * 18)) + 1)
+					text(ws.prefix(shown).joined(separator: " "), threadRect.minX, y + r.h * 0.8, chatSans, C("text"), alpha: a)
+				case "tool":
+					termLine(r.text, threadRect.minX + 32, y + r.h * 0.74, chatMono, alpha: a)
+				default: break
+				}
+			}
+		}
+		// The prompt box, with its caret; the typed prompt leaves it on send.
+		let pb = CGRect(x: win.minX + 28, y: win.maxY - promptH - 28, width: win.width - 56, height: promptH)
+		fill(pb, C("panel2"), radius: 22)
+		stroke(pb, t >= d(o, "type_at") && t < d(o, "send_at") ? C("text", 0.35) : C("line"), radius: 22, width: 1.5)
+		let typeAt = d(o, "type_at"), sendAt = d(o, "send_at")
+		let prompt = s(o, "prompt")
+		let n = t < typeAt ? 0 : min(prompt.count, Int((t - typeAt) * d(o, "cps", 24)))
+		let pf = font(V ? 34 : 30, .regular)
+		let tx = pb.minX + 30
+		if t < sendAt {
+			let shown = String(prompt.prefix(n))
+			let lines = n == 0 ? [] : wrapText(shown, pf, pb.width - 150)
+			let base = pb.minY + (V ? 64 : 66)
+			if lines.isEmpty {
+				text(s(o, "placeholder"), tx, base, pf, C("dim"))
+			}
+			for (i, l) in lines.suffix(V ? 2 : 1).enumerated() { text(l, tx, base + CGFloat(i) * CTFontGetSize(pf) * 1.3, pf, C("text")) }
+			let last = lines.suffix(V ? 2 : 1).last ?? ""
+			let on = n < prompt.count && n > 0 || Int(t * 2) % 2 == 0
+			if on {
+				let cy = base + CGFloat(max(0, lines.suffix(V ? 2 : 1).count - 1)) * CTFontGetSize(pf) * 1.3
+				fill(CGRect(x: tx + width(last, pf) + 3, y: cy - CTFontGetSize(pf) * 0.8, width: 3, height: CTFontGetSize(pf) * 1.0), C("accent"))
+			}
+		} else {
+			text(s(o, "placeholder"), tx, pb.minY + (V ? 64 : 66), pf, C("dim"), alpha: outCubic(prog(t, sendAt + 0.3, 0.4)))
+		}
+		// The send button: lights when there is something to send, pulses on send.
+		let sb = CGRect(x: pb.maxX - 82, y: pb.midY - 28, width: 56, height: 56)
+		let ready = n > 0 && t < sendAt + 0.25
+		let pulse = 1 + 0.12 * sin(.pi * prog(t, sendAt, 0.25))
+		let sbr = sb.insetBy(dx: sb.width * (1 - pulse) / 2, dy: sb.height * (1 - pulse) / 2)
+		ctx.setFillColor(ready ? C("accent") : C("dim"))
+		ctx.fillEllipse(in: sbr)
+		ctx.setStrokeColor(C("bg"))
+		ctx.setLineWidth(4)
+		ctx.setLineCap(.round)
+		ctx.move(to: CGPoint(x: sb.midX, y: sb.midY + 12)); ctx.addLine(to: CGPoint(x: sb.midX, y: sb.midY - 12))
+		ctx.move(to: CGPoint(x: sb.midX - 10, y: sb.midY - 2)); ctx.addLine(to: CGPoint(x: sb.midX, y: sb.midY - 12))
+		ctx.addLine(to: CGPoint(x: sb.midX + 10, y: sb.midY - 2))
+		ctx.strokePath()
+	}
+}
+
+// MARK: - the hidden game, recording
+
+/// A recording monitor over a take: REC and the frame counter (frames.csv), the script line that drives the shot, and
+/// a top view of the camera's path and every actor (frames.csv, actors.csv), all on the frame shown.
+func sceneMonitor(_ o: Obj, _ t: Double) {
+	let clips = arr(o, "clips")
+	guard let idx = clips.lastIndex(where: { t >= d($0, "at") }) else { return }
+	let c = clips[idx]
+	let at = d(c, "at"), dur = d(c, "dur")
+	let step = Int(d(c, "step", 1))
+	let key = V ? s(c, "media_v", s(c, "media")) : s(c, "media")
+	let inSec = V ? d(c, "in_v", d(c, "in")) : d(c, "in")
+	guard let img = footage(key, inSec: inSec, since: at, t: t, step: step) else { return }
+	let full = CGRect(x: 0, y: 0, width: CW, height: CH)
+	var r = full
+	var radius: CGFloat = 0
+	if s(c, "intro_from") == "chat", let chat = ((J["scenes"] as? [Obj]) ?? []).first(where: { s($0, "type") == "chat" }) {
+		let f = chatFocus(chat, d(chat, "cut_at"))
+		let p = inOutCubic(prog(t, at, d(c, "intro", 0.6)))
+		let start = CGRect(x: f.midX - 80, y: f.midY - 45, width: 160, height: 90)
+		r = lerpRect(start, full, p)
+		radius = lerp(10, 0, p)
+	}
+	let z = lerp(1.0, CGFloat(d(c, "z1", 1.03)), CGFloat((t - at) / dur))
+	save {
+		ctx.addPath(CGPath(roundedRect: r, cornerWidth: radius, cornerHeight: radius, transform: nil))
+		ctx.clip()
+		image(img, r.insetBy(dx: -r.width * (z - 1) / 2, dy: -r.height * (z - 1) / 2))
+	}
+	let ha = outCubic(prog(t, d(clips[0], "at") + d(clips[0], "intro", 0) - 0.1, 0.35)) * (1 - outCubic(prog(t, d(o, "to") - 0.25, 0.25)))
+	if ha <= 0 { return }
+	let track = pick(c, "track")
+	let frames = (track["f"] as? [Int]) ?? []
+	let k = max(0, min(frames.count - 1, Int(((t - at) * 30 * Double(step)).rounded(.down))))
+	save {
+		setAlpha(ha)
+		// REC, the shot and the frame counter, top-right.
+		let rf = font(V ? 24 : 22, .semibold, .mono)
+		let shot = s(c, "shot")
+		let fr = frames.isEmpty ? 0 : frames[k]
+		let total = Int(d(track, "n"))
+		let line = String(format: "REC  %@  frame %04d / %04d  %.2f s", shot, fr, total, Double(fr) / 60)
+		let w = width(line, rf) + 72
+		let pill = V ? CGRect(x: CW - 60 - w, y: 96, width: w, height: 56) : CGRect(x: CW - 56 - w, y: 52, width: w, height: 56)
+		fill(pill, CGColor(srgbRed: 0.05, green: 0.047, blue: 0.043, alpha: 0.82), radius: 28)
+		stroke(pill, C("text", 0.12), radius: 28, width: 1.2)
+		let blink = (Int((t - at) * 2) % 2 == 0) ? 1.0 : 0.35
+		ctx.setFillColor(C("warn", CGFloat(blink)))
+		ctx.fillEllipse(in: CGRect(x: pill.minX + 24, y: pill.midY - 8, width: 16, height: 16))
+		text(line, pill.minX + 52, pill.midY + 8, rf, C("text"))
+		text(s(o, "clock"), pill.maxX - 12, pill.maxY + 32, font(V ? 21 : 19, .regular, .mono), C("text", 0.75), align: 1)
+		// The script line, top-left (bottom in the vertical, over the blurred fill).
+		if V { footChip(clips, idx, t, x: 60, y: 1330, alpha: 1) } else { footChip(clips, idx, t, x: 56, y: 52, alpha: 1) }
+		// The top view.
+		let m = V ? CGRect(x: CW - 60 - 330, y: 210, width: 330, height: 300) : CGRect(x: CW - 56 - 300, y: 150, width: 300, height: 264)
+		fill(m, CGColor(srgbRed: 0.05, green: 0.047, blue: 0.043, alpha: 0.82), radius: 16)
+		stroke(m, C("text", 0.12), radius: 16, width: 1.2)
+		text(s(o, "map_title"), m.minX + 18, m.minY + 30, font(V ? 19 : 17, .medium, .mono), C("muted"))
+		let b = (track["b"] as? [Double]) ?? [0, 0, 1, 1]
+		let area = m.insetBy(dx: 22, dy: 22).offsetBy(dx: 0, dy: 16).insetBy(dx: 0, dy: 8)
+		let sx = area.width / CGFloat(b[2] - b[0]), sz = area.height / CGFloat(b[3] - b[1])
+		let sc = min(sx, sz)
+		let ox = area.midX - CGFloat(b[0] + b[2]) / 2 * sc, oz = area.midY - CGFloat(b[1] + b[3]) / 2 * sc
+		func P(_ x: Double, _ zz: Double) -> CGPoint { CGPoint(x: ox + CGFloat(x) * sc, y: oz + CGFloat(zz) * sc) }
+		let cam = (track["c"] as? [[Double]]) ?? []
+		save {
+			ctx.clip(to: m.insetBy(dx: 4, dy: 4))
+			if cam.count > 1 {
+				polyline(cam.map { P($0[0], $0[1]) }, 1, C("text", 0.22), 2)
+				if k > 0 { polyline(cam.prefix(k + 1).map { P($0[0], $0[1]) }, 1, C("accent"), 3) }
+			}
+			// Actors: a trail for the ones that move, a dot for each.
+			for a in (track["a"] as? [Obj]) ?? [] {
+				let ps = (a["p"] as? [[Double]]) ?? []
+				if ps.isEmpty { continue }
+				let kk = min(k, ps.count - 1)
+				if kk > 0 { polyline(ps.prefix(kk + 1).map { P($0[0], $0[1]) }, 1, C("text", 0.5), 2) }
+				let p = P(ps[kk][0], ps[kk][1])
+				ctx.setFillColor(C("text"))
+				ctx.fillEllipse(in: CGRect(x: p.x - 5, y: p.y - 5, width: 10, height: 10))
+			}
+			if !cam.isEmpty {
+				let cp = cam[min(k, cam.count - 1)]
+				let p = P(cp[0], cp[1])
+				let yaw = CGFloat(cp[2]) * .pi / 180
+				let dir = CGPoint(x: -sin(yaw), y: cos(yaw))
+				let side = CGPoint(x: -dir.y, y: dir.x)
+				ctx.setFillColor(C("accent"))
+				ctx.move(to: CGPoint(x: p.x + dir.x * 16, y: p.y + dir.y * 16))
+				ctx.addLine(to: CGPoint(x: p.x - dir.x * 7 + side.x * 9, y: p.y - dir.y * 7 + side.y * 9))
+				ctx.addLine(to: CGPoint(x: p.x - dir.x * 7 - side.x * 9, y: p.y - dir.y * 7 - side.y * 9))
+				ctx.closePath()
+				ctx.fillPath()
+			}
+		}
+		text(s(o, "map_legend"), m.minX + 18, m.maxY - 14, font(V ? 17 : 15, .regular, .mono), C("muted"))
+	}
+}
+
+// MARK: - the edit
+
+func sceneTimeline(_ o: Obj, _ t: Double) {
+	let from = d(o, "from"), to = d(o, "to")
+	let out = inCubic(prog(t, to - 0.4, 0.4))
+	let enter = outQuint(prog(t, from, 0.8))
+	let total = d(o, "seconds")
+	let scrubAt = d(o, "scrub_at"), scrubDur = d(o, "scrub_dur")
+	let ph = clamp(CGFloat((t - scrubAt) / scrubDur)) * CGFloat(total)
+	save {
+		setAlpha(1 - out)
+		kicker(s(o, V ? "header_v" : "header"), t, at: from + 0.1, exit: to - 0.4)
+		// The program monitor: the film at the playhead.
+		let mon = V ? CGRect(x: 60, y: 330, width: 960, height: 540) : CGRect(x: 1080, y: 236, width: 720, height: 405)
+		var mr = mon
+		mr.origin.y += (1 - enter) * 40
+		save {
+			setAlpha(enter)
+			shadow(mr, radius: 14)
+			if let img = footage(s(o, "media"), inSec: 0, since: 0, t: Double(ph) * 60 / Double(d(o, "step", 15)) / FPS, step: Int(d(o, "step", 15))) {
+				save {
+					ctx.addPath(CGPath(roundedRect: mr, cornerWidth: 14, cornerHeight: 14, transform: nil))
+					ctx.clip()
+					image(img, mr)
+				}
+			}
+			stroke(mr, C("line"), radius: 14)
+			chip(String(format: "%@  %05.2f s", s(o, "media_label"), Double(ph)), x: mr.minX + 14, y: mr.minY + 14, size: 18, alpha: 1)
+		}
+		// Facts, left of the monitor (above it in the vertical).
+		let fx: CGFloat = V ? 60 : 120, fy: CGFloat = V ? 940 : 300
+		for (i, l) in s(o, "facts").components(separatedBy: "\n").enumerated() {
+			let a = outCubic(prog(t, from + 0.3 + Double(i) * 0.12, 0.5))
+			text(l, fx, fy + CGFloat(i) * 46, font(i == 0 ? 30 : 26, i == 0 ? .semibold : .regular, .mono), i == 0 ? C("text") : C("muted"), alpha: a)
+		}
+		// The tracks.
+		let tr = V ? CGRect(x: 60, y: 1180, width: 960, height: 560) : CGRect(x: 120, y: 690, width: 1680, height: 330)
+		let lab: CGFloat = V ? 110 : 120
+		let lane = CGRect(x: tr.minX + lab, y: tr.minY, width: tr.width - lab, height: tr.height)
+		func X(_ sec: Double) -> CGFloat { lane.minX + lane.width * CGFloat(sec / total) }
+		let names = ["video", "voice", "music", "sfx"]
+		let laneH: CGFloat = V ? 110 : 64, gap: CGFloat = V ? 26 : 14
+		let top = tr.minY + 40
+		func laneY(_ i: Int) -> CGFloat { top + CGFloat(i) * (laneH + gap) }
+		save {
+			setAlpha(enter)
+			// The ruler.
+			for sec in stride(from: 0, through: total, by: 10) {
+				fill(CGRect(x: X(sec), y: tr.minY + 12, width: 1.2, height: 14), C("dim"))
+				text("\(Int(sec)) s", X(sec) + 6, tr.minY + 24, font(17, .regular, .mono), C("muted"))
+			}
+			for (i, n) in names.enumerated() {
+				text(n, tr.minX, laneY(i) + laneH / 2 + 7, font(V ? 22 : 20, .medium, .mono), C("muted"))
+				fill(CGRect(x: lane.minX, y: laneY(i), width: lane.width, height: laneH), C("panel"), radius: 8)
+			}
+			// Video: the clips slide into the track from the right, one after another.
+			let clips = (o["clips"] as? [[Any]]) ?? []
+			let slideAt = d(o, "slide_at")
+			for (i, cl) in clips.enumerated() {
+				let st = (cl[0] as? Double) ?? 0, du = (cl[1] as? Double) ?? 0, name = (cl[2] as? String) ?? "", kind = (cl[3] as? String) ?? "shot"
+				let p = outQuint(prog(t, slideAt + Double(i) * 0.05, 0.55))
+				if p <= 0 { continue }
+				var r = CGRect(x: X(st) + 1, y: laneY(0) + 4, width: max(2, X(st + du) - X(st) - 2), height: laneH - 8)
+				r.origin.x += (1 - p) * 260
+				let shotC = i % 2 == 0 ? C("panel2") : mix(C("panel2"), C("line"), 0.6)
+				fill(r, kind == "black" ? C("bg") : shotC, radius: 5)
+				stroke(r, kind == "black" ? C("line") : mix(C("line"), C("accent", 0.6), 0.25), radius: 5, width: 1.2)
+				if r.width > 66 && !V {
+					save { ctx.clip(to: r.insetBy(dx: 4, dy: 0)); text(name, r.minX + 8, r.midY + 6, font(15, .regular, .mono), C("text", 0.8)) }
+				}
+			}
+			// Voice lines, then the music bed's level (ducked under every line), then every sound effect.
+			let la = outCubic(prog(t, d(o, "lanes_at"), 0.5))
+			let voice = (o["voice"] as? [[Double]]) ?? []
+			for (i, v) in voice.enumerated() {
+				let p = outCubic(prog(t, d(o, "lanes_at") + Double(i) * 0.02, 0.3))
+				if p <= 0 { continue }
+				let r = CGRect(x: X(v[0]), y: laneY(1) + laneH * (0.5 - 0.36 * p), width: max(2, X(v[0] + v[1]) - X(v[0])), height: laneH * 0.72 * p)
+				fill(r, C("accent", 0.75), radius: 4)
+			}
+			if la > 0 {
+				let duck = d(o, "duck_db", -9)
+				var pts: [CGPoint] = []
+				let n = 600
+				for j in 0...n {
+					let sec = total * Double(j) / Double(n)
+					let under = voice.contains { sec >= $0[0] - 0.03 && sec <= $0[0] + $0[1] + 0.2 }
+					let db = under ? duck : 0
+					pts.append(CGPoint(x: X(sec), y: laneY(2) + 10 + (laneH - 20) * CGFloat(-db / 14)))
+				}
+				polyline(pts, la, C("text", 0.8), 2)
+				for cue in (o["music_cues"] as? [[Any]]) ?? [] {
+					let sec = (cue[0] as? Double) ?? 0
+					fill(CGRect(x: X(sec) - 1, y: laneY(2) + laneH - 10, width: 2, height: 8), C("muted", la))
+				}
+				text(String(format: "bed %.0f dB under every line", duck), lane.maxX - 8, laneY(2) + laneH - 10, font(15, .regular, .mono), C("muted"), align: 1, alpha: la)
+				for sec in (o["sfx"] as? [Double]) ?? [] {
+					fill(CGRect(x: X(sec) - 1, y: laneY(3) + 12, width: 2, height: laneH - 24), C("text", 0.55 * la))
+				}
+			}
+			// Cuts on words: when the playhead reaches one, its marker snaps to the word's onset.
+			for cut in (o["cuts"] as? [[Any]]) ?? [] {
+				let sec = (cut[0] as? Double) ?? 0, word = (cut[1] as? String) ?? ""
+				let p = outCubic(prog(t, scrubAt + scrubDur * sec / total, 0.3))
+				if p <= 0 { continue }
+				let x = X(sec) + (1 - settle(prog(t, scrubAt + scrubDur * sec / total, 0.35))) * 14
+				fill(CGRect(x: x - 1.5, y: laneY(0) - 6, width: 3, height: laneY(1) + laneH + 6 - laneY(0) + 6), C("accent", p))
+				let f = font(V ? 20 : 17, .semibold, .mono)
+				let label = "cut on " + word
+				let lw = width(label, f) + 20
+				let tag = CGRect(x: x - lw / 2, y: laneY(0) - 40, width: lw, height: 30)
+				fill(tag, C("accent", p), radius: 15)
+				text(label, x, tag.midY + 6, f, C("bg"), align: 0.5, alpha: p)
+			}
+			// The playhead.
+			if t >= scrubAt {
+				let x = X(Double(ph))
+				fill(CGRect(x: x - 1, y: tr.minY + 30, width: 2, height: laneY(3) + laneH - tr.minY - 26), C("text"))
+				ctx.setFillColor(C("text"))
+				ctx.move(to: CGPoint(x: x - 8, y: tr.minY + 26)); ctx.addLine(to: CGPoint(x: x + 8, y: tr.minY + 26))
+				ctx.addLine(to: CGPoint(x: x, y: tr.minY + 38)); ctx.closePath(); ctx.fillPath()
+			}
 		}
 	}
 }
@@ -1106,6 +1530,9 @@ func render(_ frame: Int) {
 		if t < from || t >= to { continue }
 		switch s(sc, "type") {
 		case "make": sceneMake(sc, t)
+		case "chat": sceneChat(sc, t)
+		case "monitor": sceneMonitor(sc, t)
+		case "timeline": sceneTimeline(sc, t)
 		case "title": sceneTitle(sc, t)
 		case "footage": sceneFootage(sc, t)
 		case "split": sceneSplit(sc, t)
