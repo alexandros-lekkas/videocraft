@@ -25,7 +25,7 @@ import java.util.Locale;
 /**
  * The actor actions of the shot script (docs/SCRIPT.md, "Actors"). Each validates its parameters when its cue comes
  * and fails the take with the script location otherwise. They act on puppets ({@code kind = "mob"} or {@code
- * * "mannequin"} actors) and, for walk, turn, look, jump, crouch and swing, on the played player.
+ * "mannequin"} actors) and, for walk, turn, look, jump, crouch and swing, on the played player.
  */
 public final class Actions {
 	private Actions() {}

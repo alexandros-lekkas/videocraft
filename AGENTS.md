@@ -152,6 +152,10 @@ They protect the owner's machine and game. They are not preferences.
   random: `SoundEngineMixin` swaps in a seeded one at `play` HEAD, else two takes log different files.
 - **ffmpeg audio.** Homebrew's ffmpeg has no `soxr` resampler, and `alimiter` delays its output by its attack unless
   `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
+- **Vanilla's sit and sleep poses are booleans.** A fox's sit and sleep, a wolf's or cat's sit, a humanoid's crouch
+  and riding pose switch the model in one frame; a fox's crouch and a goat's head-lower are already interpolated. A
+  model is posed twice per frame: in `LivingEntityRenderer.submit` (for its layers) and again in
+  `ModelFeatureRenderer.prepareModel` at draw time, so a pose change must wrap both (`PoseBlend`).
 - **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
   `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
 - **Puppets are client-side entities the level never ticks.** `ClientLevel.tickNonPassenger` is skipped for them

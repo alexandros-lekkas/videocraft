@@ -22,6 +22,11 @@
   sleep, bow; goat lower; chicken flap...), `hold`, `emit` (an egg), `voice`, `swing`, `nod`, `shake`, `talk`, `pose`;
   their own footsteps and voices through the client's sound system; `shots/<name>/actors.csv`;
   `examples/animals.toml`, `examples/mannequins.toml`; `ActorChecks`.
+- Actors read as alive in dense frame strips: vanilla's on/off poses (fox sit and sleep, wolf/cat sit, mannequin sit
+  and crouch) ease instead of popping; head and body turns are capped in speed and acceleration by body type; `turn`
+  with `follow` really turns the body; `examples/mannequins.toml` is a wide meeting and a closer conversation (wave,
+  talk, nod, a cake held and offered, point, shrug, facepalm); the played player walks, jumps, turns and swings
+  (`examples/walk.toml`).
 - Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
   chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
   their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and

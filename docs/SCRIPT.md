@@ -81,8 +81,17 @@ actor id (its head), `"camera"` (the lens of the frame) or a position; a **headi
 | `talk` | `seconds` (2), `size` | Small irregular nods, and talking hands on a mannequin, while a line is spoken. |
 | `pose`, `point` | `pose` (`wave`, `point`, `shrug`, `cheer`, `facepalm`, `type`, `think`, `hold`, `sit`, `crouch`, `sleep`, `none`), `seconds` (default: held until `none`) | Mannequin arm poses on top of the walk, one at a time, eased in and out. |
 
-Not built: `blink` (no vanilla model has eyelids; the action says so), and the played player's actions (`walk`,
-`look` and the rest for `actor = "player"`).
+Vanilla's on/off poses (a fox's or wolf's or cat's `sit`, a fox's `sleep`, a mannequin's `sit` and `crouch`) are eased
+over a third of a second (sleep: three quarters) instead of switching in one frame. Turns are held to a body's speed: a
+mannequin's head turns at most about 380 degrees a second and gets going over a few ticks; a bird's head still snaps.
+`turn` with `follow = true` keeps the turn's start and direction while the target moves.
+
+**The played player** (`actor = "player"`, the default) is driven, not animated: held movement keys through the
+game's own input (its acceleration, walk cycle, sprint and jumps) and a human hand on the view. `walk` (`path` or
+`to`, `gait = "run"` or `sprint = true` sprints on the straights, `face` a target to arrive turned to, `mark`; a block
+in the way is jumped), `stop`, `turn` (`to` a heading or target, `tolerance` degrees, `mark`), `look` (`target`,
+`hold`), `hop`/`jump`, `crouch` or `state = "crouch"` (`on`, `seconds`), `swing`. Not frame-exact between takes: the
+player runs on the client's own ticks. Not built: `blink` (no vanilla model has eyelids; the action says so).
 
 ## `[[shot]]` (implemented)
 
@@ -107,7 +116,7 @@ Cues at the same time start in the order written.
 | `command` | `command = "…"` or `commands = […]` | **Implemented.** Runs on the integrated server, output suppressed. |
 | `mark` | `label` | **Implemented.** Notes the frame in `marks.json` for the edit and measure. |
 | `wait` | `seconds` | **Implemented.** Holds a staging block. |
-| `place`, `walk`, `run`, `stop`, `turn`, `look`, `hop`, `jump`, `state`, `crouch`, `hold`, `emit`, `voice`, `swing`, `nod`, `shake`, `talk`, `point`, `pose` | see [Actor actions](#actor-actions) | **Implemented** for puppets [b]; the player's are planned. |
+| `place`, `walk`, `run`, `stop`, `turn`, `look`, `hop`, `jump`, `state`, `crouch`, `hold`, `emit`, `voice`, `swing`, `nod`, `shake`, `talk`, `point`, `pose` | see [Actor actions](#actor-actions) | **Implemented** for puppets [b]; for the player: `walk`, `run`, `stop`, `turn`, `look`, `hop`, `jump`, `crouch`, `swing`. |
 | `caption`, `title`, `card`, `lower_third`, `keycap`, `clear` | see [Text](#text) | **Implemented.** |
 | `<modid>:<name>` | the plugin's | Another mod's action ([DESIGN.md](DESIGN.md#6-extension-point)). |
 | `sound`, `tune`, `ambience`, `particles` | see [Audio](#audio) | **Implemented** (audio). |
