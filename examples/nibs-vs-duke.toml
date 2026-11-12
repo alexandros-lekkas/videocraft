@@ -40,7 +40,7 @@ id = "nibs"
 kind = "mob"
 entity = "goat"
 at = { anchor = "market-lane:shot-01" }
-facing = -90
+facing = -108
 left_horn = false
 screaming = true
 tint = "#8c9fc2"
@@ -96,6 +96,7 @@ at = -1.2
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-01" }
+facing = -108
 
 [[shot.cue]]
 at = -1.2
@@ -105,25 +106,25 @@ gait = "strut"
 path = { path = "market-lane:shot-01" }
 
 [[shot.cue]]
-at = 0.3
+at = 0.2
 do = "say"
 actor = "nibs"
 style = "proud"
-text = "Hey. It's me. *Nibs."
+text = "Hey. I'm *Nibs."
 
 [[shot.cue]]
-at = 2.9
+at = 2.4
 do = "say"
 actor = "nibs"
 style = "proud"
-text = "Best jumper in the whole *valley."
+text = "Best jumper in the *valley."
 
 # 2. The face cut-in on the brag: the single horn fills the frame (a punch-in in the edit).
 [[shot]]
 name = "s02-horn"
-duration = 1.2
+duration = 1.3
 time = 11000
-camera = { rig = "face", subject = "nibs", distance = 1.1, angle = 18, height = 0.15, fov = 34 }
+camera = { rig = "fixed", eye = { anchor = "market-lane:shot-01", offset = [15.45, 2.2, 0.35] }, at = { anchor = "market-lane:shot-01", offset = [14.3, 2.08, 0.0] }, fov = 44 }
 
 [[shot.cue]]
 at = 0.0
@@ -133,12 +134,13 @@ to = { anchor = "market-lane:shot-01", offset = [14, 0, 0] }
 facing = -90
 
 [[shot.cue]]
-at = 0.05
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "proud"
 text = "This *horn."
 fit = "none"
+caption = { style = "whole" }
 
 [[shot.cue]]
 at = 0.35
@@ -157,7 +159,7 @@ seconds = 0.5
 # 3. Over the plank bridge.
 [[shot]]
 name = "s03-bridge"
-duration = 1.7
+duration = 1.75
 preroll = 1.0
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, drift = 0.6 }
@@ -167,6 +169,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-03" }
+facing = -79
 
 [[shot.cue]]
 at = -1.0
@@ -176,7 +179,7 @@ gait = "strut"
 path = { path = "market-lane:shot-03" }
 
 [[shot.cue]]
-at = 0.1
+at = 0.0
 do = "say"
 actor = "nibs"
 style = "smug"
@@ -195,6 +198,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-04" }
+facing = -71
 
 [[shot.cue]]
 at = -1.0
@@ -206,7 +210,8 @@ path = { path = "market-lane:shot-04" }
 at = 0.05
 do = "say"
 actor = "nibs"
-text = "Anyway. I was heading to the *market..."
+text = "Anyway. Off to the *market..."
+speed = 1.2
 fit = "none"
 
 # 5. Closer, by the well: Nibs stops and turns its head to the lens, deadpan.
@@ -222,6 +227,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-05" }
+facing = -74
 
 [[shot.cue]]
 at = -1.0
@@ -256,6 +262,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-06" }
+facing = -77
 
 [[shot.cue]]
 at = -1.0
@@ -283,6 +290,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-07" }
+facing = -99
 
 [[shot.cue]]
 at = -1.0
@@ -318,6 +326,7 @@ do = "say"
 actor = "nibs"
 style = "deadpan"
 text = "*Duke. Again."
+speed = 1.25
 caption = { position = "top" }
 
 [[shot.cue]]
@@ -329,7 +338,7 @@ relative = true
 # 9. Nibs stares at the board; the picture dips to black.
 [[shot]]
 name = "s09-remember"
-duration = 2.6
+duration = 2.8
 preroll = 1.0
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.0, height = 1.0, pitch = 5, fov = 95, side = -0.8 }
@@ -339,6 +348,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-09" }
+facing = -103
 
 [[shot.cue]]
 at = -1.0
@@ -359,7 +369,8 @@ at = 0.15
 do = "say"
 actor = "nibs"
 style = "sad"
-text = "I remember last year's *show..."
+text = "I remember last *year."
+speed = 1.2
 
 # ================================================================ scene 2: the barn stage, night (the flashback)
 
@@ -645,11 +656,12 @@ to = { anchor = "barn-stage:stage-center", offset = [0.5, 0, 0] }
 facing = -90
 
 [[shot.cue]]
-at = 0.15
+at = 0.05
 do = "say"
 actor = "duke"
 style = "smug"
 text = "A *standing ovation."
+speed = 1.15
 
 [[shot.cue]]
 at = 0.0
@@ -673,6 +685,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-19" }
+facing = -119
 
 [[shot.cue]]
 at = -1.0
@@ -697,7 +710,7 @@ text = "That fox can't even *jump."
 # 20. The corner: the camera swings round as Nibs takes it. The line runs on over the montage, one word a shot.
 [[shot]]
 name = "s20-least"
-duration = 1.3
+duration = 1.4
 preroll = 1.0
 time = 11000
 camera = { rig = "lead", subject = "nibs", distance = 3.2, height = 1.0, pitch = 5, fov = 100, swing = true, yaw_drift = 12 }
@@ -707,6 +720,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-20" }
+facing = -113
 
 [[shot.cue]]
 at = -1.0
@@ -716,7 +730,7 @@ gait = "strut"
 path = { path = "market-lane:shot-20" }
 
 [[shot.cue]]
-at = 0.1
+at = 0.32
 do = "say"
 actor = "nibs"
 style = "excited"
@@ -725,26 +739,28 @@ fit = "none"
 caption = false
 
 [[shot.cue]]
-at = 0.1
+at = 0.0
 do = "caption"
+style = "whole"
 text = "I'm at least..."
 
 # 21-26. The brag montage: six struts at six places, one word a shot, each on a kick.
 [[shot]]
 name = "s21-six"
-duration = 0.5
-preroll = 0.8
+duration = 0.3833
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-1" }
+facing = -73
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -766,19 +782,20 @@ position = "center"
 
 [[shot]]
 name = "s22-times"
-duration = 0.25
-preroll = 0.8
+duration = 0.4667
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-2" }
+facing = -97
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -800,19 +817,20 @@ position = "center"
 
 [[shot]]
 name = "s23-more"
-duration = 0.5
-preroll = 0.8
+duration = 0.35
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-3" }
+facing = -77
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -834,19 +852,20 @@ position = "center"
 
 [[shot]]
 name = "s24-goat"
-duration = 0.35
-preroll = 0.8
+duration = 0.3833
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-4" }
+facing = -93
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -868,19 +887,20 @@ position = "center"
 
 [[shot]]
 name = "s25-than"
-duration = 0.5
-preroll = 0.8
+duration = 0.2667
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-5" }
+facing = -73
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -915,19 +935,20 @@ position = "center"
 
 [[shot]]
 name = "s26-him"
-duration = 0.25
-preroll = 0.8
+duration = 0.5
+preroll = 1.4
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 1.9, height = 0.8, pitch = 3, fov = 72 }
+camera = { rig = "lead", subject = "nibs", distance = 2.4, height = 0.85, pitch = 4, fov = 70 }
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:spot-6" }
+facing = -118
 
 [[shot.cue]]
-at = -0.8
+at = -1.4
 do = "walk"
 actor = "nibs"
 gait = "strut"
@@ -960,6 +981,7 @@ at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-27" }
+facing = -85
 
 [[shot.cue]]
 at = -1.0
@@ -973,7 +995,8 @@ at = 0.1
 do = "say"
 actor = "nibs"
 style = "proud"
-text = "So *today..."
+text = "So *today,"
+speed = 1.2
 
 # 28. The open end, the valley behind: Nibs stops, turns to the lens, lowers its head to ram, lifts it and screams.
 [[shot]]
@@ -981,13 +1004,14 @@ name = "s28-challenge"
 duration = 4.6
 preroll = 1.0
 time = 11000
-camera = { rig = "lead", subject = "nibs", distance = 3.0, height = 1.0, pitch = 5, fov = 95, side = 1.4, swing = true }
+camera = { rig = "lead", subject = "nibs", distance = 2.6, height = 0.95, pitch = 4, fov = 84, side = 0.9, swing = true }
 
 [[shot.cue]]
 at = -1.0
 do = "place"
 actor = "nibs"
 to = { anchor = "market-lane:shot-28" }
+facing = 103
 
 [[shot.cue]]
 at = -1.0
@@ -1065,17 +1089,18 @@ id = "videocraft:sting"
 relative = true
 
 [[shot.cue]]
-at = 0.3
+at = 0.1
 do = "title"
 text = "*DUKE"
 subtitle = "3x Talent Night champion"
 position = "bottom"
-style = "drop"
+style = "whole"
+fade_in = 0.2
 
 # 30. Duke, small and centred on black, hears it, yawns and lies down to sleep.
 [[shot]]
 name = "s30-sleep"
-duration = 1.1
+duration = 1.2
 time = 18000
 camera = { view = "black-stage:small" }
 
@@ -1099,15 +1124,16 @@ actor = "duke"
 sound = "sleep"
 
 [[shot.cue]]
-at = 0.15
+at = 0.0
 do = "caption"
+style = "whole"
 text = "*zzz"
 speaker = { name = "Duke", color = "#e8eef5" }
 
 # The end card.
 [[shot]]
 name = "end"
-duration = 2.0
+duration = 2.3
 time = 18000
 camera = { view = "black-stage:close" }
 
@@ -1202,7 +1228,7 @@ shot = "end"
 from = "s10-duke"
 to = "s18-ovation"
 frame = { color = "#e8a23a", width = 28, glow = 14, opacity = 1.0 }
-grade = "sepia"
+grade = { saturation = 0.8, contrast = 1.04, brightness = 0.02, gamma = 1.0, tint = "#c89a6a", amount = 0.35 }
 
 [edit.music]
 source = "synth"
