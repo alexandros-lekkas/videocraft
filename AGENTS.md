@@ -57,6 +57,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
 | `cli/videocraft/story/`, `cli/videocraft/series/`, `stories/` | The story pipeline (premise → shots.toml), series, `make`; prompts in `story/prompts/` ([docs/STORY.md](docs/STORY.md)) | story |
 | `modpack/pack.toml` | The distributable pack definition | d |
+| `cli/videocraft/voice/`, `cast/` | Local TTS per character (`worker/` runs in `cache/voice/venv`), word timings, the `say` resolver called by `script.py`, `voice check` ([docs/VOICE.md](docs/VOICE.md)) | voice |
 
 A new CLI command lives in its own subpackage's `commands.py` with `register(subparsers)`; do not add commands to
 `cli.py`. `cli.py` imports `videocraft.<group>.commands` for each name in `cli.GROUPS` after the built-ins: a
@@ -154,6 +155,13 @@ They protect the owner's machine and game. They are not preferences.
   `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
 - **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
   `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
+- **Voice is compiled.** `say` lines are synthesized when the script compiles (and when lint runs), cached in
+  `cache/voice/lines/` by a hash of what shapes the audio; the test suite pins `VIDEOCRAFT_VOICE=estimate`, so no test
+  starts the voice worker. The worker runs with `python -I`, which leaves its own folder off `sys.path`.
+- **Qwen3-TTS pauses are not silent.** It fills some with a quiet voiced murmur (−45 to −34 dB re the loud frames)
+  and once scoffed for a second before a deadpan "That"; both fool an energy threshold (onsets 0.1-1.1 s early) and
+  ASR ignores them. Speech must reach −25 dB to count, and a word the aligner puts deep into a burst starts after
+  its last dip (`voice/worker/align.py`). Cut on onsets after pauses; word ends are 80-160 ms off at p90.
 
 ## Working with agents
 
