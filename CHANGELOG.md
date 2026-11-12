@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The benchmark film `examples/nibs-vs-duke.toml` (docs/benchmarks/pinksheep-style.md): thirty shots and an end
+  card on market-lane, barn-stage and black-stage with the goat, fox and chicken puppets, voiced lines, the framed
+  flashback, dips to black and the six-shot montage cut on the spoken words; production log in
+  `docs/benchmarks/nibs-vs-duke-log.md`.
 - Shots end on a beat: `until = "<mark>"` stops recording on the frame an action notes that mark, with `duration`
   as the cap; a mark that never comes fails the take with the shot and the label.
 - Flying actors: `fly` (a 3-D eased curve, banking into turns, pitching on climbs), `hover` (seeded drift and bob),

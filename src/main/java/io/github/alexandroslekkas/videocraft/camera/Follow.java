@@ -73,6 +73,9 @@ final class Follow {
 		// The way the subject is going: its body heading while it walks (and while it stands, if the rig swings).
 		double h = Math.toRadians(a.heading());
 		double[] dir = {-Math.sin(h), Math.cos(h)};
+		// While it walks, the way it goes is its travel, not its body: a strut sways the body from side to side, and
+		// a camera on the body's yaw swayed with it (turn jerk 40-56 on strut tracks against about 1 on walks).
+		if (moving >= STANDING) dir = new double[] {v.x / moving, v.z / moving};
 		double[] xz = ground.follow(new double[] {g.x, g.z}, lag, dt);
 		double y = height.follow(new double[] {levelY}, riseLag, dt)[0];
 		double[] ax;
