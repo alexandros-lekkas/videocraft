@@ -7,6 +7,13 @@
   on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
   `[edit.mix]`, an original library of 79 code-made sounds that original-only exports swap in automatically, five more
   synth bed styles, and `audio find`, `audio play-sheet`, `audio catalog --refresh`, `audio library` (docs/SOUNDS.md).
+- Voiced and fast by default. Every say line is paced (`cli/videocraft/voice/pace.py`): silence trimmed to 60 ms
+  before and 120 ms after, pauses capped at 0.25 s (0.4 s after a sentence), and a line slower than 0.85 x its pace
+  stretched towards it (atempo, at most 1.2x); characters get `pace = 3.2` and qwen3 lines a brisk default delivery.
+  Later lines of a shot pack 0.12 s after the previous one (`gap`; `beat = true` keeps a written `at`). lint warns on
+  `unvoiced_text`, `slow_line` and `dead_air`; measure reports words a second per line, the voice share and the
+  longest silences; the story prompts write every line as `say` with voices in the bible; the pacing and sound
+  reviewers judge dialogue pace. talk.toml: Duke 1.62 → 2.96 words a second, Nibs 2.24 → 3.24, the film 15.7 → 12.0 s.
 - The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
   tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
 - `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and

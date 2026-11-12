@@ -56,13 +56,29 @@ def upstream(stage):
 
 # Checks ---------------------------------------------------------------------------------------------------------
 
-def check(stage, text, story, store=None, path=None, drafted=True):
+def check(stage, text, story, store=None, path=None, drafted=True, soft=False):
     """Problems with a draft, each phrased as a fix. Empty: it passes. A hand-written file (`drafted` false) is
-    trusted on its total length (a teaser or a test fixture may be short on purpose); a model draft is not."""
+    trusted on its total length (a teaser or a test fixture may be short on purpose); a model draft is not.
+    `soft`: also the voice problems (SOFT: unvoiced text, slow lines, dead air, a character without a voice),
+    which get repair rounds but never stop a draft from locking."""
     if not text.strip():
         return [f'{FILES[stage]} is empty']
     problems = CHECKS[stage](text, story, store, path)
+    if not soft:
+        problems = [p for p in problems if not is_soft(p)]
     return problems if drafted else [p for p in problems if not p.startswith(LENGTH)]
+
+
+SOFT = 'voice: '         # problems the model is asked to fix, but that never block a lock
+SOFT_ROUNDS = 1          # repair rounds spent on soft problems alone (a model call takes minutes)
+VOICE_RULES = ('unvoiced_text', 'slow_line', 'dead_air')
+PRESETS = {'qwen3': ('ryan', 'aiden'), 'kokoro': ('am_fenrir', 'am_onyx', 'am_michael', 'am_puck', 'af_heart', 'af_bella',
+                                                'af_nicole', 'bf_emma', 'bm_george', 'bm_lewis')}
+PACE = (3.0, 3.8)        # words a second for comedy dialogue
+
+
+def is_soft(problem):
+    return problem.startswith(SOFT)
 
 
 def _check_premise(text, story, store, path):
@@ -99,6 +115,7 @@ def _check_bible(text, story, store, path):
             problems.append(f'character {cid}: a mob needs entity = "minecraft:<entity>"')
         if kind == 'mannequin' and not isinstance(c.get('skin'), (dict, str)):
             problems.append(f'character {cid}: a mannequin needs skin = {{ ... }} (a skin spec) or a PNG path')
+        problems += _check_voice(cid, c.get('voice'))
     sets = bible.get('set', [])
     if not isinstance(sets, list):
         problems.append('bible.toml: sets are [[set]] tables with a name')
@@ -107,6 +124,61 @@ def _check_bible(text, story, store, path):
         if not isinstance(s, dict) or not isinstance(s.get('name'), str):
             problems.append(f'set[{i}]: name = "<set name>" is required')
     return problems
+
+
+def _check_voice(cid, v):
+    """Every character has a voice: { engine, preset, instruct, pace } (soft: a description string still works)."""
+    shape = ('voice = { engine = "qwen3", preset = "ryan" or "aiden", instruct = "<how it talks: brisk>", pace = 3.4 } '
+             '(or engine = "kokoro" with a kokoro preset)')
+    if isinstance(v, str) and v.strip().lower().startswith('none'):
+        return []   # never speaks (its own game sounds only): a deliberate choice
+    if not isinstance(v, dict):
+        return [f'{SOFT}character {cid}: {shape}']
+    engine = v.get('engine', 'qwen3')
+    out = []
+    if engine not in PRESETS:
+        out.append(f'{SOFT}character {cid}: voice engine is "qwen3" or "kokoro" (got {engine!r})')
+    elif v.get('preset') not in PRESETS[engine]:
+        out.append(f'{SOFT}character {cid}: voice preset for {engine} is one of {", ".join(PRESETS[engine])} (got {v.get("preset")!r})')
+    if engine == 'qwen3' and not str(v.get('instruct') or '').strip():
+        out.append(f'{SOFT}character {cid}: voice instruct = "<how it talks>" (brisk: never "slow" or "drawling")')
+    elif re.search(r'\b(slow|slowly|drawl\w*|unhurried|leaves pauses)\b', str(v.get('instruct') or ''), re.I):
+        out.append(f'{SOFT}character {cid}: voice instruct asks for slow delivery; keep it brisk (smug, dry or bored, but fast)')
+    pace = v.get('pace')
+    if not isinstance(pace, (int, float)) or isinstance(pace, bool) or not PACE[0] <= pace <= PACE[1]:
+        out.append(f'{SOFT}character {cid}: voice pace = <{PACE[0]}-{PACE[1]} words a second> (got {pace!r})')
+    return out
+
+
+def cast_block(bible_text):
+    """The shot script's [cast], from the bible's voices: one [[cast.character]] per character with a voice, and a
+    narrator (the cast library's, cast/*.toml) when the bible has none. Pasted into the shots prompt."""
+    try:
+        bible = tomllib.loads(bible_text or '')
+    except tomllib.TOMLDecodeError:
+        return '(the bible is not valid TOML: write [[cast.character]] tables by hand)'
+    out, ids = ['[cast]'], set()
+    for c in bible.get('character') or []:
+        if not isinstance(c, dict) or not isinstance(c.get('id'), str):
+            continue
+        v = c.get('voice')
+        if isinstance(v, str) and v.strip().lower().startswith('none'):
+            continue
+        if not isinstance(v, dict):
+            v = {'instruct': str(v or '')}
+        engine = v.get('engine', 'qwen3') if v.get('engine') in PRESETS else 'qwen3'
+        preset = v.get('preset') if v.get('preset') in PRESETS[engine] else PRESETS[engine][len(ids) % len(PRESETS[engine])]
+        pace = v.get('pace') if isinstance(v.get('pace'), (int, float)) and not isinstance(v.get('pace'), bool) else 3.4
+        lines = ['', '[[cast.character]]', f'id = {json.dumps(c["id"])}', f'name = {json.dumps(c.get("name") or c["id"])}',
+                 f'engine = "{engine}"', f'voice = "{preset}"']
+        if engine == 'qwen3' and v.get('instruct'):
+            lines.append(f'instruct = {json.dumps(str(v["instruct"]))}')
+        lines.append(f'pace = {float(pace):g}')
+        out += lines
+        ids.add(c['id'])
+    if 'narrator' not in ids:
+        out += ['', '# narrator: the cast library\'s (cast/*.toml), say actor = "narrator"']
+    return '\n'.join(out)
 
 
 def _check_outline(text, story, store, path):
@@ -200,10 +272,14 @@ def lint(path, text):
     out = (done.stdout + done.stderr).strip()
     # Not there yet: the placeholder (exit 2, "not implemented yet"; it takes no file, so argparse's usage error comes
     # first) or no such command. A usage error is our call being wrong, not the script: never sent to the model.
-    if done.returncode == 0 or 'not implemented yet' in out or 'invalid choice' in out or \
-            done.returncode == 2 and out.startswith('usage:'):
+    if 'not implemented yet' in out or 'invalid choice' in out or done.returncode == 2 and out.startswith('usage:'):
         return []
-    return [f'videocraft lint: {line}' for line in out.splitlines() if line.strip()][:30]
+    voice = [f'{SOFT}videocraft lint: {line}' for line in out.splitlines()
+             if line.startswith('WARN') and any(f' {r} ' in line for r in VOICE_RULES)][:20]
+    if done.returncode == 0:
+        return voice   # voiced and fast: the voice warnings go back to the model (soft: they never block a lock)
+    return [f'videocraft lint: {line}' for line in out.splitlines() if line.strip() and not
+            any(line.startswith('WARN') and f' {r} ' in line for r in VOICE_RULES)][:30] + voice
 
 
 CHECKS = {'premise': _check_premise, 'bible': _check_bible, 'outline': _check_outline, 'script': _check_script,
@@ -234,6 +310,7 @@ def stage_prompt(stage, store, sid, request=None, extra=''):
               'extra': extra, 'sets': _sets_text(), 'output': _output_text(story), **ctx}
     if stage == 'shots':
         values['reference'] = vocab.script_reference()
+        values['cast'] = cast_block(store.text(sid, 'bible'))
     return render(prompt_file(stage), **values)
 
 
@@ -256,7 +333,7 @@ def revise_prompt(stage, store, sid, note):
     rules = render(rules.replace('{{craft}}', ''), **{k: v for k, v in {
         'id': sid, 'output': _output_text(story), 'sets': _sets_text(), 'format': story['format'], 'length': f'{lo}-{hi} s',
         'aspect': '9:16 vertical' if story.get('vertical') else '16:9', 'request': story.get('request', ''),
-        'extra': '', 'reference': vocab.script_reference(),
+        'extra': '', 'reference': vocab.script_reference(), 'cast': cast_block(store.text(sid, 'bible')),
         **{k: '(above)' for k in STAGES}}.items()})
     values['stage_rules'] = rules
     return render(prompt_file('revise'), **values)
@@ -327,18 +404,27 @@ def run_stage(store, sid, stage, ask=None, note=None, from_file=None, lock=True,
     else:
         prompt = stage_prompt(stage, store, sid, request=request,
                               extra=f'A note from the director: {note}' if note else '')
-    rev, problems, attempt = None, [], 0
+    rev, problems, attempt, best, soft_rounds = None, [], 0, None, 0
     for attempt in range(1, repairs + 2):
         say(f'  {stage}: asking the model' + (f' (repair {attempt - 1} of {repairs})' if attempt > 1 else ''))
         text = extract(ask(prompt))
         source = 'model' if attempt == 1 else 'repair'
         rev = store.add(sid, stage, text, parent=parent if attempt == 1 else rev, inputs=inputs, source=source,
                         note=note if attempt == 1 else f'repair {attempt - 1}: ' + '; '.join(problems)[:300])
-        problems = check(stage, text, story, store, _check_path(store, sid, stage, rev))
+        problems = check(stage, text, story, store, _check_path(store, sid, stage, rev), soft=True)
+        if problems and not any(not is_soft(p) for p in problems):
+            best = (rev, problems)   # it would lock: only voice problems are left
+            if soft_rounds >= SOFT_ROUNDS or attempt > repairs:
+                say(f'  {stage} r{rev}: locks with {len(problems)} voice warning(s): ' + problems[0])
+                problems = []
+                break
+            soft_rounds += 1
         if not problems:
             break
         say(f'  {stage} r{rev}: {len(problems)} problem(s): ' + problems[0])
         if attempt > repairs:
+            if best:   # a repair broke what a soft-only draft had right: keep that one
+                rev, problems = best[0], []
             break
         prompt = render(prompt_file('repair'), round=attempt, rounds=repairs, file=FILES[stage],
                         problems='\n'.join(f'- {p}' for p in problems), current=text)

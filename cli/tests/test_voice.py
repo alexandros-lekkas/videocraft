@@ -1,4 +1,6 @@
 """The dialogue resolver (videocraft.voice) with a fake engine: deterministic word timings, no model."""
+import array
+import math
 import os
 import sys
 import tempfile
@@ -14,33 +16,46 @@ os.environ.setdefault('VIDEOCRAFT_VOICE', 'estimate')
 
 from videocraft import script  # noqa: E402
 from videocraft.voice import cast as castmod  # noqa: E402
-from videocraft.voice import front, resolve  # noqa: E402
+from videocraft.voice import front, pace, resolve  # noqa: E402
+
+
+def tone_wav(path, spans, seconds, sr=48000):
+    """A 16-bit mono wav: a 220 Hz tone inside each (start, end) span, silence elsewhere."""
+    a = array.array('h', [0] * int(seconds * sr))
+    for s, e in spans:
+        for i in range(int(s * sr), min(len(a), int(e * sr))):
+            a[i] = int(9000 * math.sin(2 * math.pi * 220 * i / sr))
+    with wave.open(str(path), 'wb') as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(a.tobytes())
 
 
 class FakeEngine:
-    """Word i starts at 0.1 + 0.4 i and lasts 0.3 s; writes a short silent wav. Counts what it synthesizes."""
+    """Word i starts at 0.1 + 0.4 i and lasts 0.3 s (or `step`/`length`); writes a wav with a tone on every word
+    and 0.1 s after the last. Counts what it synthesizes."""
     name = 'fake'
     audio = True
 
-    def __init__(self):
+    def __init__(self, step=0.4, length=0.3, head=0.1):
         self.calls = []
+        self.step, self.length, self.head = step, length, head
 
     def run(self, specs, outs):
         self.calls.append([' '.join(s['tokens']) for s in specs])
         res = []
         for s, out in zip(specs, outs):
-            words = [{'word': t, 'start': round(0.1 + 0.4 * i, 3), 'end': round(0.4 + 0.4 * i, 3)} for i, t in enumerate(s['tokens'])]
-            with wave.open(str(out), 'wb') as w:
-                w.setnchannels(1)
-                w.setsampwidth(2)
-                w.setframerate(48000)
-                w.writeframes(b'\0\0' * 4800)
+            words = [{'word': t, 'start': round(self.head + self.step * i, 3), 'end': round(self.head + self.step * i + self.length, 3)}
+                     for i, t in enumerate(s['tokens'])]
+            tone_wav(out, [(w['start'], w['end']) for w in words], words[-1]['end'] + 0.1)
             res.append({'words': words, 'seconds': words[-1]['end'] + 0.1, 'engine': 'fake', 'timing': 'ok'})
         return res
 
 
-CAST = {'character': [{'id': 'nibs', 'name': 'Nibs', 'color': '#a8c8ff', 'voice': 'ryan', 'bark': 'minecraft:entity.goat.ambient'},
-                      {'id': 'duke', 'name': 'Duke', 'voice': 'aiden'}]}
+# pace = 0: these tests are about the resolver's arithmetic on the engine's own timings (Pacing tests the rest)
+CAST = {'character': [{'id': 'nibs', 'name': 'Nibs', 'color': '#a8c8ff', 'voice': 'ryan', 'bark': 'minecraft:entity.goat.ambient', 'pace': 0},
+                      {'id': 'duke', 'name': 'Duke', 'voice': 'aiden', 'pace': 0}]}
 
 
 def shot(name, cues, duration=1.0):
@@ -128,9 +143,30 @@ class Resolver(unittest.TestCase):
         out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5, 'pause_after': 0.3},
                                                 {'do': 'say', 'actor': 'duke', 'text': 'Three.'}])))
         caps = [c for c in out['shot'][0]['cue'] if c['do'] == 'caption']
-        # the first ends at 0.5 + 0.8 = 1.3; + 0.3 pause
-        self.assertAlmostEqual(caps[1]['at'], 1.6)
+        # the first voice ends at 0.5 + 0.8 = 1.3; + 0.3 pause: the second voice's first word at 1.6
+        self.assertAlmostEqual(caps[1]['at'] + caps[1]['words'][0]['at'], 1.6)
         self.assertEqual(caps[1]['speaker']['name'], 'Duke')
+
+    def test_lines_are_packed_with_the_default_gap(self):
+        out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5},
+                                                {'do': 'say', 'actor': 'duke', 'text': 'Three four.', 'at': 3.0},
+                                                {'do': 'say', 'actor': 'nibs', 'text': 'Five.', 'gap': 0.3}], duration=None)))
+        d = out['edit']['dialogue']
+        starts = [x['at'] + x['words'][0]['start'] for x in d]
+        ends = [x['at'] + x['words'][-1]['end'] for x in d]
+        # the first at its at; the second's written at = 3.0 is packed GAP after the first; the third after its gap
+        self.assertAlmostEqual(starts[0], 0.6)
+        self.assertAlmostEqual(starts[1] - ends[0], resolve.GAP)
+        self.assertAlmostEqual(starts[2] - ends[1], 0.3)
+        self.assertTrue(any('packed' in l for l in self.log))
+        # the shot ends `tail` after the last word: no dead air at its end
+        self.assertAlmostEqual(out['shot'][0]['duration'], math.ceil((ends[2] + resolve.TAIL) * 60 - 1e-6) / 60)
+
+    def test_a_beat_keeps_its_at(self):
+        out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5},
+                                                {'do': 'say', 'actor': 'duke', 'text': 'Three.', 'at': 3.0, 'beat': True}])))
+        self.assertEqual(out['edit']['dialogue'][1]['at'], 3.0)
+        self.assertTrue(out['edit']['dialogue'][1]['beat'])
 
     def test_cache_makes_a_rerun_free_and_identical(self):
         raw = scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'Hey.'}, {'do': 'say', 'actor': 'duke', 'text': 'Hm.'}]))
@@ -179,6 +215,113 @@ class Resolver(unittest.TestCase):
         words = front.estimate('So today, I challenge Duke to a jump-off!'.split())
         rate = len(words) / words[-1]['end']
         self.assertTrue(2.0 < rate < 3.2, rate)
+
+
+class Pacing(unittest.TestCase):
+    """pace.py on synthetic wavs: silence trimmed, pauses capped, slow lines stretched, word timings exact."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def line(self, words, seconds):
+        wav = self.dir / 'raw.wav'
+        tone_wav(wav, [(w['start'], w['end']) for w in words], seconds)
+        return wav
+
+    @staticmethod
+    def onsets(path, thresh=2000):
+        samples, sr = pace.read_wav(path)
+        on, prev, n = [], False, sr // 200
+        for i in range(0, len(samples), n):
+            loud = max(abs(x) for x in samples[i:i + n]) > thresh
+            if loud and not prev:
+                on.append(i / sr)
+            prev = loud
+        return on, len(samples) / sr
+
+    def test_trims_head_and_tail_and_caps_pauses(self):
+        words = [{'word': 'Hey.', 'start': 0.5, 'end': 0.9}, {'word': 'It', 'start': 1.9, 'end': 2.1},
+                 {'word': 'is,', 'start': 2.15, 'end': 2.45}, {'word': 'me.', 'start': 3.25, 'end': 3.6}]
+        wav = self.line(words, 4.6)
+        out = self.dir / 'paced.wav'
+        opts = pace.options({'wps': 3.2, 'caps': True, 'stretch': False})
+        w, seconds, info = pace.pace_file(wav, words, opts, out)
+        self.assertAlmostEqual(w[0]['start'], pace.HEAD, delta=0.011)
+        self.assertLessEqual(seconds - w[-1]['end'], pace.TAIL + 0.03 + 0.011)
+        gaps = [b['start'] - a['end'] for a, b in zip(w, w[1:])]
+        self.assertAlmostEqual(gaps[0], pace.SENTENCE, delta=0.012)   # after "Hey." (was 1.0 s)
+        self.assertAlmostEqual(gaps[1], 0.05, delta=0.005)            # a short gap is left alone
+        self.assertAlmostEqual(gaps[2], pace.COMMA, delta=0.012)      # after "is," (was 0.8 s)
+        self.assertEqual(info['stretch'], 1.0)
+        self.assertGreater(info['wps'], info['wps_raw'])
+        # the words are where the audio is: every tone onset matches a word start
+        on, _ = self.onsets(out)
+        self.assertEqual(len(on), 4)
+        for o, x in zip(on, w):
+            self.assertAlmostEqual(o, x['start'], delta=0.012)
+
+    def test_a_deadpan_or_beat_line_keeps_its_pauses(self):
+        words = [{'word': 'That.', 'start': 0.1, 'end': 0.4}, {'word': 'Was.', 'start': 1.4, 'end': 1.7}]
+        wav = self.line(words, 1.8)
+        opts = pace.options({'wps': 3.2, 'caps': False, 'stretch': False})
+        w, _, _ = pace.pace_file(wav, words, opts, self.dir / 'p.wav')
+        self.assertAlmostEqual(w[1]['start'] - w[0]['end'], 1.0, delta=0.012)
+        ch = castmod.Character(id='x', name='X', color='#fff')
+        self.assertFalse(ch.spec(['Hm.'], 'deadpan')['pace']['caps'])
+        self.assertFalse(ch.spec(['Hm.'], None, beat=True)['pace']['caps'])
+        self.assertTrue(ch.spec(['Hm.'], None)['pace']['caps'])
+        self.assertIsNone(ch.spec(['Hm.'], None, pace=0)['pace'])
+
+    def test_a_slow_line_is_stretched_and_its_words_scaled(self):
+        # 6 words at 2 a second, no pauses to cap
+        words = [{'word': f'w{i}', 'start': round(0.06 + 0.5 * i, 3), 'end': round(0.06 + 0.5 * i + 0.45, 3)} for i in range(6)]
+        wav = self.line(words, 3.2)
+        out = self.dir / 'p.wav'
+        w, seconds, info = pace.pace_file(wav, words, pace.options({'wps': 3.2}), out)
+        self.assertEqual(info['stretch'], pace.MAX_STRETCH)
+        self.assertAlmostEqual(info['wps'], info['wps_raw'] * pace.MAX_STRETCH, delta=0.05)
+        on, length = self.onsets(out)
+        self.assertEqual(len(on), 6)
+        for o, x in zip(on, w):
+            self.assertAlmostEqual(o, x['start'], delta=0.025)   # atempo smears onsets by about 15 ms
+        self.assertAlmostEqual(length, seconds, delta=0.002)
+        # a fast line, a short line and a slow style are left at their pace
+        fast = [{'word': f'w{i}', 'start': 0.3 * i, 'end': 0.3 * i + 0.25} for i in range(6)]
+        self.assertEqual(pace.stretch_factor(fast, pace.options({'wps': 3.2})), 1.0)
+        self.assertEqual(pace.stretch_factor(words[:2], pace.options({'wps': 3.2})), 1.0)
+        ch = castmod.Character(id='x', name='X', color='#fff')
+        self.assertFalse(ch.spec(['Hm.'], 'sleepy')['pace']['stretch'])
+
+    def test_quiet_audio_only_is_cut(self):
+        # the aligner put "Hey." ending at 0.4, but the tone (its decay) runs to 0.7: the tail keeps it
+        words = [{'word': 'Hey', 'start': 0.1, 'end': 0.4}, {'word': 'you.', 'start': 0.45, 'end': 0.6}]
+        wav = self.dir / 'raw.wav'
+        tone_wav(wav, [(0.1, 0.7)], 1.5)
+        w, seconds, _ = pace.pace_file(wav, words, pace.options({'wps': 0, 'stretch': False}), self.dir / 'p.wav')
+        self.assertGreaterEqual(seconds, 0.7 - 0.04 + 0.03 - 0.01)
+        self.assertLess(seconds, 0.9)
+
+    def test_estimated_timings_are_paced_too(self):
+        tokens = 'So today, I challenge Duke to a jump-off!'.split()
+        raw = front.estimate(tokens)
+        words, info = pace.pace_words(raw, None, pace.options({'wps': 3.2}))
+        self.assertAlmostEqual(words[0]['start'], pace.HEAD / info['stretch'], delta=0.002)
+        self.assertGreaterEqual(info['wps'], 3.2 * pace.TRIGGER - 0.01)
+
+    def test_the_resolver_paces_and_records_the_rate(self):
+        tmp = Path(self.tmp.name) / 'cache'
+        cast = {'character': [{'id': 'nibs', 'voice': 'ryan'}]}
+        raw = {'name': 't', 'cast': cast, 'shot': [shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'one two three four five six'}], None)]}
+        out = resolve.resolve(raw, 'test', engine=FakeEngine(step=0.5, length=0.45), log=lambda s: None, cache=tmp)
+        d = out['edit']['dialogue'][0]
+        self.assertEqual(d['pace']['stretch'], pace.MAX_STRETCH)
+        self.assertGreater(d['wps'], 2.3)
+        self.assertIn('.p', d['file'])   # the paced copy beside the raw line
+        self.assertIn(pace.PACE, [d['pace']['target']])
 
 
 class Casts(unittest.TestCase):

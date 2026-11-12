@@ -396,10 +396,13 @@ cut_on = "Duke"                           # the next shot starts on the onset of
 |:--|:--|:--|
 | `actor` | required | Who speaks: a character of the cast (and an `[[actor]]` id, if the bark should come from it). `character` overrides the voice. |
 | `text` | required | The line, as it is said and shown; a word starting `*` is the key word. Spell numbers out ("six"). One word ("SIX") is a line too: a montage of single words is a run of short lines. |
-| `at` | after the previous line | Seconds into the shot. Without it, the line follows the previous `say` of its shot (or the words carried into it) after that line's `pause_after`. |
+| `at` | after the previous line | Seconds into the shot, for the shot's first line. Later lines are **packed**: each starts `gap` after the previous line's last word, and a written `at` on a later line is replaced (stderr says so) unless the line is `beat = true` or `fit = "none"`. |
 | `style` | | Delivery: `shout`, `whisper`, `deadpan`, `excited`, `proud`, `smug`, `sad`, `angry`, `scared`, `sleepy`, `question`, `sing`, or a sentence of your own ([VOICE.md](VOICE.md#the-cast-file)). |
 | `speed` | `1.0` | A pace on top of the character's. |
-| `pause_after` | `0.2` | Seconds before a following line without `at`. |
+| `pace` | the character's (`3.2`) | Words a second the line is paced to: silence trimmed (60 ms head, 120 ms tail), pauses capped (0.25 s, 0.4 s after a sentence), a slower line stretched up to 1.2x ([VOICE.md](VOICE.md#pacing-voiced-and-fast-by-default)). `0` or `false`: as synthesized. |
+| `beat` | `false` | A deliberate pause: the line keeps its `at` (the silence before it is the joke), keeps its own internal pauses, and lint does not call the silence dead air. |
+| `gap` | the previous line's `pause_after` | Seconds of silence before this line when it is packed. |
+| `pause_after` | `0.12` | Seconds before the next packed line (was 0.2 before pacing). |
 | `fit` | `"extend"` | `extend`: the shot lasts at least to the last word + `tail`. `cut-on`: the shot ends on the onset of `cut_on` (implied by `cut_on`); the words from it on carry into the next shot (script order) while the voice plays on over the cut. `none`: the duration is as written. |
 | `cut_on` | | A word of the line (matched without `*` and punctuation; the first match) or its index from 0. |
 | `tail` | `0.25` | Seconds kept after the last word with `extend`. |
@@ -411,7 +414,12 @@ cut_on = "Duke"                           # the next shot starts on the onset of
 | `id` | `<shot>-<n>` | The line's name in `voice.json` and `voice script -o`. |
 
 The resolved lines are in `edit.dialogue` and the iteration's `voice.json` (every line: file, words with times, shot,
-start); `bin/videocraft voice check <run>` measures captions, cuts and voice against them.
+start, words a second); `bin/videocraft voice check <run>` measures captions, cuts and voice against them.
+
+**Voiced and fast is the default.** A voiced line beats a caption, and slow lines kill a comedy short: say every
+line of dialogue and narration with `say` (the caption comes with it), keep silent on-screen text for signs, posts
+and cards (and voice the ones the joke needs), give only a shot's first line an `at`, and leave `duration` out of
+dialogue shots. lint warns on unvoiced text, slow lines and dead air (below).
 
 ## Appendix: commands that write shot scripts
 
@@ -430,6 +438,10 @@ unknown actor or camera subject, an anchor naming a set no `[[world.set]]` place
 up at once (a caption replacing a caption is fine). Warnings: an action or camera rig that is not built in and not
 namespaced (lint's lists are the mod's registries; a test fails when they drift),
 over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
-clip's `in`/`out` (or a shot `until`) naming a mark no cue makes. Notes: one-word montage
+clip's `in`/`out` (or a shot `until`) naming a mark no cue makes; and, for voiced and fast dialogue, in a script
+with a cast or say lines: `unvoiced_text` (a caption, title or lower third of 3 or more words that no voice speaks:
+voice it with `say`), `slow_line` (a voiced line of 3 or more words under 2.6 words a second; a note for `deadpan`,
+`sleepy`, `sad`) and `dead_air` (more than 0.8 s without a voice between two lines inside a run of dialogue shots;
+not over a black gap, not across a shot without lines, not before a `beat = true` line). Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
 are in `measure/report.md` (docs/REVIEW.md).

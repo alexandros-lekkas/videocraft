@@ -211,6 +211,10 @@ They protect the owner's machine and game. They are not preferences.
   hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
   only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
+- **Voiced beats captioned, and slow kills it.** The owner on the first two films: voiced lines are "significantly
+  better" than captions, and lines at 1.2-3.5 words a second with dead air were "super slow". Every line is now
+  paced to about 3.2 words a second by default (trim, pause caps, up to 1.2x atempo; `voice/pace.py`), lines in a
+  shot pack 0.12 s apart, and lint warns on unvoiced text, slow lines and dead air.
 - **AAC overshoots a limited master.** The mix limited to −1.2 dBTP in `audio.wav` measured +0.1 dBTP in the AAC
   master of the benchmark film; `loudness.py` now limits 1 dB under the ceiling (−1.6 dBTP after encode).
 - **A strut sways the body yaw.** Subject rigs took their axis from it, so lead tracks on a strut juddered (turn

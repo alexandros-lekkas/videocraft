@@ -16,7 +16,12 @@ and the shot's duration is set by the line's `fit`:
            carries into the next shot (script order) while the voice plays on over the cut
   none     the duration is left as written
 
-A `say` without `at` follows the previous line of its shot after its `pause_after` (0.2 s). The lines and their
+Lines are packed: the first line of a shot starts at its `at`; every later line (fit extend or cut-on) follows the
+previous one after `gap` (GAP, 0.12 s; the previous line's `pause_after`, or the line's own `gap`, sets it), and an
+`at` written on a later line is replaced by the packed time (a note on stderr says so), unless the line is marked
+`beat = true` (a deliberate pause before it) or has fit = "none". Lines are paced before they are timed (pace.py:
+silence trimmed, pauses capped, a slow line stretched towards the character's `pace`); the cue's `pace` overrides
+the character's (0 or false: as synthesized). The lines and their
 timings go into edit.dialogue (the run store writes it to voice.json) and a short table on stderr.
 With no voice installed (or VIDEOCRAFT_VOICE=estimate) the same pass runs on reading-speed estimates, with no audio.
 """
@@ -28,13 +33,16 @@ import sys
 
 from videocraft.voice import cast as castmod
 from videocraft.voice import front
+from videocraft.voice import pace
 
 SAY_KEYS = {'do', 'at', 'actor', 'character', 'text', 'style', 'speed', 'pause_after', 'fit', 'cut_on', 'tail', 'gain',
-            'caption', 'speaker', 'bark', 'id', 'position', 'size', 'hold', 'shade', 'key_color', 'color', 'carry'}
+            'caption', 'speaker', 'bark', 'id', 'position', 'size', 'hold', 'shade', 'key_color', 'color', 'carry',
+            'pace', 'beat', 'gap'}
 CAPTION_KEYS = ('position', 'size', 'hold', 'shade', 'key_color', 'color')
 FITS = ('extend', 'cut-on', 'none')
 TAIL = 0.25
-PAUSE_AFTER = 0.2
+GAP = 0.12            # between packed lines (was PAUSE_AFTER = 0.2 before pacing)
+PAUSE_AFTER = GAP
 
 
 def has_say(raw):
@@ -97,9 +105,16 @@ def _lines(raw, cast, draft):
                 _cut_index(cue['cut_on'], tokens, where)
             if 'at' in cue and (not isinstance(cue['at'], (int, float)) or isinstance(cue['at'], bool) or cue['at'] < 0):
                 raise _error(f'{where}: at = <seconds into the shot, >= 0>')
+            for k in ('gap', 'pause_after'):
+                if k in cue and (not isinstance(cue[k], (int, float)) or isinstance(cue[k], bool) or cue[k] < 0):
+                    raise _error(f'{where}: {k} = <seconds of silence, >= 0>')
+            p = cue.get('pace')
+            if p is not None and p is not False and (not isinstance(p, (int, float)) or isinstance(p, bool) or p < 0):
+                raise _error(f'{where}: pace = <words a second> (0 or false: no pacing)')
             try:
                 ch = cast.character(cid)
-                spec = ch.spec(tokens, cue.get('style'), cue.get('speed', 1.0), cast.styles, draft=draft)
+                spec = ch.spec(tokens, cue.get('style'), cue.get('speed', 1.0), cast.styles, draft=draft,
+                               pace=cue.get('pace'), beat=bool(cue.get('beat')))
             except castmod.CastError as e:
                 raise _error(f'{where}: {e}') from e
             lines.append(Line(shot, cue, where, display, tokens, ch, spec))
@@ -176,10 +191,12 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
     for si, shot in enumerate(shots):
         sname = shot.get('name')
         new, prev_end, need_end, cut = [], None, 0.0, None
+        prev_gap = GAP
         if carry:
             new.append(carry['caption'])
             need_end = max(need_end, carry['end'] + carry['tail'])
-            prev_end = carry['end'] + carry['pause_after']   # a line without `at` waits for the carried words
+            prev_end = carry['end']   # the shot's first line waits for the carried words
+            prev_gap = carry['pause_after']
             carry['entry']['carried_to'] = sname
             carry = None
         n = 0
@@ -190,10 +207,20 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
             line = queue.pop(0)
             c, ch, r = line.cue, line.character, line.result
             n += 1
-            at = float(c['at']) if 'at' in c else (prev_end if prev_end is not None else 0.0)
             ws = r['words']
+            packed = None
+            if prev_end is not None:
+                packed = prev_end + float(c['gap']) if 'gap' in c else prev_end + prev_gap
+            if 'at' not in c or (packed is not None and c.get('fit', 'extend') != 'none' and not c.get('beat')):
+                at = max(0.0, packed - ws[0]['start']) if packed is not None else 0.0   # the voice, not the file, follows
+                if 'at' in c and abs(at - float(c['at'])) > 0.02:
+                    log(f'voice: {line.where}: packed at {at:.2f} s after the previous line (at = {float(c["at"]):g} '
+                        'written; beat = true keeps it)')
+            else:
+                at = float(c['at'])
             end = at + ws[-1]['end']
-            prev_end = end + float(c.get('pause_after', PAUSE_AFTER))
+            prev_end = end
+            prev_gap = float(c.get('pause_after', GAP))
             tail = float(c.get('tail', TAIL))
             actor = c['actor'] if c.get('actor') in actors else 'player'
             fit = c.get('fit', 'extend')
@@ -203,6 +230,7 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                      'file': front.rel(r['file']) if r.get('file') else None, 'seconds': r.get('seconds'),
                      'engine': r.get('engine'), 'timing': r.get('timing'), 'cached': r.get('cached'), 'key': r.get('key'),
                      'voice': ch.voice if not ch.generic else f'{ch.voice} (generic)',
+                     'wps': pace.words_per_second(ws), 'pace': r.get('pace'), 'beat': bool(c.get('beat')),
                      'words': [{'word': d, 'start': w['start'], 'end': w['end']} for d, w in zip(line.display, ws)]}
             shown = words
             if fit == 'cut-on':
@@ -224,7 +252,7 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                         carry = {'caption': _caption(line, 0.0, [(d, at + s - t0) for d, s in rest],
                                                      c['actor'] if c.get('actor') in actors else 'player', c, ch, False),
                                  'end': end - t0, 'tail': tail, 'entry': entry,
-                                 'pause_after': float(c.get('pause_after', PAUSE_AFTER))}
+                                 'pause_after': float(c.get('pause_after', GAP))}
                         carry['caption']['words'][0]['at'] = 0.0
             elif fit == 'extend':
                 need_end = max(need_end, end + tail)
