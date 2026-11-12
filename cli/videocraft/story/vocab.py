@@ -48,6 +48,7 @@ CONTRACT_NOTES = {
     'sound': 'audio: sound = "minecraft:<sound id>", at the actor or a position, volume, pitch',
     'tune': 'audio: note-block notes: notes = [...], bpm, instrument',
 }
+_KEYS = {'do', 'rig', 'at', 'actor', 'name', 'key', 'keys'}  # column words in some tables, never ids
 _ROW_IDS = re.compile(r'`([a-z_][a-z0-9_]*)`')
 
 
@@ -85,7 +86,7 @@ def vocabulary(text=None, contracted=True):
         if not contracted and ('see DESIGN.md' in line or re.search(r'\|\s*\[[a-z]\]\s*\|\s*$', line)):
             continue  # a planned row ("[b]", "see DESIGN.md"): named, but its keys are not documented yet
         first = line.split('|')[1]
-        ids = set(_ROW_IDS.findall(first))
+        ids = set(_ROW_IDS.findall(first)) - _KEYS
         if 'rig' in section:
             rigs |= ids
         elif 'cue' in section or 'action' in section:
