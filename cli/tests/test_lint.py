@@ -42,3 +42,34 @@ class Lint(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class Registries(unittest.TestCase):
+    """lint's built-in actions and rigs are exactly what the mod registers (r.action / r.rig in the Java sources)."""
+
+    @staticmethod
+    def registered(kind):
+        import re
+        pattern = re.compile(r'\br\.' + kind + r'\(\s*"([a-z0-9_]+)"')
+        names = set()
+        for path in (ROOT / 'src/main/java').rglob('*.java'):
+            names |= set(pattern.findall(path.read_text()))
+        return names
+
+    def test_actions_match_the_registries(self):
+        java = self.registered('action')
+        self.assertGreater(len(java), 30)
+        self.assertEqual(lint.BUILT_IN - lint.COMPILED, java,
+                         f'missing from lint: {sorted(java - lint.BUILT_IN)}; not in the mod: {sorted(lint.BUILT_IN - lint.COMPILED - java)}')
+
+    def test_rigs_match_the_registries(self):
+        java = self.registered('rig')
+        self.assertIn('lead', java)
+        self.assertEqual(lint.BUILT_IN_RIGS, java,
+                         f'missing from lint: {sorted(java - lint.BUILT_IN_RIGS)}; not in the mod: {sorted(lint.BUILT_IN_RIGS - java)}')
+
+    def test_unknown_rig(self):
+        raw = {'name': 'x', 'shot': [{'name': 'a', 'duration': 1, 'camera': {'rig': 'orbitt'}},
+                                     {'name': 'b', 'duration': 1, 'camera': {'rig': 'mymod:spin'}}]}
+        rigs = [p for p in lint.lint(raw) if p['rule'] == 'unknown_rig']
+        self.assertEqual([(p['severity'], p['where']) for p in rigs], [('warn', 'shot a.camera')])

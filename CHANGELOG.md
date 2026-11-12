@@ -84,3 +84,6 @@
   fit, a keycap is kept inside it; `measure` checks the same area.
 - `examples/sets.toml` films Nibs, the one-horned goat, walking two of market-lane's path marks from the preroll on
   lead tracks (3 blocks, 105°), instead of a stand-in.
+- `lint` knows exactly the actions and rigs the mod registers (it had `stand_in` and `glide` missing and seven
+  unbuilt player actions listed), warns on an unknown camera `rig`, and a test fails when its lists drift from the
+  Java registries.

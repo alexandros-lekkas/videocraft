@@ -379,7 +379,8 @@ start); `bin/videocraft voice check <run>` measures captions, cuts and voice aga
 `run` writes the same list to `lint.json` before each take. Errors: unknown keys, a cue outside its shot, an
 unknown actor or camera subject, an anchor naming a set no `[[world.set]]` places, text that cannot be complete for
 `max(1.2 s, 0.5 s + 0.3 s a word)` before the next text or the end of the shot, and two different kinds of text
-up at once (a caption replacing a caption is fine). Warnings: an action that is not built in and not namespaced,
+up at once (a caption replacing a caption is fine). Warnings: an action or camera rig that is not built in and not
+namespaced (lint's lists are the mod's registries; a test fails when they drift),
 over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
 clip's `in`/`out` (or a shot `until`, which is not built yet) naming a mark no cue makes. Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
