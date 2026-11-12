@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A caption or title that does not fit now fails the take with its own message ("does not fit on two lines");
+  the cut's clean-up hit a NullPointerException on the unlaid message and reported that instead.
 - `story read` keeps packed `say` lines (no `at`) after the line before them; it sorted them to 0 s, so a cold
   reader heard every split sentence backwards and scored a script 4/10 for it.
 - `clips cut --max S` lets a vertical short run past 60 s (the platforms now take longer shorts); the default
