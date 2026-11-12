@@ -48,10 +48,13 @@ final class Moves {
 		private final Operator op = new Operator(2);
 		private final double minimum;
 		private double at = Double.NaN;
+		private Vec3 lastPivot;
 
 		Reach(double minimum) { this.minimum = minimum; }
 
 		Vec3 eye(Probe probe, Vec3 pivot, Vec3 want, Vec3 velocity, ShotContext shot) {
+			if (lastPivot != null && pivot.distanceTo(lastPivot) > Follow.JUMP) op.cut();
+			lastPivot = pivot;
 			Vec3 arm = want.subtract(pivot);
 			double length = arm.length();
 			if (length < 1e-6) return want;
@@ -279,6 +282,8 @@ final class Moves {
 		final double height, look, margin, minimum, sign, aspect;
 		final Operator reach = new Operator(1), normal = new Operator(2);
 		final Reach clear = new Reach(1.5);
+		/** Blocks of subject to fit in height: a player-sized model and a little over. */
+		static final double TALL = 2.0;
 
 		TwoShot(Params p, ShotContext shot) {
 			List<String> ids = p.strings("subjects");
@@ -305,7 +310,7 @@ final class Moves {
 			a.update(shot);
 			b.update(shot);
 			double dt = 1.0 / shot.fps();
-			Vec3 pa = a.anchor(), pb = b.anchor(), mid = pa.lerp(pb, 0.5);
+			Vec3 pa = a.predicted(), pb = b.predicted(), mid = pa.lerp(pb, 0.5);
 			Vec3 line = new Vec3(pb.x - pa.x, 0, pb.z - pa.z);
 			double separation = line.length();
 			if (separation < 1e-3) line = Follow.right(a.heading());
@@ -313,7 +318,9 @@ final class Moves {
 			double[] nn = normal.follow(new double[] {n.x, n.z}, 1.0, dt);
 			n = new Vec3(nn[0], 0, nn[1]).normalize();
 			double half = Math.toRadians(lens.fov(shot)) / 2, wide = Math.atan(Math.tan(half) * aspect);
-			double want = Math.max(minimum, (separation / 2 + margin) / (Math.tan(wide) * 0.8));
+			// Far enough that both fit side by side, and head to feet (about two blocks tall, with the margin's half).
+			double tall = (TALL + margin / 2) / 2 / (Math.tan(half) * 0.8);
+			double want = Math.max(minimum, Math.max(tall, (separation / 2 + margin) / (Math.tan(wide) * 0.8)));
 			double d = reach.follow(new double[] {want}, 0.6, dt)[0];
 			Vec3 pivot = mid.add(0, height, 0);
 			Vec3 eye = clear.eye(Rigs.probe, pivot, pivot.add(n.scale(d)), a.velocity().add(b.velocity()).scale(0.5), shot);

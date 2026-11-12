@@ -15,6 +15,8 @@ import net.minecraft.world.phys.Vec3;
 final class Follow {
 	/** Below this ground speed (blocks per second) a subject counts as standing. */
 	static final double STANDING = 0.3;
+	/** A subject that moves further than this in one frame (blocks) was placed, not walked. */
+	static final double JUMP = 1.5;
 
 	final String subject;
 	final double lag, axisLag, riseLag;
@@ -47,6 +49,16 @@ final class Follow {
 		Actor a = shot.actor(subject);
 		double dt = 1.0 / shot.fps();
 		Vec3 g = a.ground();
+		// Put somewhere new by a cue (its start mark): the operator is there at once, as after a cut, instead of
+		// swinging over from where the subject last was.
+		if (last != null && g.distanceTo(last) > JUMP) {
+			ground.cut();
+			height.cut();
+			axis.cut();
+			levelY = Double.NaN;
+			last = null;
+			started = false;
+		}
 		// The player's own position jumps with it; take its height only from where it stands. Other actors give a
 		// ground reference that already ignores the bob of steps and jumps.
 		if (a.entity() instanceof Player p) {
@@ -74,6 +86,16 @@ final class Follow {
 
 	/** The smoothed ground point under the subject. */
 	Vec3 anchor() { return anchor; }
+
+	/**
+	 * The smoothed ground point moved on by the operator's own lag: where the subject is now on a steady walk (a
+	 * critically damped follower trails a steady walk by speed × lag), still smooth. For rigs that must frame the
+	 * subject where it is, not where it was (two_shot).
+	 */
+	Vec3 predicted() {
+		double[] v = ground.speed();
+		return anchor.add(v[0] * lag, 0, v[1] * lag);
+	}
 
 	/** The smoothed direction the subject goes, in Minecraft yaw degrees. */
 	double heading() { return heading; }

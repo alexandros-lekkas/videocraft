@@ -227,6 +227,17 @@ public final class RigMoveChecks {
 		smooth("two_shot", two, 0.06, 1.5);
 		inFrame("two_shot", two, "nibs", 0.9, 0, two.poses.size());
 		inFrame("two_shot", two, "duke", 0.9, 0, two.poses.size());
+		// Head to feet of both, where they are (not where the lagging operator last had them).
+		for (String who : new String[] {"nibs", "duke"}) {
+			Walker w = (Walker) two.shot.actors.get(who);
+			for (int i = 0; i < two.poses.size(); i++) {
+				w.t = i / (double) FPS;
+				for (double up : new double[] {0, 1.9}) {
+					double[] p = project(two.poses.get(i), w.ground().add(0, up, 0), two.fovs.get(i));
+					PlanChecks.check(p[2] > 0 && Math.abs(p[1]) <= 0.95, "two_shot: " + who + " at height " + up + " is cut off (" + fmt(p[1]) + ") at frame " + i);
+				}
+			}
+		}
 		Run face = film("{\"rig\":\"face\",\"subject\":\"nibs\",\"distance\":0.3}", rigs.get("face"), walkers());
 		smooth("face", face, 0.06, 2);
 		for (int i = 0; i < face.poses.size(); i++) {
