@@ -14,6 +14,11 @@
   `unvoiced_text`, `slow_line` and `dead_air`; measure reports words a second per line, the voice share and the
   longest silences; the story prompts write every line as `say` with voices in the bible; the pacing and sound
   reviewers judge dialogue pace. talk.toml: Duke 1.62 → 2.96 words a second, Nibs 2.24 → 3.24, the film 15.7 → 12.0 s.
+- `compare --side-by-side --video <ref> --run <it> -o <out.mp4>` films a reference video and an iteration side by
+  side, shot N against shot N (or in real time with `--align time`), each follower shot stretched or held to the lead
+  shot's length, with labels, a shared timecode and per-shot length deltas; it writes `side-by-side.md`/`.json` and a
+  contact sheet beside it. `docs/benchmarks/pinksheep-style.shots.toml` holds the benchmark reference's published
+  shot timings for it.
 - The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
   tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
 - `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and
