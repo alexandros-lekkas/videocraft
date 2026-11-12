@@ -42,7 +42,54 @@ STYLES = {
                        rhythms=['1000100010101000', '1000001010001000', '1010100010000000', '1000100010001010'],
                        kick='1000001010000000', snare='0000100000001011', hat='1010101010101010',
                        bass={0: 0, 6: 7, 8: 0, 14: 7}, duty=0.5, legato=0.85, swing=0.0),
+    # A cartoon chase: fast oom-pah (bass on the beat, snare on the off-beat), nasal running sixteenths.
+    'comedy-chase': dict(scale=MAJOR, bpm=168, key='g', a=[(0, 'maj'), (0, 'maj'), (5, 'maj'), (7, 'maj')],
+                         b=[(9, 'min'), (2, 'min'), (7, 'maj'), (0, 'maj')],
+                         rhythms=['1111101011111010', '1010101011110000', '1011101010111010', '1111111110001000'],
+                         kick='1000100010001000', snare='0010001000100010', hat='0000000000000000',
+                         bass={0: 0, 4: 7, 8: 0, 12: 7}, duty=0.125, legato=0.5, swing=0.0),
+    # Suspense: a slow heartbeat kick, a pulsing low ostinato, a sparse melody that hangs on half-steps.
+    'suspense': dict(scale=MINOR, bpm=90, key='e', a=[(0, 'min'), (0, 'min'), (1, 'maj'), (0, 'min')],
+                     b=[(5, 'min'), (1, 'maj'), (7, 'maj'), (0, 'min')],
+                     rhythms=['1000000000000000', '0000000010000000', '1000000000001000', '0000100000000000'],
+                     kick='1001000000000000', snare='0000000000000000', hat='0000000000000000',
+                     bass={i: 0 for i in range(0, 16, 2)}, duty=0.5, legato=1.0, swing=0.0),
+    # Keynote: the bright corporate bed (IV-I-V-vi), four on the floor, plucked eighths.
+    'keynote': dict(scale=MAJOR, bpm=118, key='d', a=[(5, 'maj'), (0, 'maj'), (7, 'maj'), (9, 'min')],
+                    b=[(9, 'min'), (5, 'maj'), (0, 'maj'), (7, 'maj')],
+                    rhythms=['1010101010101010', '1000101000101000', '1010100010101000', '1000100010001010'],
+                    kick='1000100010001000', snare='0000100000001000', hat='0010001000100010',
+                    bass={0: 0, 3: 0, 6: 0, 8: 0, 11: 0, 14: 0}, duty=0.25, legato=0.4, swing=0.0),
+    # A lullaby: slow, no drums, held notes over a root-fifth bass (in a minor key it is the sad bed).
+    'lullaby': dict(scale=MAJOR, bpm=72, key='f', a=[(0, 'maj'), (5, 'maj'), (0, 'maj'), (7, 'maj')],
+                    b=[(9, 'min'), (5, 'maj'), (7, 'maj'), (0, 'maj')],
+                    rhythms=['1000100010001000', '1000000010000000', '1000100010000000', '1000000000000000'],
+                    kick='0000000000000000', snare='0000000000000000', hat='0000000000000000',
+                    bass={0: 0, 8: 7}, duty=0.5, legato=0.95, swing=0.0),
+    # Heroic: mixolydian I-bVII-IV-I, dotted rhythms, driving eighth-note bass.
+    'heroic': dict(scale=MAJOR, bpm=132, key='d', a=[(0, 'maj'), (10, 'maj'), (5, 'maj'), (0, 'maj')],
+                   b=[(8, 'maj'), (10, 'maj'), (0, 'maj'), (7, 'maj')],
+                   rhythms=['1000001010001000', '1000100010101010', '1000001000101000', '1010100010000000'],
+                   kick='1000001000100000', snare='0000100000001000', hat='1010101010101010',
+                   bass={i: 0 for i in range(0, 16, 2)}, duty=0.5, legato=0.9, swing=0.0),
 }
+# The moods of the music map (catalog/music.toml) and the beds that play them: the first is the default, a bpm picks
+# the style nearest it; `key` is the mood's own key when the script names none (sad is the lullaby in a minor key).
+MOODS = ('calm', 'upbeat', 'tense', 'sad', 'triumphant', 'mysterious', 'playful')
+MOOD_STYLES = {'calm': ('lullaby', 'keynote'), 'upbeat': ('upbeat', 'keynote'), 'tense': ('suspense', 'tense'),
+               'sad': ('lullaby',), 'triumphant': ('heroic', 'triumphant'), 'mysterious': ('sneaky', 'suspense'),
+               'playful': ('comedy-chase', 'upbeat')}
+MOOD_KEYS = {'sad': 'a minor'}
+
+
+def style_for(mood, bpm=None):
+    """(style, key or None) of the bed that plays `mood`, nearest `bpm` when one is given."""
+    if mood not in MOOD_STYLES:
+        raise ValueError(f'mood = "{mood}": one of {", ".join(MOODS)}')
+    styles = MOOD_STYLES[mood]
+    style = min(styles, key=lambda s: abs(STYLES[s]['bpm'] - float(bpm))) if bpm else styles[0]
+    return style, MOOD_KEYS.get(mood)
+
 QUALITY = {'maj': (0, 4, 7), 'min': (0, 3, 7), 'dim': (0, 3, 6)}
 LEVELS = {'melody': 0.22, 'bass': 0.34, 'kick': 0.62, 'snare': 0.34, 'hat': 0.10}
 

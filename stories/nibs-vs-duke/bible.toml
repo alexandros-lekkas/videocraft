@@ -9,7 +9,7 @@ kind = "mob"
 entity = "minecraft:goat"
 look = { left_horn = false, right_horn = true, tint = "#7f8fa6" }   # slate-blue-grey; fallback: a vanilla goat without its left horn
 personality = "Cocky, loud, adores itself; talks to the audience like a vlogger; sure it is the best jumper in the valley; the lost horn is a point of pride."
-voice = "Young, bright and fast, a little nasal, big self-satisfied energy; punches the key word; ends brags with a grin in the voice."
+voice = { engine = "qwen3", preset = "ryan", instruct = "Young, bright and fast, a little nasal, big self-satisfied energy; punches the key word; ends brags with a grin in the voice.", pace = 3.5 }
 sounds = ["minecraft:entity.goat.ambient", "minecraft:entity.goat.screaming.ambient", "minecraft:entity.goat.step"]
 gestures = ["struts head high", "stops and turns its head to the lens, deadpan", "lowers its head as if to ram", "screams at the sky", "small hop"]
 
@@ -20,7 +20,7 @@ kind = "mob"
 entity = "minecraft:fox"
 look = { variant = "snow" }
 personality = "Smug, unbothered, three-time Talent Night champion; never raises its voice; answers a challenge with a yawn."
-voice = "Dry, low and slow, faintly bored, a velvet showman's purr; leaves pauses."
+voice = { engine = "qwen3", preset = "aiden", instruct = "Dry, low and brisk, faintly bored, a velvet showman's purr; smug but quick, never pausing for long.", pace = 3.2 }
 sounds = ["minecraft:entity.fox.ambient", "minecraft:entity.fox.screech", "minecraft:entity.fox.sleep"]
 gestures = ["sits chin up", "trots", "crouch-bow", "carries the trophy in its mouth", "yawns and lies down to sleep"]
 

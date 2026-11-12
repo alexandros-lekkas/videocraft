@@ -274,7 +274,70 @@ class LockCommandTests(StoryCase):
         self.assertTrue(self.store.revision_path('nibs-vs-duke', 'shots', 2).with_suffix('.plan.json').exists())
 
 
+class VoicedStoryTests(StoryCase):
+    """The pipeline writes voiced, brisk scripts: the rules are in the prompts, the bible's voices become the cast,
+    and lint's voice warnings come back to the model as soft problems (one repair round, never a blocked lock)."""
+
+    def test_the_prompts_carry_the_voice_rules(self):
+        self.nvd('script')
+        shots = stages.stage_prompt('shots', self.store, 'nibs-vs-duke')
+        for rule in ('Every word of dialogue and narration is a `say` cue', '3.0-3.8 words a second', 'Near-continuous talk',
+                     'beat = true', 'unvoiced_text', 'slow_line', 'dead_air', 'a voice also reads it aloud'):
+            self.assertIn(rule, shots)
+        self.assertIn('[[cast.character]]\nid = "nibs"', shots)
+        self.assertIn('voice = "ryan"', shots)
+        self.assertIn('pace = 3.5', shots)
+        self.assertIn('Voiced beats captioned', shots)          # craft.md, every stage
+        bible = stages.prompt_file('bible')
+        self.assertIn('pace', bible)
+        self.assertIn('Never write "slow"', bible)
+        script = stages.prompt_file('script')
+        self.assertIn('NARRATOR (VO):', script)
+        self.assertIn('a voice reads it aloud too', script)
+        self.assertIn('Problems starting `voice:`', stages.prompt_file('repair'))
+        revised = stages.revise_prompt('shots', self.store, 'nibs-vs-duke', 'faster')
+        self.assertIn('[[cast.character]]', revised)
+
+    def test_the_cast_block_compiles_and_every_bible_voice_is_checked(self):
+        block = stages.cast_block((NVD / 'bible.toml').read_text())
+        import tomllib
+        cast = tomllib.loads(block)['cast']
+        self.assertEqual([(c['id'], c['voice'], c['pace']) for c in cast['character']], [('nibs', 'ryan', 3.5), ('duke', 'aiden', 3.2)])
+        from videocraft.voice import cast as castmod
+        castmod.load(cast)   # the shot script's [cast] accepts it
+        self.assertEqual(stages._check_voice('x', 'none'), [])
+        slow = stages._check_voice('x', {'preset': 'aiden', 'instruct': 'Slow and drawling.', 'pace': 2.0})
+        self.assertTrue(slow and all(stages.is_soft(p) for p in slow))
+        self.assertTrue(any('brisk' in p for p in slow) and any('pace' in p for p in slow))
+        self.assertTrue(stages._check_voice('x', 'Low and dry.'))
+
+    def test_soft_problems_get_one_repair_round_then_the_draft_locks(self):
+        self.nvd('script')
+        good = model_length_fixture()
+        warn = [f'{stages.SOFT}videocraft lint: WARN  dead_air         line b-1: 1.20 s without a voice']
+        seen = []
+        with mock.patch.object(stages, 'lint', lambda path, text: list(warn)):
+            o = stages.run_stage(self.store, 'nibs-vs-duke', 'shots', ask=lambda p, **k: seen.append(p) or f'<<<FILE\n{good}FILE>>>', say=quiet)
+        self.assertTrue(o.ok and o.locked, o.problems)
+        self.assertEqual(o.attempts, 2)
+        self.assertIn('dead_air', seen[1])
+        self.assertIn('Problems starting `voice:`', seen[1])
+        # a hand-written file is never held back by soft problems
+        with mock.patch.object(stages, 'lint', lambda path, text: list(warn)):
+            o = stages.run_stage(self.store, 'nibs-vs-duke', 'shots', from_file=FIXTURE, say=quiet)
+        self.assertTrue(o.ok, o.problems)
+
+
 class LintHookTests(unittest.TestCase):
+    def test_voice_warnings_feed_back_even_when_lint_passes(self):
+        out = ('WARN  unvoiced_text    shot a.cue[1]: caption of 5 words that no voice speaks: voice it with `say`\n'
+               'WARN  long_shot        shot a: 8 s\nLINT     0 error(s), 2 warning(s), 0 note(s)\n')
+        done = mock.Mock(returncode=0, stdout=out, stderr='')
+        with mock.patch.object(stages.subprocess, 'run', return_value=done):
+            got = stages.lint(None, 'name = "x"')
+        self.assertEqual(len(got), 1)
+        self.assertTrue(stages.is_soft(got[0]) and 'unvoiced_text' in got[0])
+
     def test_lint_is_skipped_while_it_is_a_placeholder_and_reported_when_it_fails(self):
         # The placeholder takes no file argument, so argparse refuses the call first: skipped, not sent to the model.
         done = mock.Mock(returncode=2, stdout='', stderr='usage: videocraft [-h] [--version]\nvideocraft: error: unrecognized arguments: x.toml')

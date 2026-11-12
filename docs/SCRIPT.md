@@ -302,25 +302,43 @@ or not positional with `relative = true`. Bad ids, instruments, notes or categor
 
 | `do` | Keys (defaults) | |
 |:--|:--|:--|
-| `sound` | `id` (an event: `minecraft:entity.chicken.egg`, `block.note_block.bell`, or `videocraft:<name>`), `pos` / `relative`, `volume` (1), `pitch` (1, playback rate 0.5–2), `category` (`neutral`; `master` if relative) | One sound, on the cue's frame. |
+| `sound` | `id` (an event: `minecraft:entity.chicken.egg`, `block.note_block.bell`, or `videocraft:<name>`), or by meaning: `tag`, `palette`, `library` (below); `pos` / `relative`, `volume` (1), `pitch` (1, playback rate 0.5–2), `category` (`neutral`; `master` if relative) | One sound, on the cue's frame. |
 | `tune` | `blocks` (a list of positions) or `block` (one), `notes`, `bpm` (120), `step` (0.5 beats per token), `instrument` (the block's own, else `harp`), `volume` (3, as a note block), `particles` (true), `mark` (a label noted in `marks.json` on each note's frame, for cuts on the beat) | A melody on note blocks: note *i* plays on block *i* mod *n*, on its frame, with the instrument's real sound at the note's pitch and the note particle rising from the block (as vanilla's note block). |
-| `ambience` | `id`, `pos` / `relative` / actor, `every` (0.8 s mean gap), `jitter` (0.5 of the gap), `spread` (4 blocks), `volume` (0.5), `pitch` (1), `pitch_jitter` (0.1), `duration` (to the end of the shot), `category` (`ambient`) | A bed of one event repeated with seeded jitter in time, pitch, volume and place (crickets: `videocraft:cricket`). |
+| `ambience` | `id` (or `tag`, `palette`, `library`), `pos` / `relative` / actor, `every` (0.8 s mean gap), `jitter` (0.5 of the gap), `spread` (4 blocks), `volume` (0.5), `pitch` (1), `pitch_jitter` (0.1), `duration` (to the end of the shot), `category` (`ambient`) | A bed of one event repeated with seeded jitter in time, pitch, volume and place (crickets: `videocraft:cricket`). |
 | `particles` | `id` (a simple particle: `heart`, `note`, `poof`, `happy_villager`, `cloud`, `flame`, `smoke`, `crit`, `angry_villager`, `splash`…), `pos` or actor, `offset` ([0, 0, 0]), `count` (8), `spread` (0.4 or [x, y, z]), `speed` (0), `every` (0: one burst), `duration` | A burst, or a stream every `every` seconds. Seeded. |
 
 `notes`: one token per step, `-` a rest, `c4*2` a note held two steps, `c4+e4+g4` a chord; names at harp pitch
 within a note block's range, `f#3` to `f#5` (or the block's note value 0–24).
 
 Synthesized events (no game sound; the mix makes them, and they are original audio): `videocraft:kick`, `snare`,
-`hat`, `crash`, `ding` (a bell), `dun` (a low sting), `sting` (a rising stab), `cricket`, `pop`, `whoosh`, `boing`.
+`hat`, `crash`, `ding` (a bell), `dun` (a low sting), `sting` (a rising stab), `cricket`, `pop`, `whoosh`, `boing`,
+and `videocraft:lib/<name>`, any of the 79 sounds of the original library.
+
+**Sounds by meaning** ([SOUNDS.md](SOUNDS.md)). Instead of `id`, a `sound` or `ambience` cue may name what it means;
+the compiler resolves it against the committed catalog (no game assets needed) and writes the concrete `id` into the
+plan:
+
+| Key | Meaning |
+|:--|:--|
+| `tag = "pop"` | The best Minecraft event carrying every tag (`"footstep wood"`, `"goat hurt"`, `"crowd"`); a tag no Minecraft sound has plays the matching library sound. `videocraft audio find <words>` shows what a tag finds. |
+| `palette = "drumroll"` | A comedy palette entry: one event with a suggested pitch and volume (`boing`, `pop`, `plop`, `ding`, `fail`, `record-scratch`, `dramatic-sting`, `cheer`…), a sequence (`rimshot`, `wah-wah`, `ta-da`, `dun-dun-dun`, `cash-register`) or a roll (`drumroll`, `crowd`, `applause`) that expands into several cues from `at`; steps past the end of the shot are left out. Some are original only (`slide-whistle-up`, `cartoon-fall`, `crickets`, `typewriter`). |
+| `library = "slide-whistle-up"` | An original library sound (`videocraft audio library`). |
+| `source` | `"auto"` (default: Minecraft first, the library when the catalog has nothing), `"minecraft"` (fail if none), `"original"` (the library sound). |
+| `vary = true` | A seeded pick among the best three (or the palette's alternatives) instead of the first. |
+
+A resolved cue keeps `tag`/`palette` and gains `id`, the palette's `pitch`/`volume` when the cue gave none,
+`original` (the library sound that replaces it in an original-only mix) and, on the later steps of a sequence or roll,
+`part`. Ids are still accepted everywhere.
 
 ### The mix: `[edit]` keys
 
 | Key | Default | Meaning |
 |:--|:--|:--|
 | `audio` | `"game"` | `"game"`: logged game sounds from your assets. `"original"`: no byte of game audio: synthesized stand-ins for logged sounds (footstep ticks, note-block tones at the logged pitch, plops, thuds; others are left out), the synth bed instead of a game track, voice. `"none"`: no audio stream. |
-| `[edit.music]` | none | `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
+| `[edit.music]` | none | `source = "auto"` (the default unless only a `style` or a `track` is named): `mood` = `calm`, `upbeat`, `tense`, `sad`, `triumphant`, `mysterious`, `playful` (default `upbeat`) picks a game track from the music map by mood, `bpm` and length when the mix may use game audio and the assets are there, starting at its measured entry (`start` overrides) and looping at its measured loop point when short; `exclude = [files]`, `rank = 1` for the next pick, `vocals = true` to allow sung tracks; otherwise the synth bed in the mood's style. `source = "synth"` (`style` = `upbeat`, `sneaky`, `tense`, `triumphant`, `comedy-chase`, `suspense`, `keynote`, `lullaby`, `heroic`, or a `mood`; `bpm`; `key` such as `"a minor"`; `seed`, default the script's; `start` seconds into the bed, e.g. one bar's worth to skip the drums-only intro) or `source = "game"` (`track`: a sound file `music/game/wet_hands` or an event; `start` seconds into it; an original-only mix plays the synth bed in the track's mood). `gain` (dB, 0 is about −22 dBFS RMS), `at` (seconds in the cut where it starts), `fade_in`, `fade_out` (s), `duck` (−9 dB under voice), `through_black` (false: silent over black gaps and fading with the picture). |
 | `[[edit.music.cue]]` | | `shot` and `at` (seconds in the shot), or `time` (seconds in the cut); `do` = `out` (fade to silence), `in`, `drop` (silent for `length`, default one beat, then back), `thin` (drums only), `full` (all stems; `gain` in dB to come back harder), `hit` (a crash and kick on the beat); `fade` (s). |
-| `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else). |
+| `[edit.mix]` | | `sfx`, `voice` (dB), `duck` = event patterns the bed ducks under (`["entity.goat.screaming.*"]`, or `"tag:scream"`: events the catalog tags so), `lift` = dB by event pattern (`{ "*.step" = 9 }` is the default: the game logs footsteps some 30 dB under everything else; `{ "tag:footstep wood" = 12 }`). |
+| `[[edit.sfx]]` | | A sound placed by the edit, not logged by the take (a sting on a cut, a whoosh over a transition): `shot` and `at` (seconds in the shot) or `time` (seconds in the cut); `id`, `tag`, `palette` or `library`; `source`; `gain` (dB), `pan`, `pitch`. Game audio first (a seeded variant from your assets), the library sound in an original-only mix. Not silenced over black gaps; the bed ducks under it. |
 | `voice` | | `[{ file, shot, at, gain }]`, written by the dialogue resolver: each line placed at `at` seconds into the shot (dB `gain`), levelled, never cut at a clip end. |
 
 Each logged sound lands at the output time of its frame (through trims, speed and black gaps), at its pitch, quieter
@@ -344,7 +362,9 @@ Recipes (the benchmark's sound column):
 
 Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
 logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
-`videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
+`videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`, `videocraft audio find <words>`,
+`videocraft audio play-sheet <tag>`, `videocraft audio catalog [--refresh]`, `videocraft audio library [--render]`
+([SOUNDS.md](SOUNDS.md)).
 
 ## Dialogue
 
@@ -376,10 +396,13 @@ cut_on = "Duke"                           # the next shot starts on the onset of
 |:--|:--|:--|
 | `actor` | required | Who speaks: a character of the cast (and an `[[actor]]` id, if the bark should come from it). `character` overrides the voice. |
 | `text` | required | The line, as it is said and shown; a word starting `*` is the key word. Spell numbers out ("six"). One word ("SIX") is a line too: a montage of single words is a run of short lines. |
-| `at` | after the previous line | Seconds into the shot. Without it, the line follows the previous `say` of its shot (or the words carried into it) after that line's `pause_after`. |
+| `at` | after the previous line | Seconds into the shot, for the shot's first line. Later lines are **packed**: each starts `gap` after the previous line's last word, and a written `at` on a later line is replaced (stderr says so) unless the line is `beat = true` or `fit = "none"`. |
 | `style` | | Delivery: `shout`, `whisper`, `deadpan`, `excited`, `proud`, `smug`, `sad`, `angry`, `scared`, `sleepy`, `question`, `sing`, or a sentence of your own ([VOICE.md](VOICE.md#the-cast-file)). |
 | `speed` | `1.0` | A pace on top of the character's. |
-| `pause_after` | `0.2` | Seconds before a following line without `at`. |
+| `pace` | the character's (`3.2`) | Words a second the line is paced to: silence trimmed (60 ms head, 120 ms tail), pauses capped (0.25 s, 0.4 s after a sentence), a slower line stretched up to 1.2x ([VOICE.md](VOICE.md#pacing-voiced-and-fast-by-default)). `0` or `false`: as synthesized. |
+| `beat` | `false` | A deliberate pause: the line keeps its `at` (the silence before it is the joke), keeps its own internal pauses, and lint does not call the silence dead air. |
+| `gap` | the previous line's `pause_after` | Seconds of silence before this line when it is packed. |
+| `pause_after` | `0.12` | Seconds before the next packed line (was 0.2 before pacing). |
 | `fit` | `"extend"` | `extend`: the shot lasts at least to the last word + `tail`. `cut-on`: the shot ends on the onset of `cut_on` (implied by `cut_on`); the words from it on carry into the next shot (script order) while the voice plays on over the cut. `none`: the duration is as written. |
 | `cut_on` | | A word of the line (matched without `*` and punctuation; the first match) or its index from 0. |
 | `tail` | `0.25` | Seconds kept after the last word with `extend`. |
@@ -391,7 +414,12 @@ cut_on = "Duke"                           # the next shot starts on the onset of
 | `id` | `<shot>-<n>` | The line's name in `voice.json` and `voice script -o`. |
 
 The resolved lines are in `edit.dialogue` and the iteration's `voice.json` (every line: file, words with times, shot,
-start); `bin/videocraft voice check <run>` measures captions, cuts and voice against them.
+start, words a second); `bin/videocraft voice check <run>` measures captions, cuts and voice against them.
+
+**Voiced and fast is the default.** A voiced line beats a caption, and slow lines kill a comedy short: say every
+line of dialogue and narration with `say` (the caption comes with it), keep silent on-screen text for signs, posts
+and cards (and voice the ones the joke needs), give only a shot's first line an `at`, and leave `duration` out of
+dialogue shots. lint warns on unvoiced text, slow lines and dead air (below).
 
 ## Appendix: commands that write shot scripts
 
@@ -410,6 +438,10 @@ unknown actor or camera subject, an anchor naming a set no `[[world.set]]` place
 up at once (a caption replacing a caption is fine). Warnings: an action or camera rig that is not built in and not
 namespaced (lint's lists are the mod's registries; a test fails when they drift),
 over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
-clip's `in`/`out` (or a shot `until`) naming a mark no cue makes. Notes: one-word montage
+clip's `in`/`out` (or a shot `until`) naming a mark no cue makes; and, for voiced and fast dialogue, in a script
+with a cast or say lines: `unvoiced_text` (a caption, title or lower third of 3 or more words that no voice speaks:
+voice it with `say`), `slow_line` (a voiced line of 3 or more words under 2.6 words a second; a note for `deadpan`,
+`sleepy`, `sad`) and `dead_air` (more than 0.8 s without a voice between two lines inside a run of dialogue shots;
+not over a black gap, not across a shot without lines, not before a `beat = true` line). Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut
 are in `measure/report.md` (docs/REVIEW.md).

@@ -25,6 +25,7 @@ bin/videocraft lint x.toml · measure --video f.mp4 --from 0 --to 82.2 --out /tm
 bin/videocraft review packet x · review run x · score x · compare x/1 x/2 · climb x.toml --budget 3   # docs/REVIEW.md
 bin/videocraft edit cut|timeline|verify x · audio mix|events|synth   # the picture edit; the sound track (SCRIPT.md)
 bin/videocraft voice setup|doctor|say|script|check   # docs/VOICE.md
+bin/videocraft audio find <words> · play-sheet <tag> · catalog --refresh · library   # docs/SOUNDS.md
 bin/videocraft sets list|ops|build|preview|new|skin  # docs/SETS.md
 bin/videocraft story new|draft|revise|build|… · series new|status · make "<prompt>"   # docs/STORY.md
 bin/videocraft assemble … · clips find|cut|pack x    # docs/CLIPS.md
@@ -60,7 +61,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `src/smoke/java/` | Plain-JVM `*Checks` run by `./gradlew check`; read fixtures from `cli/tests/plans/` | each owner |
 | `cli/videocraft/` | `cli.py` (built-in commands, loads the command groups), `script.py` (TOML → plan), `store.py` (run store), `game.py` (launch, lock, control), `doctor.py`, `tools.py`, `paths.py`, `measure/` (picture, loudness, camera, text rules), `lint.py`, `timeline.py`, `compare.py`, `climb.py`, `modpack.py`, `agents.py` (the one model call: `ask`), `review/` (packets, rubrics, prompts, reviews) | d |
 | `cli/videocraft/edit/` | The cut and exports | c |
-| `cli/videocraft/audio/` | The mix (`mix.py`), the synth bed (`synth.py`), game sounds from the local assets (`assets.py`), loudness, onsets | audio |
+| `cli/videocraft/audio/` | The mix (`mix.py`), the synth bed (`synth.py`), game sounds from the local assets (`assets.py`), loudness, onsets; `catalog/` (the Minecraft sound and music map), `library/` (original sounds), `resolve.py` (tags, palette, mood) ([docs/SOUNDS.md](docs/SOUNDS.md)) | audio |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
 | `cli/videocraft/story/`, `cli/videocraft/series/`, `stories/` | The story pipeline (premise → shots.toml), series, `make`; prompts in `story/prompts/` ([docs/STORY.md](docs/STORY.md)) | story |
@@ -210,6 +211,10 @@ They protect the owner's machine and game. They are not preferences.
   hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
   only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
+- **Voiced beats captioned, and slow kills it.** The owner on the first two films: voiced lines are "significantly
+  better" than captions, and lines at 1.2-3.5 words a second with dead air were "super slow". Every line is now
+  paced to about 3.2 words a second by default (trim, pause caps, up to 1.2x atempo; `voice/pace.py`), lines in a
+  shot pack 0.12 s apart, and lint warns on unvoiced text, slow lines and dead air.
 - **AAC overshoots a limited master.** The mix limited to −1.2 dBTP in `audio.wav` measured +0.1 dBTP in the AAC
   master of the benchmark film; `loudness.py` now limits 1 dB under the ceiling (−1.6 dBTP after encode).
 - **A strut sways the body yaw.** Subject rigs took their axis from it, so lead tracks on a strut juddered (turn
@@ -228,6 +233,11 @@ They protect the owner's machine and game. They are not preferences.
   a pose-stack rotation at the tail of `LivingEntityRenderer.setupRotations` (there the model faces -Z, +X its right).
   The bee loop samples are 4.2-5.9 s and logged with `attenuation_distance` 6, so a bee more than 6 blocks from the
   camera is silent in the mix.
+
+- **Minecraft sound lengths are in the Ogg header.** The last page's granule position over the identification
+  header's sample rate equals ffprobe's duration to the millisecond, so `audio catalog --refresh` measures all 4941
+  sound files in about 2 s without decoding. Mood-picked game music starts at its measured entry: C418's ambient
+  tracks have almost no steady pulse (autocorrelation peak under 0.15), so their bpm is only a hint.
 
 ## Working with agents
 

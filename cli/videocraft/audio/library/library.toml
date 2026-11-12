@@ -1,0 +1,320 @@
+# The original sound library: every sound here is made by code (recipes.py), so it can go in any export.
+# Tags use the same words as the Minecraft catalog (catalog/minecraft.toml), which is how an original-only export
+# finds the stand-in for a Minecraft sound. `videocraft audio find <words>` searches both; `videocraft audio
+# play-sheet <tag>` renders the candidates into one wav to listen to.
+
+[sound.boing]
+tags = ["boing", "spring", "bounce", "jump", "cartoon", "comedy"]
+about = "a sprung sine that wobbles and settles"
+
+[sound.boing-low]
+tags = ["boing", "spring", "bounce", "big", "cartoon", "comedy"]
+about = "a slower, lower boing for something heavy"
+
+[sound.spring]
+tags = ["spring", "twang", "boing", "metal"]
+about = "a metal spring twang (three inharmonic partials)"
+
+[sound.pop]
+tags = ["pop", "pickup", "bubble", "small", "comedy"]
+about = "a short falling sine burst with a click"
+
+[sound.pop-high]
+tags = ["pop", "pickup", "small", "ui"]
+about = "a higher, tighter pop"
+
+[sound.cork-pop]
+tags = ["pop", "cork", "bottle", "open"]
+about = "a bottle cork: a resonant burst and a low knock"
+
+[sound.plop]
+tags = ["plop", "drop", "water", "egg", "lay", "comedy"]
+about = "a water drop: a sine whose pitch rises as it closes"
+
+[sound.bubble]
+tags = ["bubble", "water", "plop", "underwater"]
+about = "a stream of small plops"
+
+[sound.gulp]
+tags = ["gulp", "drink", "swallow", "eat"]
+about = "a throat glug: a filtered triangle bending up and back"
+
+[sound.ding]
+tags = ["ding", "bell", "chime", "notification", "correct"]
+about = "a small bell (inharmonic partials) at E6"
+
+[sound.ding-double]
+tags = ["ding", "bell", "notification", "cash"]
+about = "two quick bell strikes"
+
+[sound.cash-register]
+tags = ["cash", "register", "ding", "money", "trade", "buy"]
+about = "a drawer rattle, a clunk and a bell"
+
+[sound.success-chime]
+tags = ["success", "chime", "correct", "win", "achievement", "ding"]
+about = "a rising four-note bell arpeggio"
+
+[sound.level-up]
+tags = ["levelup", "level", "xp", "success", "chiptune", "win"]
+about = "a fast rising pulse-wave arpeggio"
+
+[sound.fanfare]
+tags = ["fanfare", "triumph", "win", "achievement", "brass", "success"]
+about = "brass-like saw triads: ta-ta-taaa"
+
+[sound.sparkle]
+tags = ["sparkle", "magic", "twinkle", "shine", "chime"]
+about = "scattered high pings fading out"
+
+[sound.magic]
+tags = ["magic", "spell", "enchant", "sparkle", "shimmer"]
+about = "a rising tremolo shimmer with sparkles"
+
+[sound.whoosh]
+tags = ["whoosh", "swish", "air", "fast", "transition", "throw"]
+about = "band-passed noise sweeping up and back down"
+
+[sound.whoosh-fast]
+tags = ["whoosh", "swish", "fast", "air", "dash"]
+about = "a quick whoosh, a quarter second"
+
+[sound.swish]
+tags = ["swish", "swing", "sweep", "whoosh", "attack"]
+about = "a falling high noise sweep: a swung arm or sword"
+
+[sound.zap]
+tags = ["zap", "laser", "electric", "shoot", "shock"]
+about = "a falling ring-modulated square"
+
+[sound.teleport]
+tags = ["teleport", "warp", "portal", "magic", "vanish"]
+about = "a rising warbling triangle"
+
+[sound.thud]
+tags = ["thud", "impact", "land", "fall", "hit", "drop"]
+about = "a low dull knock with dirt"
+
+[sound.bonk]
+tags = ["bonk", "hit", "impact", "head", "knock", "comedy", "cartoon"]
+about = "a hollow wooden knock whose pitch drops"
+
+[sound.splat]
+tags = ["splat", "squish", "slime", "wet", "impact", "comedy"]
+about = "a wet low-passed burst with a burble"
+
+[sound.click]
+tags = ["click", "ui", "button", "switch"]
+about = "a crisp 2 ms click"
+
+[sound.click-soft]
+tags = ["click", "ui", "button", "soft"]
+about = "a softer, lower click"
+
+[sound.tick]
+tags = ["tick", "clock", "click", "timer"]
+about = "a clock tick"
+
+[sound.knock]
+tags = ["knock", "door", "wood", "hit"]
+about = "two knocks on a wooden door"
+
+[sound.explosion]
+tags = ["explosion", "boom", "blast", "impact", "big"]
+about = "a long falling noise burst over a sub rumble, with crackle"
+
+[sound.shatter]
+tags = ["shatter", "glass", "crash", "break", "smash"]
+about = "a crack and a shower of high shards"
+
+[sound.rumble]
+tags = ["rumble", "thunder", "earthquake", "low", "spooky"]
+about = "a swelling low rumble"
+
+[sound.heartbeat]
+tags = ["heartbeat", "tension", "spooky", "thump"]
+about = "lub-dub"
+
+[sound.splash]
+tags = ["splash", "water", "swim", "fall"]
+about = "a falling noise burst with droplets"
+
+[sound.munch]
+tags = ["munch", "eat", "eating", "crunch", "bite"]
+about = "three crunchy bites"
+
+[sound.footstep-wood]
+tags = ["footstep", "step", "wood", "footstep-wood"]
+about = "a hollow step on planks"
+
+[sound.footstep-stone]
+tags = ["footstep", "step", "stone", "footstep-stone"]
+about = "a hard step on stone"
+
+[sound.footstep-grass]
+tags = ["footstep", "step", "grass", "footstep-grass", "leaves", "dirt"]
+about = "a soft crunchy step on grass"
+
+[sound.footstep-sand]
+tags = ["footstep", "step", "sand", "footstep-sand", "gravel"]
+about = "a grainy shuffle on sand"
+
+[sound.footstep-snow]
+tags = ["footstep", "step", "snow", "footstep-snow", "wool"]
+about = "a muffled crunch on snow"
+
+[sound.footstep-metal]
+tags = ["footstep", "step", "metal", "footstep-metal"]
+about = "a step on metal with a short ring"
+
+[sound.squeak]
+tags = ["squeak", "mouse", "toy", "small", "comedy", "bat"]
+about = "a rubber squeak: a high sine bending up and back"
+
+[sound.buzz]
+tags = ["buzz", "wrong", "fail", "buzzer", "error"]
+about = "a game-show wrong-answer buzzer"
+
+[sound.error-buzz]
+tags = ["error", "fail", "wrong", "denied", "buzz", "ui"]
+about = "two falling square beeps"
+
+[sound.alarm]
+tags = ["alarm", "siren", "alert", "warning", "horn"]
+about = "a two-tone siren"
+
+[sound.honk]
+tags = ["honk", "horn", "clown", "comedy", "cartoon", "goose"]
+about = "a clown horn: a reedy pulse through nasal formants"
+
+[sound.honk-double]
+tags = ["honk", "horn", "clown", "comedy"]
+about = "honk honk"
+
+[sound.drum-hit]
+tags = ["drum", "tom", "hit", "beat", "percussion"]
+about = "a tom"
+
+[sound.kick]
+tags = ["drum", "kick", "beat", "percussion", "thump"]
+about = "a kick drum"
+
+[sound.snare]
+tags = ["drum", "snare", "beat", "percussion"]
+about = "a snare"
+
+[sound.cymbal]
+tags = ["cymbal", "crash", "drum", "percussion", "hit"]
+about = "a crash cymbal"
+
+[sound.snare-roll]
+tags = ["drumroll", "roll", "snare", "drum", "reveal", "suspense"]
+about = "a swelling snare roll ending on a hit and a cymbal"
+
+[sound.rimshot]
+tags = ["rimshot", "joke", "punchline", "drum", "comedy", "ba-dum-tss"]
+about = "ba-dum-tss"
+
+[sound.sting-dramatic]
+tags = ["sting", "dramatic", "reveal", "shock", "dun"]
+about = "dun, dun, DUN: three falling minor stabs over a timpani roll"
+
+[sound.sting-rise]
+tags = ["sting", "riser", "rise", "tension", "transition"]
+about = "a noise and saw riser"
+
+[sound.sting-spooky]
+tags = ["sting", "spooky", "creepy", "mystery", "tension"]
+about = "a dissonant tremolo cluster"
+
+[sound.fail-trombone]
+tags = ["fail", "trombone", "sad", "wah-wah", "lose", "comedy"]
+about = "wah, wah, wah, waaah"
+
+[sound.crowd-murmur]
+tags = ["crowd", "murmur", "people", "chatter", "audience"]
+about = "many voices talking: noise through drifting vowel formants"
+
+[sound.applause]
+tags = ["applause", "clap", "crowd", "audience", "cheer"]
+about = "hundreds of seeded claps in a swell"
+
+[sound.cheer]
+tags = ["cheer", "crowd", "celebrate", "yay", "audience", "happy"]
+about = "rising voiced vowels over applause"
+
+[sound.slide-whistle-up]
+tags = ["slide-whistle", "rise", "up", "cartoon", "comedy", "jump"]
+about = "a slide whistle up"
+
+[sound.slide-whistle-down]
+tags = ["slide-whistle", "fall", "down", "cartoon", "comedy"]
+about = "a slide whistle down"
+
+[sound.cartoon-fall]
+tags = ["fall", "cartoon", "comedy", "slide-whistle", "thud"]
+about = "a long falling whistle ending in a thud"
+
+[sound.record-scratch]
+tags = ["record-scratch", "scratch", "stop", "interrupt", "comedy", "scrape"]
+about = "a record rocked back and forth: tone and hiss whose speed swings through zero"
+
+[sound.typewriter]
+tags = ["typewriter", "typing", "keys", "click", "ding"]
+about = "a burst of key clicks and the carriage bell"
+
+[sound.door-creak]
+tags = ["creak", "door", "wood", "spooky", "open"]
+about = "stick-slip pulses through wooden resonances"
+
+[sound.crickets]
+tags = ["crickets", "cricket", "silence", "awkward", "night"]
+about = "awkward-silence crickets"
+
+[sound.bleat]
+tags = ["bleat", "goat", "sheep", "voice", "ambient", "animal"]
+about = "a nasal trilling meh"
+
+[sound.cluck]
+tags = ["cluck", "chicken", "voice", "ambient", "animal", "bird"]
+about = "three quick clucks"
+
+[sound.yip]
+tags = ["yip", "fox", "bark", "voice", "animal"]
+about = "a short high yip"
+
+[sound.moo]
+tags = ["moo", "cow", "voice", "ambient", "animal"]
+about = "a low opening moo"
+
+[sound.oink]
+tags = ["oink", "pig", "voice", "ambient", "animal"]
+about = "a pulse-voiced snort"
+
+[sound.meow]
+tags = ["meow", "cat", "voice", "ambient", "animal"]
+about = "a rising-falling meow"
+
+[sound.woof]
+tags = ["woof", "dog", "wolf", "bark", "voice", "animal"]
+about = "a short falling bark"
+
+[sound.hmm]
+tags = ["hmm", "villager", "voice", "ambient", "thinking", "people"]
+about = "a closed-mouth hum that dips and rises"
+
+[sound.grunt]
+tags = ["grunt", "zombie", "voice", "monster", "angry"]
+about = "a rough low pulse-voiced grunt"
+
+[sound.hiss]
+tags = ["hiss", "cat", "snake", "fuse", "angry", "steam"]
+about = "band-passed noise"
+
+[sound.yelp]
+tags = ["yelp", "hurt", "ow", "voice", "pain"]
+about = "a quick ow"
+
+[sound.scream]
+tags = ["scream", "yell", "panic", "voice", "goat", "comedy"]
+about = "a long shaking cartoon aaah"
