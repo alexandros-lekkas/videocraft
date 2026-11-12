@@ -1,6 +1,7 @@
 """The `sets` command group:
 
   videocraft sets list                                 the sets in sets/, their time of day and marks
+  videocraft sets ops [NAME]                           the build vocabulary: every `do`, its keys and defaults
   videocraft sets build <name> [--at X Y Z] [--rotate R] [--commands FILE] [--json]
                                                        commands, counts, bounding box, marks, warnings
   videocraft sets preview <name> [--only TEXT …]       a take from every viewpoint → preview/contact.png
@@ -23,6 +24,9 @@ def register(sub):
     s = p.add_subparsers(dest='sets_command', required=True)
     q = s.add_parser('list')
     q.set_defaults(run=cmd_list)
+    q = s.add_parser('ops')
+    q.add_argument('name', nargs='?')
+    q.set_defaults(run=cmd_ops)
     q = s.add_parser('build')
     q.add_argument('name')
     q.add_argument('--at', nargs=3, type=int, default=list(DEFAULT_AT), metavar=('X', 'Y', 'Z'))
@@ -58,6 +62,19 @@ def cmd_list(args):
             say(f'{s["name"]:<16} ERROR {s["error"]}')
         else:
             say(f'{s["name"]:<16} time {s["time"]!s:>6}  {s["marks"]:>3} marks  {s["description"]}')
+    return 0
+
+
+def cmd_ops(args):
+    import textwrap
+    from .ops import OPS
+    names = [args.name] if args.name else list(OPS)
+    for n in names:
+        if n not in OPS:
+            say(f'SET ERROR no op "{n}"; ops: {", ".join(OPS)}')
+            return 1
+        doc = ' '.join((OPS[n].__doc__ or '').split())
+        say(f'{n}\n' + textwrap.fill(doc, 110, initial_indent='    ', subsequent_indent='    ') + '\n')
     return 0
 
 

@@ -113,12 +113,12 @@ final class Commands {
 				int[] a = area;
 				if (waited++ == 0) {
 					pending = server.submit(() -> {
-						// Vanilla's forceload takes at most 256 chunks a command: add the area in tiles of 16x16 chunks.
-						for (int x = a[0]; x <= a[2]; x = Math.floorDiv(x, 16) * 16 + 256) {
-							for (int z = a[1]; z <= a[3]; z = Math.floorDiv(z, 16) * 16 + 256) {
-								int x2 = Math.min(a[2], Math.floorDiv(x, 16) * 16 + 255), z2 = Math.min(a[3], Math.floorDiv(z, 16) * 16 + 255);
-								String e = run(server, at, "forceload add " + x + " " + z + " " + x2 + " " + z2);
-								if (e != null && !e.contains("already") && !e.contains("No chunks were marked") && error == null) error = where + ": forceload failed: " + e;
+						// Vanilla forceloads at most 256 chunks a command, and fails on chunks already forced: a big
+						// area (a set) goes in 16x16-chunk pieces, and "no chunks were marked" means already loaded.
+						for (int x = a[0] >> 4; x <= a[2] >> 4 && error == null; x += 16) {
+							for (int z = a[1] >> 4; z <= a[3] >> 4 && error == null; z += 16) {
+								String e = run(server, at, "forceload add " + (x << 4) + " " + (z << 4) + " " + (Math.min(a[2] >> 4, x + 15) << 4) + " " + (Math.min(a[3] >> 4, z + 15) << 4));
+								if (e != null && !e.contains("already") && !e.contains("No chunks were marked")) error = where + ": forceload failed: " + e;
 							}
 						}
 						return 0;

@@ -14,7 +14,7 @@ NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description', 'cast'}
 WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage', 'preset'}
 WORLD |= {'set', 'sets', 'anchors', 'paths', 'views'}  # [[world.set]]: sets/expand.py (sets workstream)
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather'}
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather', 'vertical'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -122,6 +122,10 @@ def compile_script(raw, source='script'):
         camera = shot.get('camera')
         if not isinstance(camera, dict) or 'rig' not in camera:
             raise ScriptError(f'shot {sname}: camera = {{ rig = "orbit", ... }} is required')
+        vertical = shot.get('vertical') or {}  # [shot.vertical]: camera keys for a vertical take (docs/CLIPS.md)
+        _unknown(vertical, {'camera', 'subject', 'note'}, f'shot {sname}.vertical')
+        if output['height'] > output['width'] and isinstance(vertical.get('camera'), dict):
+            camera = {**camera, **vertical['camera']}
         preroll = float(shot.get('preroll', 0))
         if preroll < 0:
             raise ScriptError(f'shot {sname}: preroll = <seconds> is >= 0')

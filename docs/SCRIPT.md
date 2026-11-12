@@ -27,6 +27,7 @@ workstream in brackets.
 | `settle` | `4.0` | Seconds after arrival before staging, and then until every section in view is drawn. |
 | `preset` | `default` | For a seed world: `default`, `flat` (grass to the horizon) or `void` (nothing but a small platform at the origin); `flat` and `void` have no structures, so they make stages [a]. |
 | `[[world.stage]]` | | Cues (below) run once before the first shot, never recorded. |
+| `[[world.set]]` | | A set from `sets/` (`name`, `at` [0, 230, 0], `rotate`, `mirror`, `as`): built at compile time and staged before the script's own stage cues; its marks become anchors `<set>:<mark>` (docs/SETS.md) [sets]. |
 
 On arrival the world is made to hold still: mob spawning, random ticks (leaf decay, crops), fire spread, vines,
 raids, traders and advancement toasts are off, new chunks generate without their animals, and the player is put on
@@ -111,6 +112,7 @@ player runs on the client's own ticks. Not built: `blink` (no vanilla model has 
 | `preroll` | `0` | Seconds the timeline and the rig run before frame 0, unrecorded: the shot opens with the subject already walking and the operator settled. Cues may have `at` down to `-preroll` [a]. |
 | `time` | the world's | Time of day for this shot (ticks), set when it starts preparing [a]. |
 | `weather` | the world's | `clear`, `rain`, `thunder` for this shot, at once (no easing in) [a]. |
+| `[shot.vertical]` | | `camera` keys applied over `camera` when the output is taller than wide (a vertical re-shoot), and the re-frame `subject` (an actor id or `[x, y, z]`): [CLIPS.md](CLIPS.md#shotvertical). **Implemented** (clips). |
 | `[[shot.cue]]` | | The timeline. |
 
 Before recording, each shot waits at least one second of game time and until the world around the camera is drawn:
@@ -174,6 +176,12 @@ word with its `frame` and `box`.
 `[x, y, z]`, or `{ anchor = "spawn", offset = [x, y, z] }`. `spawn` is the player's feet on arrival. Or on an actor,
 where it stands when the position is read: `{ actor = "nibs", offset = [x, y, z] }` (world axes) or
 `{ actor = "nibs", front = 3, right = 0.5, up = 1.2 }` (along the way it faces).
+
+A set's marks ([docs/SETS.md](SETS.md)), resolved when the script compiles: `{ anchor = "market-lane:stall-red",
+offset = [0, 0, 1] }` (a point; a path's first point, `….end` its last; a camera's eye, `….look` its target),
+`{ path = "market-lane:shot-01", from = 0, to = 1, reverse = false }` (a path's points, for `walk`, `glide` …),
+`{ yaw = "barn-stage:rail-1" }` (a point's facing) and, as a camera, `{ view = "barn-stage:cam-wide" }` (a `fixed`
+rig at that camera mark; other keys override it) [sets].
 
 ## Camera rigs
 
@@ -362,6 +370,7 @@ start); `bin/videocraft voice check <run>` measures captions, cuts and voice aga
 | `story` | `story new "<premise>"`, `draft`, `revise`, `build`, `show`, `diff`, `lock`, `list`: premise → bible → outline → script → a shot script (`stories/<id>/shots.toml`, named after the story) that compiles; every revision kept. [STORY.md](STORY.md) |
 | `series` | `series new <story> --episodes N`, `series status <story>`: episode stories that share the story's bible. [STORY.md](STORY.md#series) |
 | `make` | `make "<prompt>" [--format short\|episode\|long] [--vertical] [--dry-run]`: every story stage, then `run` (take, cut, measure); stops at the first stage that fails. [STORY.md](STORY.md) |
+| `clips cut` | `clips cut <run> --moment N --method reshoot`: the range's shots as a vertical script (`clips/<n>/vertical.json`, 1080x1920, `[shot.vertical]` applied), taken and cut to a short. [CLIPS.md](CLIPS.md) |
 ## Checking a script (`videocraft lint`)
 
 `bin/videocraft lint x.toml [--rubric pinksheep-style]` lists every problem at once (`compile` stops at the first);

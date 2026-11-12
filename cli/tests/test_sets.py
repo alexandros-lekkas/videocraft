@@ -189,8 +189,11 @@ class Sets(unittest.TestCase):
             plan, _ = script.compile_script(raw)
             world = plan['world']
             self.assertEqual(world['time'], 9000)
-            self.assertEqual(world['stage'][0]['commands'][0].split(' ')[0], 'forceload')
-            self.assertEqual(world['stage'][1]['forceload'][0], world['sets'][0]['box']['from'][0])
+            # One cue holds the whole set behind its forceload key; no literal forceload commands (an already
+            # forced chunk fails one).
+            self.assertEqual(world['stage'][0]['forceload'][0], world['sets'][0]['box']['from'][0])
+            self.assertFalse(any(c.startswith('forceload') for cue in world['stage'] for c in cue.get('commands', [])))
+            self.assertEqual([c['do'] for c in world['stage'] if c['do'] == 'wait'], ['wait'])
             self.assertIn('tiny:door', world['anchors'])
             cam = plan['shots'][0]['camera']
             self.assertEqual((cam['rig'], cam['fov']), ('fixed', 60.0))

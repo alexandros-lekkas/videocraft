@@ -182,6 +182,19 @@ They protect the owner's machine and game. They are not preferences.
   and once scoffed for a second before a deadpan "That"; both fool an energy threshold (onsets 0.1-1.1 s early) and
   ASR ignores them. Speech must reach −25 dB to count, and a word the aligner puts deep into a burst starts after
   its last dip (`voice/worker/align.py`). Cut on onsets after pauses; word ends are 80-160 ms off at p90.
+- **Vertical takes.** A hidden 540x960 window gives a 1080x1920 framebuffer on a 2x Mac and the text layer lays every
+  caption out for it; `clips cut` passes the window itself. A 9:16 crop of a 16:9 master loses any text outside the
+  crop, so re-framing falls back to the whole frame over a blurred fill; re-shooting is the way to keep text.
+- **A moving ffmpeg crop:** `sendcmd=f=<file>,crop=…` with one `<t> crop x <px>;` line per change moves the crop
+  per frame. The re-frame operator needs about 0.3 s of look-ahead: at 0.15 s a fast-drifting subject left the crop's
+  centre 60 % in a fifth of its frames, at 0.3 s in none.
+- **argparse:** a positional named `run` in a command group overwrites `set_defaults(run=…)` (TypeError: 'str'
+  object is not callable); give it another `dest` and `metavar='run'`.
+- **A low wide lens sees 3-10 blocks of a set.** At one block up with a 105° lens, a lead track's frame is the road
+  and whatever stands within a few blocks of the walker; set dressing further off never shows (docs/SETS.md).
+- **Forceload is 256 chunks a command** and fails on chunks already forced ("No chunks were marked"); a set's box is
+  hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
+  only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
 ## Working with agents
 
