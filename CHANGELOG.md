@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The Talent Night poster on market-lane shows a fox, not a cat: a snow fox sitting in profile toward the trophy, with
+  tall pointed ears, a long snout, a white ruff and a bushy grey tail with a white tip.
 - `[[edit.export]] audio = "original"` and `cut --original-audio` write `<export>-original-audio.mp4` and
   `master-original-audio.mp4` beside the game-audio files, from a second mix in `cut/audio-original.wav`; the game
   mix in `cut/audio.wav` is never overwritten.

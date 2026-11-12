@@ -403,32 +403,38 @@ lines = [
   { text = "Champion 3 years running:", at = [2.5, 2.6], scale = 1.05, color = "#ffffff" },
   { text = "DUKE", at = [3.55, 0.35], scale = 2.6, color = "#ffffff", bold = true },
 ]
-# Original pixel art: a white fox sitting (left) and a golden trophy (right), 1/16 block a pixel.
+# Original pixel art: a snow fox sitting in profile toward a golden trophy (right): tall pointed ears, a long snout
+# with a black nose, a white ruff, and a big bushy grey tail curled up behind with a white tip, so it reads as a fox
+# and not a cat even at thumbnail size.
 [[build.art]]
-at = [0.3, 0.25]
-pixel = 0.08
-palette = { W = "white_concrete", w = "snow_block", g = "light_gray_concrete", K = "black_concrete", O = "orange_concrete", k = "gray_concrete", P = "pink_concrete" }
+at = [0.25, 0.22]
+pixel = 0.075
+palette = { W = "white_concrete", w = "snow_block", g = "light_gray_concrete", K = "black_concrete", k = "gray_concrete" }
 rows = [
-  "..W.....W.......",
-  ".WWW...WWW......",
-  ".WPWW.WWPW......",
-  ".WWWWWWWWW......",
-  "WWKWWWWWKWW.....",
-  "WWWWWWWWWWW.....",
-  ".WWWWKKWWW......",
-  "..WWWWWWW.......",
-  "...WWWWW........",
-  "..WWWWWWW.......",
-  ".WWWWWWWWW..ww..",
-  ".WWWWWWWWWW.www.",
-  ".WWWWWWWWWWWwww.",
-  ".WWWgWWWWWWWWww.",
-  ".WWWgWWWWWWWWww.",
-  ".WWWWWWWWWWWWw..",
-  ".WWWWWWWWWWWW...",
-  ".WWgWWWgWWWW....",
-  ".WW.WW.WW.WW....",
-  ".kk.kk.kk.kk....",
+  ".................W....W.......",
+  "................WW...WW.......",
+  "................WgW.WgW.......",
+  "...............WggWWggW.......",
+  "...............WWWWWWWWW......",
+  "..............WWWWWWWWWWW.....",
+  "..............WWWWWWKKWWWWW...",
+  "..............WWWWWWWWWWWWWWWK",
+  "...............WWWWWWWWWWWWWg.",
+  "...............wwwWWWWWWgg....",
+  "..............wwwwwwWWWW......",
+  "..ww.........wwwwwwwWWW.......",
+  ".wwww........wwwwwwwWWW.......",
+  "wwwwww.....WWwwwwwwwWWW.......",
+  "wwwwwgg..WWWWWwwwwwwWWW.......",
+  ".wgggggg.WWWWWWwwwwwWWW.......",
+  "..gggggWWWWWWWWWwwwwWWW.......",
+  "..ggggggWWWWWWWWWwwwWWW.......",
+  "...gggggWWWWWWWWWWWWWWW.......",
+  "...ggggggWWWWWWWWWWWWWW.......",
+  "....gggggWWWWWWWWWWgWWg.......",
+  ".....gggggWWWWWWWWWgWWg.......",
+  ".......ggggggggggggkWWk.......",
+  "..........ggggggggkkkkk.......",
 ]
 [[build.art]]
 at = [3.75, 1.2]
