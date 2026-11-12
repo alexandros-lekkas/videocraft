@@ -78,6 +78,8 @@ def compile_script(raw, source='script'):
     from videocraft.voice import resolve as dialogue  # `say` cues -> captions on the words, edit.voice, shot lengths
     if dialogue.has_say(raw):
         raw = dialogue.resolve(raw, source)
+    from videocraft.audio import resolve as sounds  # sound cues by tag, palette or library -> event ids (docs/SOUNDS.md)
+    raw = sounds.resolve(raw, source)
     name = raw.get('name')
     if not isinstance(name, str) or not NAME.match(name):
         raise ScriptError(f'{source}: name = "<lowercase-dash-name>" is required (got {name!r})')
