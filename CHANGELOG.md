@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A `say` line with `fit = "none"` that runs over its shot's end keeps its caption on screen across the cut (and
+  over a run of short shots): the whole line, the words said before the cut already landed, the rest popping on time.
 - `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
   painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
   filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,

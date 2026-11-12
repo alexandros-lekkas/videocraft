@@ -190,7 +190,7 @@ word with its `frame` and `box`.
 
 | `do` | Keys (defaults) |
 |:--|:--|
-| `caption` | `text` (a string, wrapped and balanced over at most two lines, or a list of lines); a word starting `*` is the key word (yellow, breathes). Or `words = [{ w = "Hey.", at = 0.0 }, …]`: each word pops on the frame nearest cue `at` + its `at` (seconds), exactly (the voice timeline's way in); `br = true` breaks the line before a word. `style` (`pop`: words pop in, `stagger` 0.12 s apart; `whole`: all on the first frame, no animation), `position` (`bottom`, `top`, `center`), `size` (63), `hold` (seconds after the last word lands; default until replaced or the cut; ends with a 5-frame fade), `speaker` (a name, or `{ name, color }`: a coloured tag above; `speaker_color` is the colour with a plain name), `color` (`#ffffff`), `key_color` (`#ffe23b`), `shade` (false: a dark gradient behind). |
+| `caption` | `text` (a string, wrapped and balanced over at most two lines, or a list of lines); a word starting `*` is the key word (yellow, breathes). Or `words = [{ w = "Hey.", at = 0.0 }, …]`: each word pops on the frame nearest cue `at` + its `at` (seconds), exactly (the voice timeline's way in; a negative `at` is a word already on screen, landed, on the cue's first frame); `br = true` breaks the line before a word. `style` (`pop`: words pop in, `stagger` 0.12 s apart; `whole`: all on the first frame, no animation), `position` (`bottom`, `top`, `center`), `size` (63), `hold` (seconds after the last word lands; default until replaced or the cut; ends with a 5-frame fade), `speaker` (a name, or `{ name, color }`: a coloured tag above; `speaker_color` is the colour with a plain name), `color` (`#ffffff`), `key_color` (`#ffe23b`), `shade` (false: a dark gradient behind). |
 | `title` | `text` (big centred words with depth; `*` key words), `subtitle`, `style` (`pop`, `drop`: letters drop in one after another and bounce, `whole`), `position` (`center`, `top`, `bottom`), `size` (112, shrinks to fit one line, then two), `subtitle_size` (56), `color`, `subtitle_color`, `shade` (false; true or an opacity draws a soft band behind), `hold`, `fade_in`, `fade_out` (seconds). |
 | `card` | A full-frame card: `background` (`#000000`), `opacity` (1.0; less lets the picture through), `title`, `subtitle`, `style` (`whole`), `fade_in`, `fade_out` (seconds; without `hold` the fade out ends on the cut), `hold`, and the sizes and colours of `title`. For end cards and graphic inserts. |
 | `lower_third` | `text` (a name), `subtitle` (a line under it), `color` (the bar, `#ffe23b`), `side` (`left`, `right`), `size` (56), `hold` (slides out at its end). Slides in from the side on a dark panel at the bottom of the safe area. |
@@ -407,14 +407,14 @@ cut_on = "Duke"                           # the next shot starts on the onset of
 | `beat` | `false` | A deliberate pause: the line keeps its `at` (the silence before it is the joke), keeps its own internal pauses, and lint does not call the silence dead air. |
 | `gap` | the previous line's `pause_after` | Seconds of silence before this line when it is packed. |
 | `pause_after` | `0.12` | Seconds before the next packed line (was 0.2 before pacing). |
-| `fit` | `"extend"` | `extend`: the shot lasts at least to the last word + `tail`. `cut-on`: the shot ends on the onset of `cut_on` (implied by `cut_on`); the words from it on carry into the next shot (script order) while the voice plays on over the cut. `none`: the duration is as written. |
+| `fit` | `"extend"` | `extend`: the shot lasts at least to the last word + `tail`. `cut-on`: the shot ends on the onset of `cut_on` (implied by `cut_on`); the words from it on carry into the next shot (script order) while the voice plays on over the cut. `none`: the duration is as written; a line that runs past the shot's end carries its whole caption on into the next shot (and the ones after, over a run of short shots): the words already said are on screen, settled, and the rest pop on their onsets. |
 | `cut_on` | | A word of the line (matched without `*` and punctuation; the first match) or its index from 0. |
 | `tail` | `0.25` | Seconds kept after the last word with `extend`. |
 | `gain` | `0` | dB on this line in the mix. |
 | `bark` | the cast's | `false` for none, or another sound event. |
 | `caption` | `true` | `false`: no caption (voice only); or a table of caption keys. `position`, `size`, `hold`, `shade`, `key_color`, `color` pass through too. |
 | `speaker` | the cast's name and colour | `false` for no tag, a name, or `{ name, color }`. |
-| `carry` | `true` | With `cut-on`: carry the rest of the caption into the next shot. |
+| `carry` | `true` | With `cut-on`: carry the rest of the caption into the next shot; with `none`: carry the line's caption over the cut. |
 | `id` | `<shot>-<n>` | The line's name in `voice.json` and `voice script -o`. |
 
 The resolved lines are in `edit.dialogue` and the iteration's `voice.json` (every line: file, words with times, shot,

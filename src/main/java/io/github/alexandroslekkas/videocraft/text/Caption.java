@@ -165,7 +165,8 @@ final class Caption extends Message {
 				if (i > 0) f = Math.max(f, wordFrames[i - 1] + 1);
 				next += stagger;
 			}
-			wordFrames[i] = Math.max(startFrame, f);
+			// A word timed before the cue (a caption carried over a cut) is on screen from the first frame, already landed.
+			wordFrames[i] = !whole && !Double.isNaN(w.at()) && w.at() < 0 ? Math.min(f, startFrame - 1) : Math.max(startFrame, f);
 		}
 		endFrame = holdEnd(shownFrame());
 	}
