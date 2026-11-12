@@ -50,6 +50,7 @@ public final class Actions {
 		r.action("talk", (p, s) -> gesture(p, s, Gesture.Kind.TALK, 2.0));
 		r.action("point", (p, s) -> gesture(p, s, Gesture.Kind.POINT, Double.POSITIVE_INFINITY));
 		r.action("pose", Actions::pose);
+		FlightActions.register(r);
 		r.action("blink", (p, s) -> {
 			throw new IllegalArgumentException(p.where() + ": blink: no vanilla mob or mannequin model has eyelids to close; use a nod or a look instead");
 		});
@@ -170,6 +171,7 @@ public final class Actions {
 			};
 		}
 		Puppet p = puppet(params, shot);
+		if (p.flying()) throw new IllegalArgumentException(params.where() + ": '" + p.id + "' is in the air: fly, hover, swarm or land it (land on = a position puts it on its feet)");
 		String gait = forced != null ? forced : params.string("gait", "walk").toLowerCase(Locale.ROOT);
 		double speed = params.has("speed") ? params.number("speed") : p.breed().pace(gait, params.where());
 		if (speed <= 0 || speed > 8) throw new IllegalArgumentException(params.where() + ": speed is in blocks per second, 0 to 8");
