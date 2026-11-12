@@ -207,6 +207,13 @@ They protect the owner's machine and game. They are not preferences.
   hundreds of chunks, so `Commands` forceloads a cue's area in 16x16-chunk pieces. Stage cues run side by side, so
   only a cue's own `forceload` key holds its commands until the chunks have loaded.
 
+- **AAC overshoots a limited master.** The mix limited to −1.2 dBTP in `audio.wav` measured +0.1 dBTP in the AAC
+  master of the benchmark film; `loudness.py` now limits 1 dB under the ceiling (−1.6 dBTP after encode).
+- **A strut sways the body yaw.** Subject rigs took their axis from it, so lead tracks on a strut juddered (turn
+  jerk 40-56 against about 1 on walks); `Follow` now follows the subject's travel while it moves.
+- **A walk carries over the cut.** A `walk` still going at the end of a shot keeps going in the next, over that
+  shot's `place`; put a `stop` (`arrive = 0`) before a `place` that must hold.
+
 ## Working with agents
 
 - **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git
