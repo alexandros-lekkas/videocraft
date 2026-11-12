@@ -25,6 +25,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 3 | 0009 | 8.0 | 6.5 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 7.0 | 6.5 | **6.61** | 5.5 | pass |
 | 4 | 0010 | 8.0 | 7.0 | 7.0 | 5.0 | 6.0 | 7.0 | 6.0 | 7.0 | 6.5 | **6.61** | 5 | pass |
 | 5 | 0011 | 8.0 | 7.5 | 7.0 | 5.0 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | **6.56** | 5 | pass |
+| 6 | 0012 | 8.0 | 7.0 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -82,3 +83,33 @@ remain are about acting: the button (s30) is a 13%-high blob; "the best jumper i
 take at the board; the trophy vanishes without visibly reaching the mouth. Applied for 0012: Nibs jumps on "jumper"
 (s01) and on "jump" (s19, now a closer side lead), a dead stop and double take at the board (s07, closer), s16b
 tight on Duke's head at the post, s30 close on Duke facing the lens, s26 a 1 s beat, s29 2.6 s.
+
+Round 6 (0012) is again 6.61, minimum 5.5: four rounds inside ±0.05 of the same average, so the climb stopped
+there. **Best iteration: 0012** (tied for the best average with 0007, 0009 and 0010; the highest minimum; the only one
+with every multi-word caption up for its reading time). 0013 is the script as committed (Duke's "zzz" moved above
+him) and passes; its frames.csv and actors.csv match 0012's byte for byte where nothing changed.
+
+## Where it stands
+
+Measured on 0012 against the benchmark's checks:
+
+| Check | Benchmark | 0012 |
+|:--|:--|:--|
+| Shots found by scene detection (1-30) | 30 ±2 | 30 (31 clips in the edit: s16 split in two; one join on black not seen) |
+| Median shot length | 2.3-3.0 s | 2.25 s |
+| Opening | 5-7 s | 6.2 s |
+| Shots over 7.5 s | none | none (longest 7.15 s) |
+| Montage shots under 0.6 s | six, 0:58-1:01 | five, 0:56.4-0:58.2, then "HIM" held 1.0 s (a reviewer's beat) |
+| Black stretches ≥ 0.5 s | two, about 0:27 and 1:07 | 0:26.17-0:27.05 and 1:05.43-1:06.10 |
+| Lead tracks: Nibs centred, size steady | middle third, < 15% change | x 0.47-0.51 on every lead; size change 0-11% except s19 (16%, its jump) and s28 (61%, the optical push) |
+| Captions | ≤ 2.5 words/s, ≥ 1 s | max 1.52 words/s; every multi-word caption up for its reading time; the six montage words 0.27-0.47 s (one word a shot) |
+| Loudness | −14 ±1 LUFS, no clipping | −14.2 LUFS, −1.2 dBTP master; −14.1/−1.6 for the original-audio export |
+| Silence at the dips | < −50 LUFS | only at the two dips (0:25.9-0:27.0, 1:05.4-1:06.0) |
+| Egg plop and scream on their frames | ±2 frames | 0 frames (audio events --onsets) |
+| Running time | 70-74 s + 2 s card | 70.95 s + 2.3 s card |
+
+What holds the score under 7, by the reviewers' own repeated notes: acting (5-5.5: puppets with no faces; Nibs'
+beats are walks, glances and hops; the rubric wants every beat to read with the captions covered), sound (6 in
+every round: the reviewer cannot hear and scores the loudness curve and the script's cues only), comedic timing
+(6-6.5: words pop in as spoken, so key words land a second or more into shots; a cut-on-word edit needs the
+`cut_on` pass over every line), and the one-word montage cards, which fail the 1 s reading floor by design.
