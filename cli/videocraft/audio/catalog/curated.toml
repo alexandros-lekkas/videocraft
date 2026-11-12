@@ -1,0 +1,443 @@
+# Hand curation for the generated catalogs. `videocraft audio catalog --refresh` reads this file and the local game
+# assets and writes minecraft.toml and music.toml next to it; edit this file (not the generated ones) and refresh.
+#
+#   [best]          per tag: the Minecraft events to prefer, in order, when a script asks for that tag
+#   [palette.*]     the comedy palette: named effects mapped to the best real Minecraft event(s), with pitch and
+#                   volume suggestions, and the original library sound that replaces them in original-only exports
+#   [music."<file>"] moods (first is the main one), vocals, a note; tempo, starts and loops are measured
+#
+# Palette entries:  pick = [{ id, pitch, volume, note }]  alternatives, the first is the default (a pitch [lo, hi]
+#                                                          is a seeded choice in that range)
+#                   sequence = [{ at, id, pitch, volume }]  every step plays, `at` seconds after the cue
+#                   roll = { id, seconds, rate, crescendo, pitch, jitter, volume, end = [{ at, id, pitch, volume }] }
+#                          a run of hits at `rate` per second, swelling when crescendo, with seeded jitter in time
+#                   original = "<library sound>"            the stand-in in an original-only export (played once)
+# The ids were chosen from the event names, the curated meanings and the measured lengths in minecraft.toml; nobody
+# listened to them while writing this (the catalog is built by an agent that cannot hear). Re-rank by ear.
+
+[best]
+pop = ["entity.item.pickup", "ui.hud.bubble_pop", "block.bubble_column.bubble_pop", "block.lava.pop"]
+plop = ["entity.chicken.egg", "block.sniffer_egg.plop", "entity.turtle.lay_egg", "entity.frog.lay_spawn"]
+ding = ["entity.experience_orb.pickup", "block.note_block.bell", "entity.arrow.hit_player", "entity.player.levelup", "block.bell.use"]
+boing = ["entity.slime.jump", "block.shelf_mushroom.bounce", "entity.sulfur_cube.bounce", "entity.magma_cube.jump", "entity.slime.jump_small"]
+whoosh = ["entity.player.attack.sweep", "entity.breeze.wind_burst", "item.trident.throw", "entity.ender_pearl.throw", "ui.toast.in"]
+swish = ["entity.player.attack.sweep", "entity.player.attack.nodamage", "entity.fishing_bobber.throw"]
+click = ["ui.button.click", "block.wooden_button.click_on", "block.lever.click", "block.stone_button.click_on"]
+impact = ["block.anvil.land", "entity.goat.ram_impact", "item.mace.smash_ground_heavy", "entity.player.attack.strong", "entity.zombie.attack_wooden_door"]
+bonk = ["entity.player.attack.strong", "entity.zombie.attack_wooden_door", "entity.goat.ram_impact", "block.anvil.land"]
+thud = ["entity.generic.small_fall", "entity.player.small_fall", "entity.armor_stand.fall", "entity.generic.big_fall"]
+explosion = ["entity.generic.explode", "entity.firework_rocket.large_blast", "entity.dragon_fireball.explode"]
+splash = ["entity.generic.splash", "entity.player.splash.high_speed", "entity.player.splash", "entity.fishing_bobber.splash"]
+fail = ["entity.villager.no", "block.fire.extinguish", "entity.item.break", "block.note_block.didgeridoo", "block.crafter.fail"]
+error = ["block.crafter.fail", "block.dispenser.fail", "block.chest.locked", "entity.villager.no"]
+success = ["ui.toast.challenge_complete", "entity.player.levelup", "entity.villager.yes"]
+levelup = ["entity.player.levelup"]
+sparkle = ["entity.firework_rocket.twinkle", "block.amethyst_block.chime", "block.enchantment_table.use"]
+magic = ["block.enchantment_table.use", "entity.evoker.cast_spell", "entity.illusioner.cast_spell", "item.totem.use"]
+teleport = ["entity.enderman.teleport", "item.chorus_fruit.teleport", "entity.shulker.teleport"]
+crowd = ["entity.villager.celebrate", "entity.pillager.celebrate", "entity.piglin.celebrate"]
+cheer = ["entity.villager.celebrate", "entity.piglin.celebrate", "entity.pillager.celebrate"]
+hmm = ["entity.villager.ambient", "entity.villager.trade", "entity.wandering_trader.ambient"]
+yes = ["entity.villager.yes", "entity.wandering_trader.yes"]
+no = ["entity.villager.no", "entity.wandering_trader.no"]
+scream = ["entity.goat.screaming.ambient", "entity.goat.screaming.hurt", "entity.fox.screech", "entity.enderman.scream", "entity.ghast.scream"]
+sting = ["entity.elder_guardian.curse", "event.mob_effect.bad_omen", "ambient.cave", "block.end_portal.spawn", "entity.wither.spawn"]
+dramatic = ["entity.elder_guardian.curse", "event.mob_effect.bad_omen", "block.end_portal.spawn", "entity.wither.spawn"]
+spooky = ["ambient.cave", "entity.warden.heartbeat", "entity.elder_guardian.curse", "block.sculk_shrieker.shriek"]
+scrape = ["block.grindstone.use", "item.brush.brushing.generic", "item.axe.scrape", "block.honey_block.slide"]
+horn = ["item.goat_horn.sound.0", "item.goat_horn.sound.1", "event.raid.horn"]
+honk = ["item.goat_horn.sound.0", "item.goat_horn.sound.3", "event.raid.horn"]
+alarm = ["event.raid.horn", "block.bell.use"]
+bell = ["block.bell.use", "block.note_block.bell"]
+eating = ["entity.generic.eat", "entity.player.burp"]
+drink = ["entity.generic.drink", "item.honey_bottle.drink"]
+squeak = ["entity.bat.ambient", "entity.rabbit.ambient", "entity.silverfish.ambient"]
+splat = ["entity.slime.squish", "entity.magma_cube.squish", "block.honey_block.fall", "block.mud.fall"]
+door = ["block.wooden_door.open", "block.wooden_door.close", "block.iron_door.open", "block.fence_gate.open"]
+chest = ["block.chest.open", "block.chest.close", "block.barrel.open", "block.ender_chest.open"]
+fuse = ["entity.creeper.primed", "entity.tnt.primed"]
+thunder = ["entity.lightning_bolt.thunder"]
+bubble = ["block.bubble_column.bubble_pop", "ui.hud.bubble_pop", "block.bubble_column.upwards_ambient"]
+glass = ["block.glass.break", "block.decorated_pot.shatter", "entity.splash_potion.break"]
+crash = ["block.glass.break", "block.decorated_pot.shatter", "block.anvil.land"]
+cash = ["entity.experience_orb.pickup", "block.note_block.bell"]
+xp = ["entity.experience_orb.pickup", "entity.player.levelup"]
+bleat = ["entity.goat.ambient", "entity.sheep.ambient"]
+cluck = ["entity.chicken.ambient"]
+moo = ["entity.cow.ambient"]
+oink = ["entity.pig.ambient"]
+meow = ["entity.cat.ambient", "entity.cat.purreow", "entity.cat.stray_ambient"]
+woof = ["entity.wolf.ambient", "entity.wolf.growl"]
+yip = ["entity.fox.ambient", "entity.fox.aggro", "entity.fox.screech"]
+grunt = ["entity.zombie.ambient", "entity.piglin.ambient", "entity.hoglin.ambient"]
+hiss = ["entity.cat.hiss", "entity.creeper.primed"]
+sneeze = ["entity.panda.sneeze"]
+burp = ["entity.player.burp"]
+footstep = ["block.grass.step", "block.wood.step", "block.stone.step", "block.sand.step"]
+footstep-wood = ["block.wood.step", "block.cherry_wood.step", "block.bamboo_wood.step", "block.ladder.step"]
+footstep-stone = ["block.stone.step", "block.deepslate.step", "block.tuff.step", "block.calcite.step"]
+footstep-grass = ["block.grass.step", "block.moss.step", "block.azalea.step"]
+footstep-sand = ["block.sand.step", "block.suspicious_sand.step", "block.soul_sand.step"]
+footstep-snow = ["block.snow.step", "block.powder_snow.step"]
+footstep-gravel = ["block.gravel.step", "block.suspicious_gravel.step"]
+footstep-wool = ["block.wool.step"]
+footstep-metal = ["block.metal.step", "block.iron.step", "block.copper.step", "block.chain.step"]
+footstep-glass = ["block.glass.step", "block.amethyst_block.step"]
+
+# ---- the comedy palette ----
+
+[palette.boing]
+about = "a cartoon spring bounce"
+original = "boing"
+pick = [{ id = "entity.slime.jump", pitch = [1.05, 1.25], note = "the slime's squelchy hop, pitched up" },
+        { id = "block.shelf_mushroom.bounce" }, { id = "entity.magma_cube.jump", pitch = 1.3 }]
+
+[palette.pop]
+about = "a small bright pop: something appears or is picked up"
+original = "pop"
+pick = [{ id = "entity.item.pickup", pitch = [1.3, 1.8], note = "the item pickup pop" }, { id = "ui.hud.bubble_pop" },
+        { id = "block.bubble_column.bubble_pop" }]
+
+[palette.plop]
+about = "something soft drops out: an egg, a blob"
+original = "plop"
+pick = [{ id = "entity.chicken.egg", pitch = [0.9, 1.1], note = "the chicken laying an egg" }, { id = "block.sniffer_egg.plop" },
+        { id = "entity.turtle.lay_egg" }]
+
+[palette.ding]
+about = "a bright ding: correct, idea, reward"
+original = "ding"
+pick = [{ id = "entity.experience_orb.pickup", pitch = [0.9, 1.1], note = "the XP ding" },
+        { id = "block.note_block.bell", pitch = 1.0, volume = 0.8 }, { id = "entity.arrow.hit_player" }]
+
+[palette.levelup]
+about = "the level-up jingle: a win"
+original = "level-up"
+pick = [{ id = "entity.player.levelup" }]
+
+[palette.success]
+about = "a small victory"
+original = "success-chime"
+pick = [{ id = "ui.toast.challenge_complete", volume = 0.8, note = "the advancement fanfare" }, { id = "entity.player.levelup" }]
+
+[palette.ta-da]
+about = "ta-da: a rising note-block arpeggio"
+original = "fanfare"
+sequence = [{ at = 0.0, id = "block.note_block.pling", pitch = 1.0 }, { at = 0.09, id = "block.note_block.pling", pitch = 1.26 },
+            { at = 0.18, id = "block.note_block.pling", pitch = 1.498 }, { at = 0.3, id = "block.note_block.pling", pitch = 2.0 },
+            { at = 0.3, id = "block.note_block.bell", pitch = 1.0, volume = 0.6 }]
+
+[palette.fail]
+about = "it did not work"
+original = "fail-trombone"
+pick = [{ id = "entity.villager.no", note = "the villager's grumpy hrmm" }, { id = "block.fire.extinguish", note = "a fizzle" },
+        { id = "entity.item.break", note = "a tool breaking" }]
+
+[palette.wah-wah]
+about = "the sad trombone, on note blocks: four falling didgeridoo notes"
+original = "fail-trombone"
+sequence = [{ at = 0.0, id = "block.note_block.didgeridoo", pitch = 0.841 }, { at = 0.36, id = "block.note_block.didgeridoo", pitch = 0.794 },
+            { at = 0.72, id = "block.note_block.didgeridoo", pitch = 0.749 }, { at = 1.08, id = "block.note_block.didgeridoo", pitch = 0.707 },
+            { at = 1.08, id = "block.note_block.bass", pitch = 0.707, volume = 0.7 }]
+
+[palette.error]
+about = "denied: a wrong button"
+original = "error-buzz"
+pick = [{ id = "block.crafter.fail" }, { id = "block.dispenser.fail" }, { id = "block.chest.locked" }]
+
+[palette.drumroll]
+about = "a drumroll before a reveal (note-block snares, swelling, ending on a kick and a snare)"
+original = "snare-roll"
+roll = { id = "block.note_block.snare", seconds = 1.7, rate = 22, crescendo = true, pitch = [0.95, 1.05], jitter = 0.1, volume = 0.7,
+         end = [{ at = 0.0, id = "block.note_block.basedrum", pitch = 0.8, volume = 1.0 }, { at = 0.0, id = "block.note_block.snare", pitch = 0.9, volume = 1.0 },
+                { at = 0.0, id = "block.note_block.hat", pitch = 0.7, volume = 0.8 }] }
+
+[palette.rimshot]
+about = "ba-dum-tss after a joke"
+original = "rimshot"
+sequence = [{ at = 0.0, id = "block.note_block.basedrum", pitch = 1.19 }, { at = 0.17, id = "block.note_block.basedrum", pitch = 1.0 },
+            { at = 0.34, id = "block.note_block.snare", pitch = 1.0 }, { at = 0.34, id = "block.note_block.hat", pitch = 0.6, volume = 1.2 }]
+
+[palette.record-scratch]
+about = "everything stops (Minecraft has no record scratch: a grindstone scrape is the closest)"
+original = "record-scratch"
+pick = [{ id = "block.grindstone.use", pitch = [1.3, 1.5], note = "a scrape, pitched up" }, { id = "item.brush.brushing.generic", pitch = 1.6 },
+        { id = "item.axe.scrape", pitch = 1.4 }]
+
+[palette.dramatic-sting]
+about = "dun dun DUN: a dramatic reveal"
+original = "sting-dramatic"
+pick = [{ id = "entity.elder_guardian.curse", note = "the curse stinger" }, { id = "event.mob_effect.bad_omen" },
+        { id = "block.end_portal.spawn", volume = 0.8 }]
+
+[palette.dun-dun-dun]
+about = "dun, dun, DUN on low note blocks"
+original = "sting-dramatic"
+sequence = [{ at = 0.0, id = "block.note_block.bass", pitch = 0.749 }, { at = 0.4, id = "block.note_block.bass", pitch = 0.707 },
+            { at = 0.85, id = "block.note_block.bass", pitch = 0.595 }, { at = 0.85, id = "block.note_block.didgeridoo", pitch = 0.595 },
+            { at = 0.85, id = "block.note_block.basedrum", pitch = 0.6 }]
+
+[palette.spooky]
+about = "something is wrong here"
+original = "sting-spooky"
+pick = [{ id = "ambient.cave" }, { id = "entity.warden.heartbeat" }, { id = "block.sculk_shrieker.shriek", volume = 0.6 }]
+
+[palette.crowd]
+about = "a crowd reacting (a few villagers celebrating at once)"
+original = "crowd-murmur"
+roll = { id = "entity.villager.celebrate", seconds = 1.2, rate = 5, pitch = [0.8, 1.3], jitter = 0.6, volume = 0.6 }
+
+[palette.applause]
+about = "applause substitute: villagers and pillagers celebrating over a patter of hats"
+original = "applause"
+roll = { id = "block.note_block.hat", seconds = 2.2, rate = 26, pitch = [0.7, 1.4], jitter = 0.9, volume = 0.5,
+         end = [{ at = -2.2, id = "entity.villager.celebrate", pitch = 1.0 }, { at = -1.7, id = "entity.villager.celebrate", pitch = 1.25 },
+                { at = -1.3, id = "entity.pillager.celebrate", pitch = 1.1, volume = 0.7 }, { at = -0.8, id = "entity.villager.celebrate", pitch = 0.85 }] }
+
+[palette.cheer]
+about = "yay"
+original = "cheer"
+pick = [{ id = "entity.villager.celebrate", pitch = [0.95, 1.2] }, { id = "entity.piglin.celebrate" }]
+
+[palette.hmm]
+about = "a thoughtful (or doubtful) hmm"
+original = "hmm"
+pick = [{ id = "entity.villager.ambient" }, { id = "entity.villager.trade" }]
+
+[palette.yes]
+about = "agreed"
+original = "success-chime"
+pick = [{ id = "entity.villager.yes" }]
+
+[palette.no]
+about = "nope"
+original = "error-buzz"
+pick = [{ id = "entity.villager.no" }]
+
+[palette.whoosh]
+about = "a fast move or a transition"
+original = "whoosh"
+pick = [{ id = "entity.player.attack.sweep", pitch = [0.8, 1.0] }, { id = "entity.breeze.wind_burst", volume = 0.7 }, { id = "item.trident.throw" }]
+
+[palette.swish]
+about = "a swing that misses"
+original = "swish"
+pick = [{ id = "entity.player.attack.nodamage" }, { id = "entity.player.attack.sweep", pitch = 1.3 }]
+
+[palette.thud]
+about = "a body hits the ground"
+original = "thud"
+pick = [{ id = "entity.generic.big_fall" }, { id = "entity.generic.small_fall" }, { id = "entity.armor_stand.fall" }]
+
+[palette.bonk]
+about = "a head bonk"
+original = "bonk"
+pick = [{ id = "entity.player.attack.strong", pitch = 1.3 }, { id = "entity.zombie.attack_wooden_door", pitch = 1.4, volume = 0.6 }]
+
+[palette.impact]
+about = "something heavy lands"
+original = "thud"
+pick = [{ id = "block.anvil.land", note = "the anvil" }, { id = "entity.goat.ram_impact" }, { id = "item.mace.smash_ground_heavy" }]
+
+[palette.splat]
+about = "a wet splat"
+original = "splat"
+pick = [{ id = "entity.slime.squish", pitch = [0.8, 1.0] }, { id = "entity.magma_cube.squish" }, { id = "block.honey_block.fall" }]
+
+[palette.explosion]
+about = "boom"
+original = "explosion"
+pick = [{ id = "entity.generic.explode" }, { id = "entity.firework_rocket.large_blast" }]
+
+[palette.splash]
+about = "into the water"
+original = "splash"
+pick = [{ id = "entity.player.splash.high_speed" }, { id = "entity.generic.splash" }]
+
+[palette.sparkle]
+about = "a twinkle of magic or shine"
+original = "sparkle"
+pick = [{ id = "entity.firework_rocket.twinkle" }, { id = "block.amethyst_block.chime", pitch = [1.0, 1.3] }]
+
+[palette.magic]
+about = "a spell"
+original = "magic"
+pick = [{ id = "block.enchantment_table.use" }, { id = "entity.evoker.cast_spell" }]
+
+[palette.teleport]
+about = "gone"
+original = "teleport"
+pick = [{ id = "entity.enderman.teleport" }, { id = "item.chorus_fruit.teleport" }]
+
+[palette.cash-register]
+about = "ka-ching"
+original = "cash-register"
+sequence = [{ at = 0.0, id = "block.chain.place", pitch = 1.4, volume = 0.6 }, { at = 0.12, id = "entity.experience_orb.pickup", pitch = 0.8 },
+            { at = 0.14, id = "block.note_block.bell", pitch = 1.19, volume = 0.7 }]
+
+[palette.honk]
+about = "a honk (a goat horn pitched up)"
+original = "honk"
+pick = [{ id = "item.goat_horn.sound.0", pitch = 1.6, volume = 0.6 }, { id = "item.goat_horn.sound.3", pitch = 1.5, volume = 0.6 }]
+
+[palette.alarm]
+about = "the alarm"
+original = "alarm"
+pick = [{ id = "event.raid.horn", volume = 0.7 }, { id = "block.bell.use" }]
+
+[palette.scream]
+about = "a goat screams"
+original = "scream"
+pick = [{ id = "entity.goat.screaming.ambient" }, { id = "entity.goat.screaming.hurt" }, { id = "entity.fox.screech" }]
+
+[palette.gulp]
+about = "a nervous gulp"
+original = "gulp"
+pick = [{ id = "entity.generic.drink", pitch = 1.2 }, { id = "item.honey_bottle.drink" }]
+
+[palette.munch]
+about = "eating"
+original = "munch"
+pick = [{ id = "entity.generic.eat" }]
+
+[palette.burp]
+about = "burp"
+original = "gulp"
+pick = [{ id = "entity.player.burp" }]
+
+[palette.squeak]
+about = "a tiny squeak"
+original = "squeak"
+pick = [{ id = "entity.bat.ambient", pitch = 1.2 }, { id = "entity.rabbit.ambient" }]
+
+[palette.click]
+about = "a click"
+original = "click"
+pick = [{ id = "ui.button.click" }]
+
+[palette.door]
+about = "a door opens"
+original = "door-creak"
+pick = [{ id = "block.wooden_door.open" }, { id = "block.iron_door.open" }]
+
+[palette.fuse]
+about = "it is about to blow"
+original = "hiss"
+pick = [{ id = "entity.creeper.primed" }, { id = "entity.tnt.primed" }]
+
+[palette.slide-whistle-up]
+about = "a slide whistle up (no Minecraft sound is close: original only)"
+original = "slide-whistle-up"
+
+[palette.slide-whistle-down]
+about = "a slide whistle down (original only)"
+original = "slide-whistle-down"
+
+[palette.cartoon-fall]
+about = "a long whistling fall ending in a thud (original only: Minecraft has no whistle)"
+original = "cartoon-fall"
+
+[palette.crickets]
+about = "awkward silence (Minecraft has no crickets: original only)"
+original = "crickets"
+
+[palette.typewriter]
+about = "typing (original only)"
+original = "typewriter"
+
+# ---- music: moods and notes (tempo, starts, loops are measured by the refresh) ----
+# Moods: calm, upbeat, tense, sad, triumphant, mysterious, playful. The first is the main one.
+
+[music]
+"music/game/a_familiar_room" = { mood = ["calm", "sad"] }
+"music/game/an_ordinary_day" = { mood = ["calm", "upbeat"] }
+"music/game/ancestry" = { mood = ["mysterious", "tense"] }
+"music/game/below_and_above" = { mood = ["calm", "mysterious"] }
+"music/game/broken_clocks" = { mood = ["calm", "sad"] }
+"music/game/bromeliad" = { mood = ["calm", "playful"] }
+"music/game/clark" = { mood = ["calm"] }
+"music/game/comforting_memories" = { mood = ["sad", "calm"] }
+"music/game/creative/aria_math" = { mood = ["upbeat", "triumphant"] }
+"music/game/creative/biome_fest" = { mood = ["playful", "upbeat"] }
+"music/game/creative/blind_spots" = { mood = ["mysterious", "calm"] }
+"music/game/creative/dreiton" = { mood = ["mysterious", "tense"] }
+"music/game/creative/haunt_muskie" = { mood = ["mysterious", "sad"] }
+"music/game/creative/taswell" = { mood = ["sad", "mysterious"] }
+"music/game/crescent_dunes" = { mood = ["mysterious", "calm"] }
+"music/game/danny" = { mood = ["upbeat", "calm"] }
+"music/game/deeper" = { mood = ["mysterious", "tense"] }
+"music/game/dry_hands" = { mood = ["calm", "playful"] }
+"music/game/ebb" = { mood = ["calm"] }
+"music/game/echo_in_the_wind" = { mood = ["calm", "mysterious"] }
+"music/game/eld_unknown" = { mood = ["mysterious", "sad"] }
+"music/game/end/alpha" = { mood = ["triumphant", "mysterious"], note = "the credits suite" }
+"music/game/end/boss" = { mood = ["tense"], note = "the dragon fight" }
+"music/game/end/the_end" = { mood = ["mysterious", "triumphant"] }
+"music/game/endless" = { mood = ["calm", "triumphant"] }
+"music/game/featherfall" = { mood = ["calm"] }
+"music/game/fireflies" = { mood = ["calm", "playful"] }
+"music/game/floating_dream" = { mood = ["calm", "upbeat"] }
+"music/game/haggstrom" = { mood = ["upbeat", "playful"] }
+"music/game/home" = { mood = ["calm"] }
+"music/game/infinite_amethyst" = { mood = ["mysterious", "calm"] }
+"music/game/key" = { mood = ["calm", "mysterious"] }
+"music/game/komorebi" = { mood = ["calm"] }
+"music/game/left_to_bloom" = { mood = ["calm", "triumphant"] }
+"music/game/lilypad" = { mood = ["calm", "playful"] }
+"music/game/living_mice" = { mood = ["calm", "sad"] }
+"music/game/memories" = { mood = ["sad", "calm"] }
+"music/game/mice_on_venus" = { mood = ["calm", "playful"] }
+"music/game/minecraft" = { mood = ["calm", "sad"] }
+"music/game/nether/ballad_of_the_cats" = { mood = ["mysterious", "playful"] }
+"music/game/nether/concrete_halls" = { mood = ["tense", "mysterious"] }
+"music/game/nether/crimson_forest/chrysopoeia" = { mood = ["mysterious", "tense"] }
+"music/game/nether/dead_voxel" = { mood = ["tense"] }
+"music/game/nether/nether_wastes/rubedo" = { mood = ["tense", "mysterious"] }
+"music/game/nether/soulsand_valley/so_below" = { mood = ["tense", "mysterious"] }
+"music/game/nether/warmth" = { mood = ["sad", "tense"] }
+"music/game/nightly" = { mood = ["calm", "mysterious"] }
+"music/game/one_more_day" = { mood = ["calm", "sad"] }
+"music/game/os_piano" = { mood = ["calm", "mysterious"] }
+"music/game/oxygene" = { mood = ["calm"] }
+"music/game/pokopoko" = { mood = ["playful", "upbeat"] }
+"music/game/puzzlebox" = { mood = ["playful", "mysterious"] }
+"music/game/shores" = { mood = ["calm"] }
+"music/game/stand_tall" = { mood = ["triumphant", "calm"] }
+"music/game/subwoofer_lullaby" = { mood = ["calm", "mysterious"] }
+"music/game/swamp/aerie" = { mood = ["calm", "mysterious"] }
+"music/game/swamp/firebugs" = { mood = ["playful", "calm"] }
+"music/game/swamp/labyrinthine" = { mood = ["mysterious", "tense"] }
+"music/game/sweden" = { mood = ["calm", "sad"] }
+"music/game/watcher" = { mood = ["mysterious", "tense"] }
+"music/game/water/axolotl" = { mood = ["playful", "calm"] }
+"music/game/water/dragon_fish" = { mood = ["mysterious", "calm"] }
+"music/game/water/shuniji" = { mood = ["calm", "mysterious"] }
+"music/game/wending" = { mood = ["calm", "triumphant"] }
+"music/game/wet_hands" = { mood = ["calm", "sad"] }
+"music/game/yakusoku" = { mood = ["calm", "sad"] }
+"music/menu/beginning_2" = { mood = ["calm", "sad"] }
+"music/menu/floating_trees" = { mood = ["calm", "mysterious"] }
+"music/menu/moog_city_2" = { mood = ["calm", "playful"] }
+"music/menu/mutation" = { mood = ["mysterious", "calm"] }
+"records/11" = { mood = ["tense", "sad"], bed = false, note = "a broken disc: footsteps and a struggle; not a bed" }
+"records/13" = { mood = ["mysterious", "tense"], bed = false, note = "cave ambience; not a bed" }
+"records/5" = { mood = ["tense", "mysterious"], bed = false, note = "morse code and footsteps; not a bed" }
+"records/blocks" = { mood = ["upbeat", "playful"] }
+"records/bounce" = { mood = ["upbeat", "playful"] }
+"records/cat" = { mood = ["playful", "upbeat"] }
+"records/chirp" = { mood = ["upbeat", "playful"] }
+"records/creator" = { mood = ["upbeat", "triumphant"] }
+"records/creator_music_box" = { mood = ["calm", "playful"] }
+"records/far" = { mood = ["calm", "mysterious"] }
+"records/lava_chicken" = { mood = ["playful", "upbeat"], vocals = true, note = "a song with sung lyrics: clashes with dialogue" }
+"records/mall" = { mood = ["upbeat", "calm"] }
+"records/mellohi" = { mood = ["mysterious", "sad"] }
+"records/otherside" = { mood = ["upbeat", "playful"] }
+"records/pigstep" = { mood = ["upbeat", "tense"] }
+"records/precipice" = { mood = ["tense", "triumphant"] }
+"records/relic" = { mood = ["mysterious", "sad"] }
+"records/stal" = { mood = ["playful", "upbeat"] }
+"records/strad" = { mood = ["upbeat", "playful"] }
+"records/tears" = { mood = ["sad", "calm"] }
+"records/wait" = { mood = ["upbeat", "playful"] }
+"records/ward" = { mood = ["mysterious", "tense"] }

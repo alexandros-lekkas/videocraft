@@ -185,7 +185,9 @@ class PlacementTests(unittest.TestCase):
         report = json.loads((it.cut / 'audio.json').read_text())
         self.assertEqual(out, it.cut / 'audio.wav')
         self.assertEqual({e['source'] for e in report['events']}, {'stand-in', 'synth'})
-        self.assertEqual([s['event'] for s in report['skipped']], ['minecraft:entity.fox.ambient'])
+        # The fox's voice used to be left out; the catalog now maps it to the library's original yip.
+        self.assertEqual(report['skipped'], [])
+        self.assertEqual({e['event']: e['stand_in'] for e in report['events']}['minecraft:entity.fox.ambient'], 'yip')
         self.assertEqual(report['music']['source'], 'synth')
         self.assertFalse(report['game_assets_used'])
         self.assertLess(abs(report['loudness']['integrated'] + 14), 1.0)

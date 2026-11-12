@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Sounds by meaning, Minecraft first: a committed catalog of all 1991 sound events and 92 music tracks of 26.3 (names,
+  tags, measured lengths, tempo, entries and loops; no audio), a comedy palette (`palette = "drumroll"`), `tag = "pop"`
+  on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
+  `[edit.mix]`, an original library of 79 code-made sounds that original-only exports swap in automatically, five more
+  synth bed styles, and `audio find`, `audio play-sheet`, `audio catalog --refresh`, `audio library` (docs/SOUNDS.md).
 - Voiced and fast by default. Every say line is paced (`cli/videocraft/voice/pace.py`): silence trimmed to 60 ms
   before and 120 ms after, pauses capped at 0.25 s (0.4 s after a sentence), and a line slower than 0.85 x its pace
   stretched towards it (atempo, at most 1.2x); characters get `pace = 3.2` and qwen3 lines a brisk default delivery.
