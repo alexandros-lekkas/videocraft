@@ -10,6 +10,7 @@ control port 25750+n.
 """
 import json
 import os
+import re
 import socket
 import signal
 import subprocess
@@ -203,6 +204,47 @@ def control(path, method='GET', port=SLOT_PORTS[0], timeout=2):
         return json.loads(response.read())
 
 
+GAME_LOG_LINE = re.compile(r'\[\d\d:\d\d:\d\d\] \[[^\]]+/[A-Z]+\]')
+
+
+class SetupWatch:
+    """Keeps the first run from going silent while Gradle and Loom download Minecraft (about 1 GB, minutes).
+
+    Until the game's first log line (`[hh:mm:ss] [thread/LEVEL]`, Fabric Loader's "Loading Minecraft"), Gradle's own download and progress lines are passed through, and after
+    QUIET seconds without any output a progress line is said every EVERY seconds. `clock` is injectable for tests.
+    """
+    QUIET = 15
+    EVERY = 30
+    PASS = ('download', 'starting a gradle daemon', 'loom', 'build failed', 'what went wrong', '%')
+
+    def __init__(self, say=print, clock=time.monotonic):
+        self.say, self.clock = say, clock
+        self.started = self.last_line = clock()
+        self.last_said = None
+        self.game = False
+
+    def line(self, text):
+        """Called for every line the Gradle child prints."""
+        self.last_line = self.clock()
+        if 'VIDEOCRAFT' in text or GAME_LOG_LINE.match(text):
+            self.game = True
+        elif not self.game and any(k in text.lower() for k in self.PASS):
+            self.say('  ' + text.strip())
+
+    def tick(self):
+        """Called about twice a second; says a progress line when it is due."""
+        if self.game:
+            return
+        now = self.clock()
+        if now - self.last_line < self.QUIET:
+            return
+        if self.last_said is not None and self.last_said > self.last_line and now - self.last_said < self.EVERY:
+            return
+        self.last_said = now
+        seconds = int(now - self.started)
+        self.say(f'  … still setting up Gradle and Minecraft (first run downloads ~1 GB), {seconds // 60}m {seconds % 60:02d}s')
+
+
 def default_window():
     """Window size in points for a 1920x1080 framebuffer. Macs are assumed 2x; the mod resizes if the guess is wrong."""
     return (960, 540) if sys.platform == 'darwin' else (1920, 1080)
@@ -234,13 +276,13 @@ def play(take: Path, *, show=False, timeout=900, window=None, port=None, slot_wa
             raise SystemExit(f'Port {port} is already in use; pick another or leave --port out to get a free slot')
     say(f'  control port {slot.port} (slot {slot.index} of {len(SLOT_PORTS)})' if slot else f'  control port {port} (no slot)')
     try:
-        return _play(take, show, timeout, window, slot.port if slot else port, gradle_args, on_line, ffmpeg)
+        return _play(take, show, timeout, window, slot.port if slot else port, gradle_args, on_line, ffmpeg, say)
     finally:
         if slot:
             slot.release()
 
 
-def _play(take, show, timeout, window, port, gradle_args, on_line, ffmpeg):
+def _play(take, show, timeout, window, port, gradle_args, on_line, ffmpeg, say=print):
     w, h = window or default_window()
     props = {'take': str(take.resolve()), 'gameDir': str(GAME_DIR), 'ffmpeg': ffmpeg, 'controlPort': str(port), 'width': str(w), 'height': str(h)}
     if show:
@@ -254,10 +296,12 @@ def _play(take, show, timeout, window, port, gradle_args, on_line, ffmpeg):
         process = subprocess.Popen(command, cwd=ROOT, env=tools.gradle_env(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                                    start_new_session=os.name != 'nt')
         PID_FILE.write_text(json.dumps({'pid': process.pid, 'port': port}) + '\n')
+        setup = SetupWatch(say)
         def pump():
             for line in process.stdout:
                 log.write(line)
                 log.flush()
+                setup.line(line)
                 if on_line:
                     on_line(line.rstrip('\n'))
 
@@ -266,6 +310,7 @@ def _play(take, show, timeout, window, port, gradle_args, on_line, ffmpeg):
         try:
             while process.poll() is None and time.time() < started + timeout:
                 time.sleep(0.5)
+                setup.tick()
             if process.poll() is None:
                 try:
                     control('/quit', 'POST', port)

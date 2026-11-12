@@ -151,8 +151,10 @@ and a drop shadow so it reads on any background, and captured with the frame. **
 layout pixels**: pixels of a frame whose short side is 1080, so a size means the same at 1920x1080 and 1080x1920
 (and 1280x720). They are rounded to a multiple of 7 (the font's capitals are 7 font pixels), which keeps the bitmap
 letters on whole frame pixels. Nothing smaller than 44 px is allowed (it does not read on a phone). Everything sits
-inside the safe area: 5% at the sides and top, 15% at the bottom (x 96–1824, y 54–918 at 1920x1080; x 54–1026,
-y 96–1632 at 1080x1920). **One message at a time**: a `caption`, `title`, `card` or `lower_third` replaces the one on
+inside the safe area: 5% at the sides and top, 15% at the bottom (x 96–1824, y 54–918 at 1920x1080). A frame taller
+than wide is a vertical short, and TikTok, Shorts and Reels draw their buttons over its right edge and their caption,
+username and progress bar over roughly its bottom quarter, so there the safe area is 5% left and top, 12% right and
+25% bottom (x 54–950, y 96–1440 at 1080x1920): a `bottom` caption sits above the apps' own text. **One message at a time**: a `caption`, `title`, `card` or `lower_third` replaces the one on
 screen on its own frame; a `keycap` has its own slot. Everything leaves with the cut. A message whose text does not
 fit fails the take, naming the cue.
 
@@ -377,7 +379,8 @@ start); `bin/videocraft voice check <run>` measures captions, cuts and voice aga
 `run` writes the same list to `lint.json` before each take. Errors: unknown keys, a cue outside its shot, an
 unknown actor or camera subject, an anchor naming a set no `[[world.set]]` places, text that cannot be complete for
 `max(1.2 s, 0.5 s + 0.3 s a word)` before the next text or the end of the shot, and two different kinds of text
-up at once (a caption replacing a caption is fine). Warnings: an action that is not built in and not namespaced,
+up at once (a caption replacing a caption is fine). Warnings: an action or camera rig that is not built in and not
+namespaced (lint's lists are the mod's registries; a test fails when they drift),
 over 2.5 words a second, a shot longer than the rubric's `max_shot_seconds` (7.5 s for the benchmark), and an edit
 clip's `in`/`out` (or a shot `until`, which is not built yet) naming a mark no cue makes. Notes: one-word montage
 text under the reading time, and anchors that are not built in. The rules are in `cli/videocraft/lint.py`; the measured counterparts on the cut

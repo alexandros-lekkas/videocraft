@@ -11,9 +11,12 @@ public final class TextChecks {
 		// A 1920x1080 frame is 1920x1080 layout pixels; its safe area is DESIGN.md's x 96-1824, y 54-918.
 		TextLayout land = new TextLayout(1920, 1080);
 		PlanChecks.check(land.scale() == 1 && Arrays.equals(land.safeFrame(), new int[] {96, 54, 1824, 918}), "landscape safe area " + Arrays.toString(land.safeFrame()));
-		// A vertical 1080x1920 frame keeps one frame pixel a layout pixel; the safe area follows its own width and height.
+		// A vertical 1080x1920 frame keeps one frame pixel a layout pixel; its safe area stays clear of the short-video
+		// apps' buttons (the right 12 %) and caption (the bottom 25 %).
 		TextLayout tall = new TextLayout(1080, 1920);
-		PlanChecks.check(tall.scale() == 1 && Arrays.equals(tall.safeFrame(), new int[] {54, 96, 1026, 1632}), "vertical safe area " + Arrays.toString(tall.safeFrame()));
+		PlanChecks.check(tall.scale() == 1 && Arrays.equals(tall.safeFrame(), new int[] {54, 96, 950, 1440}), "vertical safe area " + Arrays.toString(tall.safeFrame()));
+		// Centred text is centred on the safe area: the frame's middle at 1920x1080, left of it on a vertical frame.
+		PlanChecks.check(land.centreX() == 960 && Math.abs(tall.centreX() - 502.2) < 1e-9, "centre " + land.centreX() + " " + tall.centreX());
 		// 1280x720: the same layout as 1080p, two thirds of a frame pixel each.
 		TextLayout small = new TextLayout(1280, 720);
 		PlanChecks.check(Math.abs(small.width() - 1920) < 1e-9 && Math.abs(small.height() - 1080) < 1e-9, "720p layout is 1920x1080");

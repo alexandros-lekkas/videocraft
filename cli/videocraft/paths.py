@@ -21,6 +21,17 @@ REAL_MINECRAFT = [Path.home() / 'Library/Application Support/minecraft', Path.ho
                   Path(os.environ.get('APPDATA', '/nonexistent')) / '.minecraft']
 
 
+def gradle_home(env=None) -> Path:
+    """Gradle's user home: GRADLE_USER_HOME when set, else ~/.gradle (where Loom keeps Minecraft and its assets)."""
+    value = (os.environ if env is None else env).get('GRADLE_USER_HOME')
+    return Path(value).expanduser() if value else Path.home() / '.gradle'
+
+
+def loom_assets(env=None) -> Path:
+    """The game assets Loom downloaded for the dev client (sound and music indexes and objects)."""
+    return gradle_home(env) / 'caches' / 'fabric-loom' / 'assets'
+
+
 def is_real_minecraft(path: Path) -> bool:
     path = path.resolve()
     for real in REAL_MINECRAFT:
