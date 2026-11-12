@@ -6,6 +6,19 @@
   and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
   `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
   `stories/nibs-vs-duke/` holds the benchmark's script.
+- Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
+  chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
+  their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and
+  pan from the camera, voice, an original chiptune bed with stems and cues (`out`, `in`, `drop`, `thin`, `full`,
+  `hit`), ducking, silence over black, mastered to −14 LUFS / −1 dBTP; `[edit] audio = "original"` uses no game
+  audio; commands `audio mix`, `audio events --onsets`, `audio synth`; `examples/sound.toml`.
+- Text in the game (`caption`, `title`, `card`, `lower_third`, `keycap`, `clear`): sizes in 1080-line pixels on any
+  frame aspect, inside the safe area, one message at a time, words popping on exact frames (explicit `words` times
+  for a voice timeline), `shots/<name>/text.json` for measure; `examples/text.toml`.
+- The picture edit: clips by `in`/`out` (marks) and `length`, exact to the frame; slow pushes and push-ins whose hold
+  is an exact nearest-neighbour crop; speed ramps; fades and `black` gaps; `[[edit.look]]` frames and grades;
+  `cut/timeline.json`; the audio mix muxed when present; exports `x-1080p60`, `readme-720p30`, `gif`, `poster`;
+  `videocraft edit cut|timeline|verify`; `examples/edit.toml`.
 - `AGENTS.md`: a "Working with agents" section (orchestrator, builders in worktrees, reviewer agents, probing
   accounts); T3 Craft is linked by its public repository.
 - Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,

@@ -28,6 +28,8 @@ def measure(it):
     expected = sum(s['frames'] for s in result['shots'])
     for clip in it.edit()['clip']:
         expected -= sum(clip.get('trim') or [0, 0])
+    if (it.cut / 'timeline.json').exists():  # the cut's own frame count (black gaps, speed, in/out): edit/timeline.py
+        expected = json.loads((it.cut / 'timeline.json').read_text())['frames']
     checks = {
         'size': video['width'] == out['width'] and video['height'] == out['height'],
         'fps': abs(video['fps'] - out['fps']) < 1e-6,

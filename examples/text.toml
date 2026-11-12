@@ -1,0 +1,97 @@
+# Every text action, drawn in the game over a slow orbit: popping captions with a key word, a caption on a voice
+# timeline (explicit word times) with a speaker tag, a title whose letters drop in, a card that fades in and out, a
+# lower third with a keycap. Each shot's text lands in take/shots/<shot>/text.json.
+#   bin/videocraft run examples/text.toml
+name = "text"
+seed = 1
+
+[world]
+seed = "videocraft"
+time = 1000
+weather = "clear"
+
+# 1. Words pop in one after another; the key word (*) is yellow and breathes. The second caption replaces the first.
+[[shot]]
+name = "pop"
+duration = 4.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 16, height = 7, from = 20, sweep = 25, ease = "smooth" }
+
+[[shot.cue]]
+at = 0.2
+do = "caption"
+text = "Hey. It's me. *Nibs."
+
+[[shot.cue]]
+at = 2.1
+do = "caption"
+text = "Best jumper in the whole *valley."
+
+# 2. A voice timeline drives the words: each pops on the frame nearest cue + at (here 0.5 s + at).
+[[shot]]
+name = "voice"
+duration = 3.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 12, height = 5, from = 120, sweep = 20, ease = "smooth" }
+
+[[shot.cue]]
+at = 0.5
+do = "caption"
+speaker = { name = "Duke", color = "#e8eef5" }
+words = [{ w = "Thank", at = 0.0 }, { w = "you.", at = 0.25 }, { w = "Thank", at = 0.9 }, { w = "*you.", at = 1.2 }]
+hold = 1.0
+
+# 3. A title over the picture: letters drop in and bounce once, the subtitle rises in under it.
+[[shot]]
+name = "title"
+duration = 3.5
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 20, height = 10, from = 200, sweep = 20, ease = "smooth" }
+
+[[shot.cue]]
+at = 0.3
+do = "title"
+text = "NIBS vs *DUKE"
+subtitle = "The Jump-Off"
+style = "drop"
+shade = true
+
+# 4. A full-frame card: black, fades up from the picture and back out on the cut.
+[[shot]]
+name = "card"
+duration = 3.0
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 20, height = 10, from = 240, sweep = 10 }
+
+[[shot.cue]]
+at = 0.0
+do = "card"
+title = "TALENT NIGHT"
+subtitle = "Champion 3 years running: Duke"
+fade_in = 0.4
+fade_out = 0.4
+
+# 5. A lower third slides in and out; then a caption at the top (one message at a time) with a keycap that is pressed.
+[[shot]]
+name = "lower"
+duration = 3.5
+camera = { rig = "orbit", center = { anchor = "spawn" }, radius = 14, height = 6, from = 300, sweep = 25, ease = "smooth" }
+
+[[shot.cue]]
+at = 0.2
+do = "lower_third"
+text = "Nibs"
+subtitle = "Goat. One horn. Best jumper."
+color = "#8fb3d9"
+hold = 1.7
+
+[[shot.cue]]
+at = 1.9
+do = "keycap"
+key = "SPACE"
+press = 0.7
+x = 1500
+y = 560
+
+[[shot.cue]]
+at = 2.0
+do = "caption"
+text = "Press *jump to win."
+position = "top"
+style = "whole"
