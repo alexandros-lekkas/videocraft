@@ -13,7 +13,7 @@ from pathlib import Path
 from videocraft import tools
 from videocraft.audio import dsp
 
-TARGET, CEILING = -14.0, -1.0
+TARGET, CEILING = -14.0, -2.0   # -2 so the AAC master (its encode overshoots the mix by 0.8-0.9 dB) stays under -1 dBTP
 
 
 def _raw_input(path):

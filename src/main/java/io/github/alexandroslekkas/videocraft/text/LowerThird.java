@@ -29,7 +29,7 @@ final class LowerThird extends Message {
 	void start() {
 		double[] safe = layout.safe();
 		// Too wide for the safe area (a vertical frame's is 896 px): step the sizes down, never below the smallest readable.
-		int least = TextLayout.fontScale(TextLayout.MIN_CAP);
+		int least = TextLayout.MIN_SCALE;
 		float boxW, boxH;
 		while (true) {
 			roleK = Math.max(least, k - 2);

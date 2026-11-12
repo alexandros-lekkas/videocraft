@@ -192,6 +192,12 @@ def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False, n
     """Takes the vertical script; returns (picture path, vertical iteration)."""
     raw = script_.load(it.path / 'script.toml') if (it.path / 'script.toml').exists() else script_.load(it.path / 'script.json')
     plan, edit = it.plan(), it.edit()
+    # A skin PNG is relative to the script it was written in, which is not this copy's folder (nor clips/<n>/, where
+    # the vertical script goes): take the path the take resolved.
+    skins = {a.get('id'): a.get('skin') for a in plan.get('actors', []) if isinstance(a.get('skin'), str)}
+    for a in raw.get('actor', []):
+        if isinstance(a.get('skin'), str) and not Path(a['skin']).is_absolute() and skins.get(a.get('id')):
+            a['skin'] = skins[a['id']]
     timeline = json.loads((it.cut / 'timeline.json').read_text()) if (it.cut / 'timeline.json').exists() else {'clips': []}
     name = re.sub(r'[^a-z0-9_-]', '-', f'{plan["name"][:39]}-vertical')
     auto = auto_vertical(plan, raw, m, pieces)

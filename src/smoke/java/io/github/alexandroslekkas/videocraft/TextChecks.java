@@ -22,6 +22,7 @@ public final class TextChecks {
 		PlanChecks.check(Math.abs(small.width() - 1920) < 1e-9 && Math.abs(small.height() - 1080) < 1e-9, "720p layout is 1920x1080");
 		// Cap heights round to whole font pixels: 63 px is 9 a font pixel; 44 px is the floor (6.3 → 6 would be 42, so 7).
 		PlanChecks.check(TextLayout.fontScale(63) == 9 && TextLayout.fontScale(56) == 8, "font scale");
+		PlanChecks.check(TextLayout.MIN_SCALE * TextLayout.CAP >= TextLayout.MIN_CAP && TextLayout.MIN_SCALE == 7, "the smallest scale is at least 44 px");
 		// Fitting: six-pixel letters (5 + 1 spacing), four-pixel spaces.
 		List<String> words = List.of("Best", "jumper", "in", "the", "whole", "valley.");
 		TextLayout.Fit one = TextLayout.fit(words, w -> w.length() * 6, 4, 1728, 2, 9, 7, false, null);

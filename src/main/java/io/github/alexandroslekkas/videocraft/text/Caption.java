@@ -106,7 +106,7 @@ final class Caption extends Message {
 		for (int i = 0; i < words.size(); i++) if (words.get(i).breakBefore()) forced.add(i);
 		double[] safe = layout.safe();
 		int space = Ink.width(" ");
-		int largest = TextLayout.fontScale(cap), smallest = Math.max(TextLayout.fontScale(TextLayout.MIN_CAP), Math.min(largest, 7));
+		int largest = TextLayout.fontScale(cap), smallest = Math.max(TextLayout.MIN_SCALE, Math.min(largest, 7));
 		TextLayout.Fit fit = TextLayout.fit(texts, Ink::width, space, safe[2] - safe[0], 2, largest, smallest, false, forced);
 		if (fit == null) {
 			throw new IllegalArgumentException(params.where() + ": the caption does not fit on two lines inside the safe area ("
