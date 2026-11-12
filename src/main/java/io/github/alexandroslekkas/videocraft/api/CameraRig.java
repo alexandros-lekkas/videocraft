@@ -13,4 +13,13 @@ public interface CameraRig {
 
 	/** Field of view in degrees for this shot (the game's own FOV option, 30–110). */
 	default int fov() { return 70; }
+
+	/**
+	 * The vertical field of view of this frame in degrees, for rigs whose lens changes during the shot (a zoom). Called
+	 * once per frame after {@link #pose}. Camera and third-person views use exactly this (no sprint or effect FOV).
+	 */
+	default double fov(ShotContext shot) { return fov(); }
+
+	/** The id of the actor this rig films, if any: logged per frame in frames.csv (subject_*) to measure framing. */
+	default String subject() { return null; }
 }

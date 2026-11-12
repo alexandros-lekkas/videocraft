@@ -119,7 +119,8 @@ final class ShotRun implements ShotContext {
 		if (at != poseFrame) {
 			poseFrame = at;
 			pose = rig.view() == View.FIRST ? null : rig.pose(this, partialTick);
-			if (recording && records) logFrame();
+			lens = rig.fov(this);
+			if (recording()) logFrame();
 		}
 		return pose;
 	}
@@ -129,8 +130,22 @@ final class ShotRun implements ShotContext {
 		double[] player = p == null ? new double[5] : new double[] {p.getX(), p.getY(), p.getZ(), p.getYRot(), p.getXRot()};
 		double[] cam = pose == null ? new double[] {player[0], p == null ? 0 : p.getEyeY(), player[2], player[3], player[4]}
 			: new double[] {pose.x(), pose.y(), pose.z(), pose.yaw(), pose.pitch()};
-		log.row(frame, seconds(), cam, rig.fov(), player, p != null && p.onGround());
+		String subjectId = rig.subject();
+		double[] subject = null;
+		if (subjectId != null) {
+			try {
+				Actor a = director.actor(subjectId);
+				Vec3 g = a.ground();
+				subject = new double[] {g.x, g.y, g.z, a.heading(), a.head().y};
+			} catch (RuntimeException e) {
+				subject = null;
+			}
+		}
+		log.row(frame, seconds(), cam, lens, player, p != null && p.onGround(), subjectId, subject);
 	}
+
+	/** The field of view of the frame being rendered (see {@link CameraRig#fov(ShotContext)}). */
+	double lens() { return lens; }
 
 	/** Stops whatever is still running and writes frames.csv and marks.json. */
 	void finish() {
@@ -176,8 +191,23 @@ final class ShotRun implements ShotContext {
 		JsonElement e = params.raw(key);
 		if (e == null || e.isJsonNull()) throw new IllegalArgumentException(params.where() + ": missing position '" + key + "'");
 		if (e.isJsonArray()) return vec(e.getAsJsonArray(), params.where() + "." + key);
+		if (!e.isJsonObject()) throw new IllegalArgumentException(params.where() + "." + key + ": a position is [x, y, z], {anchor = \"name\"} or {actor = \"id\"}");
 		JsonObject o = e.getAsJsonObject();
-		Vec3 base = anchor(o.get("anchor").getAsString());
+		Vec3 base;
+		if (o.has("actor")) {
+			// On an actor, where it stands now: offset in world axes, or front/right/up along the way it faces.
+			Actor a = actor(o.get("actor").getAsString());
+			base = a.ground();
+			double yaw = Math.toRadians(a.heading());
+			Vec3 front = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+			if (o.has("front")) base = base.add(front.scale(o.get("front").getAsDouble()));
+			if (o.has("right")) base = base.add(right.scale(o.get("right").getAsDouble()));
+			if (o.has("up")) base = base.add(0, o.get("up").getAsDouble(), 0);
+		} else if (o.has("anchor")) {
+			base = anchor(o.get("anchor").getAsString());
+		} else {
+			throw new IllegalArgumentException(params.where() + "." + key + ": a position table names an anchor or an actor");
+		}
 		return o.has("offset") ? base.add(vec(o.getAsJsonArray("offset"), params.where() + "." + key + ".offset")) : base;
 	}
 

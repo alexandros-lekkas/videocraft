@@ -35,7 +35,11 @@ public interface ShotContext {
 	/** Defines (or moves) a named point for the rest of the take. */
 	void anchor(String name, Vec3 at);
 
-	/** Resolves a position parameter: {@code [x, y, z]} or {@code {anchor = "spawn", offset = [x, y, z]}}. */
+	/**
+	 * Resolves a position parameter: {@code [x, y, z]}, {@code {anchor = "spawn", offset = [x, y, z]}}, or a point on
+	 * an actor where it stands now, {@code {actor = "nibs", offset = [x, y, z]}} in world axes or
+	 * {@code {actor = "nibs", front = 3, right = 0.5, up = 1.2}} along the way it faces.
+	 */
 	Vec3 position(Params params, String key);
 
 	/** An actor by id ({@code player} always exists). Throws if the script never staged it. */

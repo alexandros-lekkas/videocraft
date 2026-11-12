@@ -44,6 +44,13 @@ public final class Director {
 		return d == null || d.shot == null || d.step != Step.SHOTS ? null : d.shot.pose(partialTick);
 	}
 
+	/** The vertical field of view of this frame for camera and third-person shots, or NaN to leave the game's. */
+	public static double lens() {
+		Director d = current;
+		if (d == null || d.shot == null || d.step != Step.SHOTS || d.shot.rig() == null || d.shot.rig().view() == View.FIRST) return Double.NaN;
+		return d.shot.lens();
+	}
+
 	/** Whether vanilla HUD elements (hotbar, hearts, crosshair) draw this frame: only through the player's own eyes, if the shot asks. */
 	public static boolean hudVisible() {
 		Director d = current;
