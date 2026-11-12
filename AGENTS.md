@@ -120,6 +120,15 @@ They protect the owner's machine and game. They are not preferences.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
 
+- **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
+  drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or
+  pitch) comes from the instance's own `RandomSource`, which vanilla seeds from the level's or an entity's unseeded
+  random: `SoundEngineMixin` swaps in a seeded one at `play` HEAD, else two takes log different files.
+- **ffmpeg audio.** Homebrew's ffmpeg has no `soxr` resampler, and `alimiter` delays its output by its attack unless
+  `latency=1`; the master uses the default resampler and `latency=1` (`audio events --onsets` checks the delay is 0).
+- **Spawn moves between takes.** The same world seed spawns the player at a different spot each take (vanilla's
+  `respawn_radius`), so `{ anchor = "spawn" }` positions shift by a few blocks: compare logs relative to spawn.
+
 ## Working with agents
 
 - **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git

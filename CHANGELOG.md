@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
+  chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
+  their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and
+  pan from the camera, voice, an original chiptune bed with stems and cues (`out`, `in`, `drop`, `thin`, `full`,
+  `hit`), ducking, silence over black, mastered to −14 LUFS / −1 dBTP; `[edit] audio = "original"` uses no game
+  audio; commands `audio mix`, `audio events --onsets`, `audio synth`; `examples/sound.toml`.
 - `AGENTS.md`: a "Working with agents" section (orchestrator, builders in worktrees, reviewer agents, probing
   accounts); T3 Craft is linked by its public repository.
 - Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,
