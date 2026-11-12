@@ -136,6 +136,10 @@ They protect the owner's machine and game. They are not preferences.
   `--output-format json` (the answer is `result`, or `structured_output` with `--json-schema`). A reviewer that is
   told it sees stills only, and is given frames.csv numbers, cites timecodes and gives fixes that can be applied
   (`runs/hello/*/review/camera.json`).
+- **Reviewer scores wobble by about a point** between two runs of the same role on the same packet (camera 4, then 5,
+  on hello 0001). A climb step that gains one point on one criterion is noise; `climb` keeps ties with the parent.
+- **The proposer must see the frames.** The first hello climb spent three takes moving a subject behind the same
+  ice spikes, because it read the reviewers' words without the strips; it now gets the contact sheets and strips.
 
 - **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
   drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or
