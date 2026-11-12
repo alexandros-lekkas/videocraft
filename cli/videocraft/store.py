@@ -8,6 +8,7 @@
         script.toml               the script as authored (copy)
         plan.json                 what the mod played (compiled)
         edit.json                 the cut as compiled (order, trims, music, exports)
+        voice.json                every spoken line (say cues): file, words with times, shot, start (videocraft.voice)
         take/                     written by the mod: result.json, game.log, shots/<name>/{video.mp4,frames.csv,marks.json}
         cut/                      written by the edit: <export>.mp4, graph.txt, poster.png
         measure/metrics.json      written by measure
@@ -79,6 +80,8 @@ def new_iteration(script_path: Path, plan: dict, edit: dict, parent: str | None 
     (it.path / 'plan.json').write_text(plan_text)
     (it.take / 'plan.json').write_text(plan_text)
     (it.path / 'edit.json').write_text(json.dumps(edit, indent=2) + '\n')
+    if edit.get('dialogue'):  # the dialogue resolver's lines (videocraft.voice): file, words, shot, start
+        (it.path / 'voice.json').write_text(json.dumps(edit['dialogue'], indent=2) + '\n')
     meta = {'iteration': it.name, 'parent': parent, 'created': datetime.datetime.now().astimezone().isoformat(timespec='seconds'),
             'script': str(Path(script_path).resolve()), 'scriptSha': _sha(source), 'planSha': _sha(plan_text.encode()), 'videocraft': _git_commit()}
     (it.path / 'meta.json').write_text(json.dumps(meta, indent=2) + '\n')

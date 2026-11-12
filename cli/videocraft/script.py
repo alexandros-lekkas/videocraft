@@ -11,7 +11,7 @@ from pathlib import Path
 
 PLAN_VERSION = 1
 NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
-TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description'}
+TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description', 'cast'}
 WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage'}
 SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
@@ -62,6 +62,9 @@ def compile_script(raw, source='script'):
     if not isinstance(raw, dict):
         raise ScriptError(f'{source}: the script is a table')
     _unknown(raw, TOP, source)
+    from videocraft.voice import resolve as dialogue  # `say` cues -> captions on the words, edit.voice, shot lengths
+    if dialogue.has_say(raw):
+        raw = dialogue.resolve(raw, source)
     name = raw.get('name')
     if not isinstance(name, str) or not NAME.match(name):
         raise ScriptError(f'{source}: name = "<lowercase-dash-name>" is required (got {name!r})')
