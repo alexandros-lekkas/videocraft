@@ -1213,7 +1213,7 @@ shot = "s27-today"
 [[edit.clip]]
 shot = "s28-challenge"
 fade_out = 12
-push = [{ at = 196, zoom = 1.4, x = 960, y = 540, ramp = 4 }]
+push = [{ at = 196, zoom = 1.4, x = 960, y = 660, ramp = 4 }]
 [[edit.clip]]
 black = 0.6
 [[edit.clip]]
