@@ -55,12 +55,13 @@ final class Moves {
 			Vec3 arm = want.subtract(pivot);
 			double length = arm.length();
 			if (length < 1e-6) return want;
-			Vec3 ahead = pivot.add(velocity.scale(0.5));
-			double free = Math.min(probe.free(pivot, want), probe.free(ahead, ahead.add(arm)));
-			// The margin only applies in front of something; in the open the camera is exactly where it was asked.
-			double allowed = free >= length - 1e-9 ? length : Math.max(0.2, Math.min(length, free - MARGIN));
+			// Probed a margin past the wanted eye, so the distance allowed is continuous: in the open it is exactly the
+			// arm, and a wall coming into range pulls it in smoothly instead of by a step of the margin.
+			Vec3 reach = arm.scale((length + MARGIN) / length), ahead = pivot.add(velocity.scale(0.5));
+			double free = Math.min(probe.free(pivot, pivot.add(reach)), probe.free(ahead, ahead.add(reach)));
+			double allowed = Math.max(0.2, Math.min(length, free - MARGIN));
 			double rise = allowed < minimum ? Math.min(2.0, (minimum - allowed) * 0.8) : 0;
-			double lag = !Double.isNaN(at) && allowed < at ? 0.12 : 0.6;
+			double lag = !Double.isNaN(at) && allowed < at ? 0.25 : 0.6;
 			double[] r = op.follow(new double[] {allowed, rise}, lag, 1.0 / shot.fps());
 			at = r[0];
 			return pivot.add(arm.scale(r[0] / length)).add(0, r[1], 0);
@@ -366,7 +367,12 @@ final class Moves {
 			Vec3 head = follow.anchor().add(Follow.forward(axis).scale(headAhead)).add(0, headHeight, 0);
 			double d = Math.max(distance, nearest);
 			Vec3 want = head.add(Follow.forward(axis + angle).scale(d)).add(0, height, 0);
-			return look(reach.eye(Rigs.probe, head, want, follow.velocity(), shot), head, lens, shot);
+			Vec3 eye = reach.eye(Rigs.probe, head, want, follow.velocity(), shot);
+			// The smoothed head trails a walking subject: never let the real one come nearer than the model reaches.
+			Vec3 real = shot.actor(follow.subject).head(), off = eye.subtract(real);
+			double gap = off.length();
+			if (gap < nearest) eye = gap < 1e-6 ? want : real.add(off.scale(nearest / gap));
+			return look(eye, head, lens, shot);
 		}
 	}
 }
