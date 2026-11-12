@@ -12,7 +12,8 @@ def clips(it):
             out.append({'index': c.get('index', k), 'kind': c.get('kind', 'shot'), 'shot': c.get('shot'),
                         'src_in': int(c.get('src_in', 0) or 0), 'src_out': int(c.get('src_out', 0) or 0),
                         'out_start': int(c.get('out_start', 0)), 'out_frames': int(c.get('out_frames', 0)),
-                        'fade_in': int(c.get('fade_in', 0) or 0), 'fade_out': int(c.get('fade_out', 0) or 0)})
+                        'fade_in': int(c.get('fade_in', 0) or 0), 'fade_out': int(c.get('fade_out', 0) or 0),
+                        'speed': float(c.get('speed') or 1.0)})
         return out
     result = it.result() or {}
     frames = {s['name']: s['frames'] for s in result.get('shots', [])}
@@ -22,7 +23,7 @@ def clips(it):
         total = frames.get(clip.get('shot'), 0)
         n = max(0, total - int(head) - int(tail))
         out.append({'index': k, 'kind': 'shot', 'shot': clip.get('shot'), 'src_in': int(head), 'src_out': total - int(tail),
-                    'out_start': at, 'out_frames': n, 'fade_in': 0, 'fade_out': 0})
+                    'out_start': at, 'out_frames': n, 'fade_in': 0, 'fade_out': 0, 'speed': 1.0})
         at += n
     return out
 

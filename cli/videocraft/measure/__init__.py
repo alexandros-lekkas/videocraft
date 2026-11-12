@@ -55,13 +55,21 @@ def _shots_measures(it, plan, fps, aspect):
             continue
         rows = camera.read_csv(fcsv)
         cams[shot['name']] = {'rig': (shot.get('camera') or {}).get('rig'), **camera.kinematics(rows, fps)}
+        acsv = d / 'actors.csv'
+        actors = camera.read_csv(acsv) if acsv.exists() else []
+        rig = (shot.get('camera') or {}).get('rig')
+        tracks = {}
         subject = camera.subject_of(shot)
-        if subject:
-            acsv = d / 'actors.csv'
-            actors = camera.read_csv(acsv) if acsv.exists() else []
-            track = camera.subject_track(rows, actors, subject, camera.height_of(subject, plan), aspect)
-            frames_out[shot['name']] = {'subject': subject, 'rig': (shot.get('camera') or {}).get('rig'),
-                                        **camera.framing(track, (shot.get('camera') or {}).get('rig'))}
+        for who in dict.fromkeys(([subject] if subject else []) + [str(a['actor']) for a in actors]):
+            tracks[who] = camera.framing(camera.subject_track(rows, actors, who, camera.height_of(who, plan), aspect), rig if who == subject else None)
+        seen = {k: v for k, v in tracks.items() if v.get('seen')}
+        if seen:
+            # the camera's subject, else the actor biggest in frame
+            inside = {k: v for k, v in seen.items() if 0 <= v['x']['median'] <= 1 and 0 <= v['y']['median'] <= 1} or seen
+            main = subject if subject in seen else max(inside, key=lambda k: inside[k]['height']['median'])
+            others = {k: {'x': v['x']['median'], 'height': v['height']['median'], 'seen': v['seen']} for k, v in seen.items() if k != main}
+            frames_out[shot['name']] = {'subject': main, 'from': 'camera' if main == subject else 'biggest actor', 'rig': rig,
+                                        **tracks[main], 'others': others}
         tjson = d / 'text.json'
         if tjson.exists():
             items, size = text.load(tjson, fps)
@@ -77,11 +85,16 @@ def _shots_measures(it, plan, fps, aspect):
 def _warnings(m):
     w = []
     pic = m.get('picture') or {}
+    moving = m.get('_moving')
     for d in pic.get('duplicate_at_cuts', []):
+        if moving is not None and not (d['frame'] < len(moving) and moving[d['frame']]):
+            continue
         w.append(f'repeated frame at the cut at {d["t"]:.2f} s (frame {d["frame"]})')
+    moving = m.get('_moving')   # master frames whose clip's camera moves (runs); None: unknown (any video)
     for f in pic.get('frozen', []):
-        if f['end'] - f['start'] >= 0.5:
-            w.append(f'picture frozen {f["start"]:.2f}-{f["end"]:.2f} s')
+        a, b = f['frames']
+        if f['end'] - f['start'] >= 0.5 and (moving is None or any(moving[i] for i in range(a, min(b, len(moving))))):
+            w.append(f'picture frozen {f["start"]:.2f}-{f["end"]:.2f} s' + ('' if moving is None else ' while the camera moves'))
     cc = m.get('cut_check') or {}
     if cc.get('missed'):
         w.append(f'{len(cc["missed"])} cut(s) in the edit not seen as cuts (same picture both sides?): frames {cc["missed"][:8]}')
@@ -97,6 +110,20 @@ def _warnings(m):
     if ld and ld.get('true_peak') is not None and ld['true_peak'] > -1.0:
         w.append(f'true peak {ld["true_peak"]} dBFS (over -1)')
     return w
+
+
+def _moving_frames(clips, cams, total, covered=None):
+    """Per master frame: whether its clip's camera moves (travels or turns). A still picture under a still camera (a
+    card, a locked-off shot of a resting subject) is not a fault; under a moving camera it is."""
+    out = [False] * total
+    for c in clips:
+        k = cams.get(c.get('shot') or '') or {}
+        moves = (k.get('travel') or 0) > 0.05 or (k.get('yaw_range') or 0) > 0.5 or (k.get('pitch_range') or 0) > 0.5
+        hidden = (covered or {}).get(c.get('shot'), ())
+        for f in range(c['out_start'], min(total, c['out_start'] + c['out_frames'])):
+            src = (c.get('src_in') or 0) + round((f - c['out_start']) * (c.get('speed') or 1))
+            out[f] = moves and not any(a <= src < b for a, b in hidden)
+    return out
 
 
 def measure(it):
@@ -131,7 +158,13 @@ def measure(it):
                'cut_check': {'expected': hard, 'soft': soft, 'matched': len(matched), 'missed': missed, 'extra': extra},
                'loudness': loudness.measure(master) if vid['audio'] else None,
                'camera': cams, 'framing': framing, 'text': texts}
+    cards = {}
+    for t in texts['items']:
+        if t['kind'] == 'card':     # a full-frame card hides the camera: a still picture under it is right
+            cards.setdefault(t['shot'], []).append((t['start'], t['end']))
+    metrics['_moving'] = _moving_frames(tl.clips(it), cams, vid['frames'], cards)
     metrics['warnings'] = _warnings(metrics)
+    metrics.pop('_moving')
     (it.measure / 'metrics.json').write_text(json.dumps(metrics, indent=2) + '\n')
     write_report(metrics, it.measure / 'report.md', title=f'{plan["name"]} {it.name}', plan=plan)
     return metrics

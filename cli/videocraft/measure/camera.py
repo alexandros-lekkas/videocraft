@@ -184,5 +184,7 @@ def height_of(subject, plan):
         if actor.get('id') == subject:
             if 'height' in actor:
                 return float(actor['height'])
-            return HEIGHTS.get(actor.get('entity') or actor.get('kind'), 1.8) * float(actor.get('scale', 1) or 1)
+            kind = str(actor.get('entity') or actor.get('kind') or '')
+            kind = kind if ':' in kind or kind in HEIGHTS else f'minecraft:{kind}'
+            return HEIGHTS.get(kind, 1.8) * float(actor.get('scale', 1) or 1) * (0.5 if actor.get('baby') else 1)
     return HEIGHTS['player']
