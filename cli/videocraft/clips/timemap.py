@@ -180,15 +180,16 @@ def line_bounds(word, words):
     return min(w.start for w in same), max(w.end for w in same)
 
 
-def snap_start(t, cuts, words, tolerance=SNAP_SHOT, floor=0.0):
+def snap_start(t, cuts, words, tolerance=SNAP_SHOT, floor=0.0, whole_line=False):
     """A start at or before `t`: the latest shot boundary within `tolerance` before it that is not inside a word, else
-    the start of the line `t` is inside (never mid-word), else `t` itself."""
+    the onset of the word `t` is inside (the start of its line with `whole_line`), else `t` itself. Never mid-word."""
     for c in sorted(cuts, reverse=True):
         if t - tolerance - 1e-9 <= c <= t + 1e-9 and c >= floor and not inside_word(c, words):
             return c
     w = inside_word(t, words)
-    if w:
-        return max(floor, line_bounds(w, words)[0])
+    while w:
+        t = line_bounds(w, words)[0] if whole_line else w.start
+        w = inside_word(t, words)     # a caption word and a spoken word may overlap: step back until clear
     return max(floor, t)
 
 
@@ -199,8 +200,10 @@ def snap_end(t, cuts, words, tolerance=SNAP_SHOT, ceiling=None):
         if t - 1e-9 <= c <= t + tolerance + 1e-9 and (ceiling is None or c <= ceiling + 1e-9) and not inside_word(c, words):
             return c
     w = inside_word(t, words)
-    end = w.end if w else t
-    return min(end, ceiling) if ceiling is not None else end
+    while w:
+        t = w.end
+        w = inside_word(t, words)
+    return min(t, ceiling) if ceiling is not None else t
 
 
 def frame_range(start, end, fps):

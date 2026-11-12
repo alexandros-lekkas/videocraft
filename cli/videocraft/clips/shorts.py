@@ -91,7 +91,8 @@ def _map_push(push, width, height):
     return push
 
 
-def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60, from_start=False, auto=None):
+def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60, from_start=False, auto=None,
+                    hook_in_game=True):
     """The vertical re-shoot of `pieces` ([(segment, src_in, src_out, frames)]) as a script dict."""
     width, height = plan['output']['width'], plan['output']['height']
     needed = [s.shot for s, *_ in pieces if s.kind == 'shot']
@@ -145,7 +146,7 @@ def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0
         if 'fade_out' in src and src_out == full.get('src_out'):
             clip['fade_out'] = src['fade_out']
         clips.append(clip)
-    if hook and shots:
+    if hook and shots and hook_in_game:
         first = next((p for p in pieces if p[0].kind == 'shot'), None)
         if first:
             target = next(s for s in shots if s['name'] == first[0].shot)
@@ -199,7 +200,10 @@ def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False, n
         say('  re-shoot: ' + line)
         if notes is not None:
             notes.append(line)
-    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps, from_start, auto)
+    in_game = not text_at_start(pieces, m.fps)
+    if hook and not in_game and notes is not None:
+        notes.append('text is on screen in the first second: the hook is a band over the picture, not a game title')
+    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps, from_start, auto, in_game)
     path = folder / 'vertical.json'
     path.write_text(json.dumps(vs, indent=2) + '\n')
     script_.compile_script(script_.load(path), str(path))   # fails here, not in the game, if the vertical script is wrong
@@ -207,7 +211,21 @@ def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False, n
     vit, code = runs.take(path, say=say, timeout=timeout)
     if code != 0 or not vit or not (vit.cut / 'master.mp4').exists():
         raise RuntimeError(f'the vertical take did not pass (exit {code}); see {vit.take / "game.log" if vit else path}')
-    return vit.cut / 'master.mp4', vit
+    return vit.cut / 'master.mp4', vit, in_game
+
+
+def text_at_start(pieces, fps):
+    """Whether the take shows any text in the short's first HOOK_SECONDS (a game title there would replace it)."""
+    left = int(HOOK_SECONDS * fps)
+    for seg, src_in, src_out, frames in pieces:
+        if left <= 0:
+            break
+        if seg.kind == 'shot':
+            last = src_in + min(frames, left)
+            if any(a <= last and b >= src_in for a, b, _, _ in text_boxes(seg, src_in, src_out)):
+                return True
+        left -= frames
+    return False
 
 
 # ---- Re-frame ----
@@ -472,10 +490,10 @@ def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', sub
         + (f', hook "{hook_text}"' if hook_text else '') + f' -> {folder}')
     record = {'run': str(it.path), 'moment': mo, 'start': s, 'end': e, 'frames': b - a, 'fps': m.fps, 'aspect': aspect,
               'width': OUT_W, 'height': OUT_H, 'requested': method, 'hook': hook_text, 'pull': pull, 'notes': []}
-    vit, plan, cw = None, None, None
+    vit, plan, cw, hook_in_game = None, None, None, False
     if chosen == 'reshoot':
         try:
-            picture, vit = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout, from_start, record['notes'])
+            picture, vit, hook_in_game = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout, from_start, record['notes'])
             record['reshoot'] = str(vit.path)
         except (RuntimeError, script_.ScriptError, SystemExit) as err:
             if method == 'reshoot':
@@ -491,7 +509,7 @@ def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', sub
     wav = folder / 'audio.wav'
     record['loudness'] = audio_slice(it.cut / 'master.mp4', s, (b - a) / m.fps, wav, info['audio'])
     hook_overlay = None
-    if hook_text and chosen == 'reframe':
+    if hook_text and (chosen == 'reframe' or not hook_in_game):
         png, h = hook_band(folder / 'hook.png', hook_text)
         hook_overlay = (png, h, int(OUT_H * 0.16))
     out = folder / 'short-1080x1920.mp4'

@@ -105,7 +105,8 @@ Both methods: the sound is the master's own mix over exactly the same frames (th
 performance), faded 15 ms at both ends and re-mastered to −14 LUFS (`loudness` is checked unless the source is
 silent; a peaky slice gets up to eight passes). A short never dips to black at its end: it ends on the payoff plus a beat, so it loops. A cold moment's
 hook (`--hook` to set it, `--hook none` to drop it) is drawn in the first second: in the game as a `title` at the
-top when re-shot (the next caption replaces it, one message at a time), as a bitmap-font band when re-framed.
+top when re-shot and no text is up in the first 1.4 s (a title would replace it: one message at a time), else
+as a bitmap-font band over the top of the picture (always, when re-framed).
 
 ### `[shot.vertical]`
 

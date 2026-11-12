@@ -237,7 +237,7 @@ def candidates(evs, cuts, words, total, shortest=SHORTEST, longest=LONGEST, beat
         end_at = p.get('end', p['t']) if p['kind'] == 'key' else p['t']
         e = timemap.snap_end(min(total, end_at + beat), cuts, words, ceiling=total)
         for s0 in starts:
-            s = timemap.snap_start(s0, cuts, words)
+            s = timemap.snap_start(s0, cuts, words, whole_line=True)
             if shortest - 1e-6 <= e - s <= longest + 1e-6:
                 out.add((round(s, 4), round(e, 4)))
     return sorted(out)

@@ -79,7 +79,10 @@ class Snapping(unittest.TestCase):
     def test_never_mid_word(self):
         cuts = [0.0, 9.0, 12.2, 20.0]
         s = timemap.snap_start(10.4, [], self.WORDS)
-        self.assertEqual(s, 10.0)                                  # the start of the line it was inside
+        self.assertEqual(s, 10.3)                                  # the onset of the word it was inside
+        self.assertEqual(timemap.snap_start(10.4, [], self.WORDS, whole_line=True), 10.0)   # or of its line
+        overlapping = self.WORDS + [word('least', 10.45, 10.9, 'spoken')]
+        self.assertEqual(timemap.snap_start(10.6, [], overlapping), 10.3)                    # clear of both
         self.assertIsNone(timemap.inside_word(s, self.WORDS))
         e = timemap.snap_end(12.1, [c for c in cuts if c != 12.2], self.WORDS)
         self.assertEqual(e, 12.4)                                  # the end of the word it was inside
