@@ -16,7 +16,9 @@ and the shot's duration is set by the line's `fit`:
            carries into the next shot (script order) while the voice plays on over the cut
   none     the duration is left as written
 
-A `say` without `at` follows the previous line of its shot after its `pause_after` (0.2 s). The lines and their
+A `say` without `at` follows the previous line of its shot after its `pause_after` (0.2 s). Lines are paced before they are timed (pace.py:
+silence trimmed, pauses capped, a slow line stretched towards the character's `pace`); the cue's `pace` overrides
+the character's (0 or false: as synthesized). The lines and their
 timings go into edit.dialogue (the run store writes it to voice.json) and a short table on stderr.
 With no voice installed (or VIDEOCRAFT_VOICE=estimate) the same pass runs on reading-speed estimates, with no audio.
 """
@@ -28,9 +30,11 @@ import sys
 
 from videocraft.voice import cast as castmod
 from videocraft.voice import front
+from videocraft.voice import pace
 
 SAY_KEYS = {'do', 'at', 'actor', 'character', 'text', 'style', 'speed', 'pause_after', 'fit', 'cut_on', 'tail', 'gain',
-            'caption', 'speaker', 'bark', 'id', 'position', 'size', 'hold', 'shade', 'key_color', 'color', 'carry'}
+            'caption', 'speaker', 'bark', 'id', 'position', 'size', 'hold', 'shade', 'key_color', 'color', 'carry',
+            'pace', 'beat'}
 CAPTION_KEYS = ('position', 'size', 'hold', 'shade', 'key_color', 'color')
 FITS = ('extend', 'cut-on', 'none')
 TAIL = 0.25
@@ -97,9 +101,16 @@ def _lines(raw, cast, draft):
                 _cut_index(cue['cut_on'], tokens, where)
             if 'at' in cue and (not isinstance(cue['at'], (int, float)) or isinstance(cue['at'], bool) or cue['at'] < 0):
                 raise _error(f'{where}: at = <seconds into the shot, >= 0>')
+            for k in ('pause_after',):
+                if k in cue and (not isinstance(cue[k], (int, float)) or isinstance(cue[k], bool) or cue[k] < 0):
+                    raise _error(f'{where}: {k} = <seconds of silence, >= 0>')
+            p = cue.get('pace')
+            if p is not None and p is not False and (not isinstance(p, (int, float)) or isinstance(p, bool) or p < 0):
+                raise _error(f'{where}: pace = <words a second> (0 or false: no pacing)')
             try:
                 ch = cast.character(cid)
-                spec = ch.spec(tokens, cue.get('style'), cue.get('speed', 1.0), cast.styles, draft=draft)
+                spec = ch.spec(tokens, cue.get('style'), cue.get('speed', 1.0), cast.styles, draft=draft,
+                               pace=cue.get('pace'), beat=bool(cue.get('beat')))
             except castmod.CastError as e:
                 raise _error(f'{where}: {e}') from e
             lines.append(Line(shot, cue, where, display, tokens, ch, spec))
@@ -203,6 +214,7 @@ def resolve(raw, source='script', engine=None, log=None, cache=None):
                      'file': front.rel(r['file']) if r.get('file') else None, 'seconds': r.get('seconds'),
                      'engine': r.get('engine'), 'timing': r.get('timing'), 'cached': r.get('cached'), 'key': r.get('key'),
                      'voice': ch.voice if not ch.generic else f'{ch.voice} (generic)',
+                     'wps': pace.words_per_second(ws), 'pace': r.get('pace'), 'beat': bool(c.get('beat')),
                      'words': [{'word': d, 'start': w['start'], 'end': w['end']} for d, w in zip(line.display, ws)]}
             shown = words
             if fit == 'cut-on':

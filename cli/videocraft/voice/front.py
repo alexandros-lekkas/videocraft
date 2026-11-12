@@ -5,7 +5,8 @@ once per `script` or compile. Every line is cached under cache/voice/lines/<key>
 hash of everything that shapes the audio (engine, model, voice, instruction, seed, speed, pitch, loudness, text and
 the worker's version): a re-run is instant and bit-identical.
 
-    synthesize(specs, engine)   -> one result per spec: {file, words, seconds, engine, timing, key, cached}
+    synthesize(specs, engine)   -> one result per spec: {file, words, seconds, engine, timing, key, cached, pace}
+                                   (a spec with `pace` is tightened by pace.py: trim, pause caps, stretch)
     engine_for(mode)            -> WorkerEngine, EstimateEngine (reading speed, no audio) or None
     estimate(tokens, speed)     -> word timings at reading speed, for scripts without a voice installed
 """
@@ -19,6 +20,7 @@ import sys
 from pathlib import Path
 
 from videocraft.paths import ROOT
+from videocraft.voice import pace
 
 HERE = Path(__file__).resolve().parent
 WORKER = HERE / 'worker' / 'worker.py'
@@ -195,7 +197,32 @@ def synthesize(specs, engine, cache=None):
             if engine.audio:
                 (cache / f'{key}.json').write_text(json.dumps(meta, indent=1) + '\n')
             results[i] = {**meta, 'file': str(out) if engine.audio else None, 'key': key, 'cached': False}
+    for i, s in enumerate(specs):
+        if 'pace' in s:
+            results[i] = paced(results[i], s, cache)
     return results
+
+
+def paced(r, spec, cache=None):
+    """A line after pace.py (trim, pause caps, stretch): the paced WAV is cached beside the raw one, keyed by the raw
+    line's key and the pacing settings, so changing the pacing never re-synthesizes. `pace` in the result records
+    the words a second before and after."""
+    opts = pace.options(spec.get('pace'))
+    if opts is None:
+        return {**r, 'pace': None}
+    if not r.get('file'):
+        words, info = pace.pace_words(r['words'], None, opts)
+        return {**r, 'words': words, 'pace': info}
+    cache = Path(cache or LINES)
+    pk = pace.pace_key(r['key'], opts)
+    wav, meta = cache / f'{r["key"]}.p{pk}.wav', cache / f'{r["key"]}.p{pk}.json'
+    if wav.exists() and meta.exists():
+        m = json.loads(meta.read_text())
+    else:
+        words, seconds, info = pace.pace_file(r['file'], r['words'], opts, wav, ffmpeg=shutil.which('ffmpeg') or 'ffmpeg')
+        m = {'words': words, 'seconds': seconds, 'pace': info}
+        meta.write_text(json.dumps(m, indent=1) + '\n')
+    return {**r, 'raw_file': r['file'], 'file': str(wav), 'words': m['words'], 'seconds': m['seconds'], 'pace': m['pace']}
 
 
 def copy_line(result, dest):
