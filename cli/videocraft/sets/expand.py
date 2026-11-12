@@ -41,6 +41,7 @@ def expand(raw, source='script'):
     placed = {}
     cues = []
     anchors, paths, views, info = {}, {}, {}, []
+    settle = 3.0
     for i, spec in enumerate(specs):
         where = f'world.set[{i}]'
         if not isinstance(spec, dict) or 'name' not in spec:
@@ -60,10 +61,7 @@ def expand(raw, source='script'):
         ents = p.entity_commands()
         if ents:
             cues.append({'at': LOAD_DELAY + ENTITY_GAP, 'do': 'command', 'forceload': box, 'commands': ents})
-        # Until the runtime waits for batched commands itself, give the server time to place them and the client
-        # time to draw them before the first shot prepares (staging seconds run faster than real time).
-        settle = round(3.0 + len(p.cells) / 15000, 1)
-        cues.append({'at': LOAD_DELAY + 2 * ENTITY_GAP, 'do': 'wait', 'seconds': settle})
+        settle += len(p.cells) / 15000
         anchors.update(p.anchors(prefix))
         for k, m in p.marks.items():
             if m['kind'] == 'path':
@@ -78,6 +76,10 @@ def expand(raw, source='script'):
             world['time'] = built.time
         if 'weather' not in world and i == 0:
             world['weather'] = built.weather
+    # Until the runtime waits for batched commands itself, give the server time to place them and the client time
+    # to draw them before the first shot prepares (staging seconds run faster than real time). One wait for all
+    # the sets: two waits at the same moment overlap, and the second set's blocks were still arriving at shot one.
+    cues.append({'at': LOAD_DELAY + 2 * ENTITY_GAP, 'do': 'wait', 'seconds': round(settle, 1)})
     shift = LOAD_DELAY + 3 * ENTITY_GAP
     own = [dict(c, at=float(c.get('at', 0)) + shift) for c in world.get('stage', [])]
     world['stage'] = cues + own
