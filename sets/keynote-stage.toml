@@ -85,6 +85,91 @@ color = "#b8d8ff"
 glow = true
 shadow = false
 
+# Pools of light on the stage floor under the spots (a dark stage reads as lit where the presenter stands).
+[[build]]
+do = "box"
+from = [-3, 2, -14]
+to = [3, 2, -10]
+block = "gray_carpet"
+
+[[build]]
+do = "box"
+from = [-2, 2, -13]
+to = [2, 2, -11]
+block = "light_gray_carpet"
+
+[[build]]
+do = "blocks"
+list = [
+  [-3, 2, -14, "black_carpet"], [3, 2, -14, "black_carpet"], [-3, 2, -10, "black_carpet"], [3, 2, -10, "black_carpet"],
+  [-10, 2, -13, "gray_carpet"], [-9, 2, -13, "gray_carpet"], [-8, 2, -13, "gray_carpet"], [-10, 2, -11, "gray_carpet"], [-8, 2, -11, "gray_carpet"],
+  [-10, 2, -12, "gray_carpet"], [-8, 2, -12, "gray_carpet"], [-9, 2, -11, "light_gray_carpet"],
+]
+
+# A glowing frame round the screen, and an original slide graphic: four bars rising, a trend line of dots.
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [-13.7, 3.3, -20.03]
+size = [27.4, 0.12, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [-13.7, 14.58, -20.03]
+size = [27.4, 0.12, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [-13.7, 3.3, -20.03]
+size = [0.12, 11.4, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [13.58, 3.3, -20.03]
+size = [0.12, 11.4, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "cyan_concrete"
+from = [7.0, 4.6, -19.95]
+size = [0.9, 0.8, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "cyan_concrete"
+from = [8.3, 4.6, -19.95]
+size = [0.9, 1.4, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [9.6, 4.6, -19.95]
+size = [0.9, 2.1, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "white_concrete"
+from = [10.9, 4.6, -19.95]
+size = [0.9, 3.0, 0.02]
+glow = true
+
+[[build]]
+do = "display"
+block = "light_blue_concrete"
+from = [6.6, 4.45, -19.95]
+size = [5.6, 0.06, 0.02]
+glow = true
+
 # A podium stage left, and a little table with a glass of water.
 [[build]]
 do = "blocks"
@@ -171,6 +256,30 @@ block = "polished_deepslate"
 [[build]]
 do = "blocks"
 list = [
+  [-12, 14, -6, "iron_chain[axis=y]"], [-12, 15, -6, "iron_chain[axis=y]"], [-12, 13, -6, "polished_deepslate"], [-12, 12, -6, "redstone_lamp[lit=true]"],
+  [-4, 14, -6, "iron_chain[axis=y]"], [-4, 15, -6, "iron_chain[axis=y]"], [-4, 13, -6, "polished_deepslate"], [-4, 12, -6, "redstone_lamp[lit=true]"],
+  [4, 14, -6, "iron_chain[axis=y]"], [4, 15, -6, "iron_chain[axis=y]"], [4, 13, -6, "polished_deepslate"], [4, 12, -6, "redstone_lamp[lit=true]"],
+  [12, 14, -6, "iron_chain[axis=y]"], [12, 15, -6, "iron_chain[axis=y]"], [12, 13, -6, "polished_deepslate"], [12, 12, -6, "redstone_lamp[lit=true]"],
+]
+
+[[build]]
+do = "box"
+from = [-14, 16, -6]
+to = [14, 16, -6]
+block = "polished_deepslate"
+
+# Step lights along the aisle, so the dark house has lines leading to the stage.
+[[build]]
+do = "blocks"
+list = [
+  [-3, 1, 1, "sea_lantern"], [3, 1, 1, "sea_lantern"], [-3, 1, 5, "sea_lantern"], [3, 1, 5, "sea_lantern"],
+  [-3, 2, 9, "sea_lantern"], [3, 2, 9, "sea_lantern"], [-3, 2, 12, "sea_lantern"], [3, 2, 12, "sea_lantern"],
+  [-3, 3, 15, "sea_lantern"], [3, 3, 15, "sea_lantern"], [-3, 3, 19, "sea_lantern"], [3, 3, 19, "sea_lantern"],
+]
+
+[[build]]
+do = "blocks"
+list = [
   [-12, 15, -8, "redstone_lamp[lit=true]"], [-6, 15, -8, "redstone_lamp[lit=true]"], [0, 15, -8, "redstone_lamp[lit=true]"],
   [6, 15, -8, "redstone_lamp[lit=true]"], [12, 15, -8, "redstone_lamp[lit=true]"],
   [-10, 16, 6, "ochre_froglight"], [10, 16, 6, "ochre_froglight"], [-10, 16, 16, "ochre_froglight"], [10, 16, 16, "ochre_froglight"],
@@ -208,7 +317,7 @@ at = [0, 9, -20]
 
 [[mark]]
 name = "stage-walk"
-path = [[-9, 2, -12], [0, 2, -12], [9, 2, -12]]
+path = [[-7, 2, -12], [0, 2, -12], [7, 2, -12]]
 
 [[mark]]
 name = "seat-front"
