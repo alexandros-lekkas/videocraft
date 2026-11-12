@@ -94,7 +94,8 @@ def tone(freq, length, level=0.5, partials=((1, 1.0),), attack=0.004, decay=0.25
 def square(freq, length, level=0.3, duty=0.5, decay=0.2, cutoff=6000):
     n = int(length * SR)
     inc = freq / SR
-    raw = [1.0 if (i * inc) % 1.0 < duty else -1.0 for i in range(n)]
+    hi, lo = 2 * (1 - duty), -2 * duty  # centred on zero: no DC
+    raw = [hi if (i * inc) % 1.0 < duty else lo for i in range(n)]
     env = _env(n, int(0.003 * SR), decay * SR)
     return array('f', [x * e * level for x, e in zip(_onepole(raw, cutoff), env)])
 

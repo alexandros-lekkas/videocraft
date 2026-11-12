@@ -87,7 +87,9 @@ def _square_note(freq, n, level, duty):
         inc = freq / SR
         attack, release = min(n, int(0.003 * SR)), min(n, int(0.02 * SR))
         decay = 0.6 * SR
-        raw = [(1.0 if (i * inc) % 1.0 < duty else -1.0) for i in range(n)]
+        # Centred on zero (a narrow pulse otherwise carries DC, which thumps at every note edge and eats headroom).
+        hi, lo = 2 * (1 - duty), -2 * duty
+        raw = [(hi if (i * inc) % 1.0 < duty else lo) for i in range(n)]
         # A gentle low-pass takes the edge off the naive square (it aliases above a few kHz).
         k = 1 - math.exp(-2 * math.pi * 5200 / SR)
         y, out = 0.0, array('f', bytes(4 * n))
