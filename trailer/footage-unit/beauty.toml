@@ -1,0 +1,109 @@
+# Footage unit: beauty shots of the finished barn set at golden hour, for the "prompt becomes the world" match cut
+# and the end card. The cast on its marks (the tripod still standing), the sun low.
+#   bin/videocraft run trailer/footage-unit/beauty.toml
+name = "fu-beauty"
+seed = 5
+description = "The finished barn set at golden hour: an orbit, a sky-headroom wide, a two-shot"
+
+[world]
+seed = "videocraft"
+time = 12300
+
+[[world.set]]
+name = "barn-stage"
+at = [0, 230, 0]
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill 12 230 -1 12 231 0 air strict",
+  "fill 13 230 -12 31 231 9 air replace minecraft:tall_grass strict",
+  "fill 13 230 -12 31 230 9 air replace minecraft:short_grass strict",
+  "setblock 19 230 -4 yellow_carpet strict",
+  "setblock 19 230 2 yellow_carpet strict",
+  "setblock 22 230 -6 yellow_carpet strict",
+  "setblock 22 230 -1 yellow_carpet strict",
+  "setblock 22 230 4 yellow_carpet strict",
+  "fill 24 230 -6 24 231 -6 spruce_fence strict",
+  "summon minecraft:block_display 23.62 232.0 -6.3 {block_state:\"minecraft:black_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.76f,0.5f,0.6f]}}",
+  "summon minecraft:block_display 23.4 232.1 -6.15 {block_state:\"minecraft:gray_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.24f,0.3f,0.3f]}}",
+  "summon minecraft:block_display 23.75 232.5 -6.22 {block_state:\"minecraft:red_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.1f,0.1f,0.1f]}}",
+]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "goat"
+at = [19.5, 230, -1.4]
+facing = -40
+left_horn = false
+tint = "#8c9fc2"
+
+[[actor]]
+id = "duke"
+kind = "mob"
+entity = "fox"
+variant = "snow"
+at = [19.8, 230, 1.6]
+facing = -120
+
+[[actor]]
+id = "hen-1"
+kind = "mob"
+entity = "chicken"
+at = [15.5, 230, -3.5]
+facing = -60
+
+[[actor]]
+id = "hen-2"
+kind = "mob"
+entity = "chicken"
+at = [14.8, 230, 2.6]
+facing = -110
+
+[[actor]]
+id = "hen-3"
+kind = "mob"
+entity = "chicken"
+at = [16.0, 230, 4.2]
+facing = -130
+
+# A slow orbit round the barn and the yard from above the roof line.
+[[shot]]
+name = "orbit"
+duration = 8.0
+camera = { rig = "orbit", center = [4.0, 233, 0.5], look = [4.0, 233.5, 0.5], radius = 34, height = 9, from = 230, sweep = 32, ease = "linear", fov = 60 }
+
+# Low in the yard, the barn small at the bottom of frame, the evening sky over it: headroom for a title.
+[[shot]]
+name = "headroom"
+duration = 8.0
+camera = { rig = "dolly", from = [31.0, 230.9, 10.0], to = [29.0, 230.9, 7.0], at = [10.0, 238.5, -2.0], ease = "linear", fov = 66 }
+
+[[shot.cue]]
+at = 1.5
+do = "look"
+actor = "nibs"
+target = "duke"
+hold = 2.0
+
+# The two leads on their marks, a slow two-shot drifting round them.
+[[shot]]
+name = "pair"
+duration = 7.0
+time = 11500
+camera = { rig = "orbit", center = [19.6, 230.8, 0.1], look = [19.6, 230.6, 0.1], radius = 4.6, height = 0.6, from = 255, sweep = 25, ease = "smooth", fov = 50 }
+
+[[shot.cue]]
+at = 1.0
+do = "look"
+actor = "duke"
+target = "nibs"
+hold = 2.5
+
+[[shot.cue]]
+at = 2.0
+do = "look"
+actor = "nibs"
+target = "camera"
+hold = 2.0
