@@ -68,6 +68,16 @@ def cmd_doctor(args):
     return 0 if good else 1
 
 
+def doctor():
+    """For `videocraft doctor`: one line, no worker started (`videocraft voice doctor` has the detail)."""
+    missing = [r.split('/')[-1] for r in front.WEIGHTS if not front.weights_cached(r)]
+    if front.VENV_PY.exists() and not missing:
+        n = len(list(front.LINES.glob('*.json'))) if front.LINES.is_dir() else 0
+        return [(True, 'voice', f'Qwen3-TTS + Kokoro + wav2vec2 ready in {front.VENV}; {n} line(s) cached')]
+    what = ('no venv' if not front.VENV_PY.exists() else '') + (f'{"; " if not front.VENV_PY.exists() else ""}weights missing: {", ".join(missing)}' if missing else '')
+    return [(False, 'voice', f'{what}: bin/videocraft voice setup (until then say cues get estimated timings, no voice)')]
+
+
 def cmd_setup(args):
     """uv venv -p 3.12 cache/voice/venv; uv pip install -r requirements.txt; the worker --prefetch (the weights into
     the user's HF cache, 3.8 GB the first time). Every step is printed; a step already done is quick."""

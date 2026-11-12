@@ -215,6 +215,14 @@ class Compile(unittest.TestCase):
         self.assertEqual(len(edit['dialogue']), 4)
         self.assertTrue(any(d.get('cut_on') for d in edit['dialogue']))
 
+    def test_lint_sees_resolved_lines_and_treats_spoken_captions_as_subtitles(self):
+        from videocraft import lint
+        problems = lint.lint(script.load(ROOT / 'examples/talk.toml'))
+        self.assertFalse([p for p in problems if p['severity'] == 'error'], problems)
+        self.assertTrue(any('spoken' in p['message'] for p in problems))
+        raw = scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'Hey you.', 'fit': 'none', 'at': 0.5}], duration=0.8))
+        self.assertTrue(any(p['rule'] == 'reading' and p['severity'] == 'error' for p in lint.lint(raw)), 'up under 1 s')
+
     def test_scripts_without_say_are_untouched(self):
         raw = script.load(ROOT / 'examples/hello.toml')
         self.assertFalse(resolve.has_say(raw))

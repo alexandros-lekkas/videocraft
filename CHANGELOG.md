@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Voice (`docs/VOICE.md`): a `say` cue is a spoken line, synthesized locally per character (Qwen3-TTS 1.7B
+  CustomVoice on MLX, Kokoro-82M as draft/fallback; cast files in `cast/`), aligned word by word (wav2vec2 CTC, onsets
+  snapped to the waveform past pause murmur and unscripted sounds), and resolved at compile time into a caption that
+  pops on the word onsets, an `edit.voice` line, an optional bark, and the shot's length (`fit = extend | cut-on |
+  none`; `cut_on` ends the shot on a word). Lines are cached by content hash; `voice.json` in each iteration; without a
+  voice installed, estimated timings. Commands `voice setup | doctor | say | script | check`; `examples/talk.toml`.
 - The story pipeline (`docs/STORY.md`): `story new/draft/revise/build/show/diff/lock/list`, `series new/status`
   and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
   `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.

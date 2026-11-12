@@ -131,7 +131,7 @@ def _speaker(cue, ch):
 
 def _caption(line, at, words, actor, cue, ch, first):
     """A caption cue for `words` [(display, start)] at shot time `at`."""
-    cap = {'do': 'caption', 'at': round(at, 4), 'actor': actor,
+    cap = {'do': 'caption', 'at': round(at, 4), 'actor': actor, 'voiced': line.cue.get('id') or line.where,
            'words': [{'w': d, 'at': round(max(0.0, s), 4)} for d, s in words]}
     sp = _speaker(cue, ch)
     if sp:
@@ -268,3 +268,27 @@ def _table(report, engine, log):
         timing = e.get('timing') or ''
         log(f'  {e["id"]:<16} {e["character"]:<8} {e["shot"]:<12} at {e["at"]:6.2f}  {dur:5.2f} s  '
             f'{"cached" if e.get("cached") else (e.get("engine") or ""):<8} {timing if timing != "ok" else ""}{cut}')
+
+
+SPOKEN_MIN = 1.0   # a spoken caption is still up at least this long, first word to last frame (subtitle practice)
+
+
+def lint_spoken(problems, resolved):
+    """Lint's reading rules are for text read without sound (max(1.2 s, 0.5 + 0.3 s a word) after the caption is
+    complete, at most 2.5 words a second). A caption the voice speaks is a subtitle: the viewer hears it as it pops,
+    so those become notes, unless the caption is up for less than SPOKEN_MIN in all."""
+    voiced = {}
+    for shot in resolved.get('shot') or []:
+        cues = shot.get('cue') or []
+        for k, c in enumerate(cues):
+            if c.get('do') == 'caption' and c.get('voiced'):
+                later = [x['at'] for x in cues if x.get('do') in ('caption', 'title', 'card', 'lower_third') and x['at'] > c['at']]
+                end = min(later + [float(shot.get('duration') or 0)])
+                voiced[f'shot {shot.get("name")}.cue[{k}]'] = end - c['at'] - c['words'][0]['at']
+    out = []
+    for p in problems:
+        up = voiced.get(p.get('where'))
+        if up is not None and p.get('rule') in ('reading', 'words_per_second') and up >= SPOKEN_MIN:
+            p = {**p, 'severity': 'info', 'message': p['message'] + ' (spoken: the voice carries it)'}
+        out.append(p)
+    return out

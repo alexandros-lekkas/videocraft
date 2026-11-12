@@ -13,6 +13,7 @@ workstream in brackets.
 | `seed` | `1` | The take's random seed (hand, reaction times, NPC choices). Same script and seed, same take. |
 | `description` | | Free text for people and reviewers. |
 | `[output]` | `width = 1920`, `height = 1080`, `fps = 60` | Framebuffer pixels and frames per second. **Implemented.** |
+| `[cast]` | the files in `cast/` | Who speaks with which voice: `file = "cast/<name>.toml"` and/or `[[cast.character]]`. See [Dialogue](#dialogue). **Implemented.** |
 
 ## `[world]` (implemented)
 
@@ -36,7 +37,7 @@ always there as `player`.
 | Key | Default | Meaning |
 |:--|:--|:--|
 | `name` | required | Unique in the script; `stage` is reserved. |
-| `duration` | required | Seconds; exactly `duration × fps` frames are recorded. |
+| `duration` | required | Seconds; exactly `duration × fps` frames are recorded. A shot with `say` lines may leave it out ([Dialogue](#dialogue)). |
 | `camera` | required | `{ rig = "<id>", … }`, the rig's parameters below. |
 | `hud` | `true` | First-person shots only: draw the hotbar, hearts and crosshair. |
 | `bob` | `true` | First-person shots only: view bobbing. Always off for camera and third-person rigs. |
@@ -58,6 +59,7 @@ Cues at the same time start in the order written.
 | `caption`, `title`, `card`, `lower_third`, `keycap`, `clear` | see [Text](#text) | **Implemented.** |
 | `<modid>:<name>` | the plugin's | Another mod's action ([DESIGN.md](DESIGN.md#6-extension-point)). |
 | `sound`, `tune`, `ambience`, `particles` | see [Audio](#audio) | **Implemented** (audio). |
+| `say` | see [Dialogue](#dialogue) | **Implemented** (voice). A spoken line: a word-timed caption, the voice in the mix, the shot's length. |
 
 ## Text
 
@@ -206,6 +208,53 @@ Recipes (the benchmark's sound column):
 Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
 logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
 `videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
+
+## Dialogue
+
+A `say` cue is a spoken line. At compile time the line is synthesized with the character's voice (local open-weights
+TTS; [VOICE.md](VOICE.md)), aligned word by word, and replaced by a `caption` whose words pop on their onsets, a
+voice line in the mix (`edit.voice`), the character's `bark` sound on the first word if the cast gives one, and the
+shot's length. Lines are cached, so a re-compile is instant. **Implemented.** Without a voice installed the same
+happens on reading-speed timings, with no audio and a warning (`VIDEOCRAFT_VOICE=estimate` asks for that;
+`=draft` uses the cast's fast draft voices).
+
+```toml
+[cast]
+file = "cast/nibs-vs-duke.toml"          # character -> engine, voice, instruction, seed, tag colour, bark
+
+[[shot]]
+name = "challenge"                        # no duration: the shot is as long as its lines (or ends on cut_on)
+camera = { rig = "fixed", eye = [0, 72, -4], at = [0, 70, 0] }
+
+[[shot.cue]]
+at = 0.2
+do = "say"
+actor = "nibs"
+text = "So today, I challenge *Duke to a jump-off!"
+style = "excited"
+cut_on = "Duke"                           # the next shot starts on the onset of "Duke"
+```
+
+| Key | Default | Meaning |
+|:--|:--|:--|
+| `actor` | required | Who speaks: a character of the cast (and an `[[actor]]` id, if the bark should come from it). `character` overrides the voice. |
+| `text` | required | The line, as it is said and shown; a word starting `*` is the key word. Spell numbers out ("six"). One word ("SIX") is a line too: a montage of single words is a run of short lines. |
+| `at` | after the previous line | Seconds into the shot. Without it, the line follows the previous `say` of its shot (or the words carried into it) after that line's `pause_after`. |
+| `style` | | Delivery: `shout`, `whisper`, `deadpan`, `excited`, `proud`, `smug`, `sad`, `angry`, `scared`, `sleepy`, `question`, `sing`, or a sentence of your own ([VOICE.md](VOICE.md#the-cast-file)). |
+| `speed` | `1.0` | A pace on top of the character's. |
+| `pause_after` | `0.2` | Seconds before a following line without `at`. |
+| `fit` | `"extend"` | `extend`: the shot lasts at least to the last word + `tail`. `cut-on`: the shot ends on the onset of `cut_on` (implied by `cut_on`); the words from it on carry into the next shot (script order) while the voice plays on over the cut. `none`: the duration is as written. |
+| `cut_on` | | A word of the line (matched without `*` and punctuation; the first match) or its index from 0. |
+| `tail` | `0.25` | Seconds kept after the last word with `extend`. |
+| `gain` | `0` | dB on this line in the mix. |
+| `bark` | the cast's | `false` for none, or another sound event. |
+| `caption` | `true` | `false`: no caption (voice only); or a table of caption keys. `position`, `size`, `hold`, `shade`, `key_color`, `color` pass through too. |
+| `speaker` | the cast's name and colour | `false` for no tag, a name, or `{ name, color }`. |
+| `carry` | `true` | With `cut-on`: carry the rest of the caption into the next shot. |
+| `id` | `<shot>-<n>` | The line's name in `voice.json` and `voice script -o`. |
+
+The resolved lines are in `edit.dialogue` and the iteration's `voice.json` (every line: file, words with times, shot,
+start); `bin/videocraft voice check <run>` measures captions, cuts and voice against them.
 
 ## Appendix: commands that write shot scripts
 
