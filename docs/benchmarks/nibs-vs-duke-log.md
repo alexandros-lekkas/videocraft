@@ -24,6 +24,7 @@ they see strips, contact sheets, cut pairs and measurements, and say they cannot
 | 2 | 0007 | 8.0 | 7.5 | 7.0 | 5.5 | 6.5 | 6.0 | 6.0 | 6.5 | 6.5 | **6.61** | 5.5 | pass |
 | 3 | 0009 | 8.0 | 6.5 | 7.0 | 5.5 | 6.5 | 6.5 | 6.0 | 7.0 | 6.5 | **6.61** | 5.5 | pass |
 | 4 | 0010 | 8.0 | 7.0 | 7.0 | 5.0 | 6.0 | 7.0 | 6.0 | 7.0 | 6.5 | **6.61** | 5 | pass |
+| 5 | 0011 | 8.0 | 7.5 | 7.0 | 5.0 | 6.0 | 6.5 | 6.0 | 7.0 | 6.0 | **6.56** | 5 | pass |
 
 Round 1's agreed fixes (all six reviewers named at least one): the flashback's middle sags (s14 and s15, 8.7 s of
 nearly static note blocks with Duke at 8% and 0% of the frame); Duke's bow and ovation are specks (3-4% of the
@@ -74,3 +75,10 @@ up after the dip; the trophy grab is hidden behind the post; two hens are cut by
 (s07); s19 3.6 s; s28 stops early, turns square and a slow optical push (fov 84 to 50) replaces the snap zoom;
 s10 2.6 s, s11 1.4 s, s12 1.6 s, s14 2.2 s, s18 2.5 s; the grab on the camera side of the post with a ding; all four
 hens in frame, one getting bored; the bed under everything but the two black dips; more preroll on s09/s19/s20.
+
+0011: silence only at the two dips; strut-track turn rates fell from p95 7-25 to 1-2 °/s with the Follow fix; camera
+scored 8 from one reviewer for the first time. Round 5 (6.56) is inside the wobble of the plateau. The notes that
+remain are about acting: the button (s30) is a 13%-high blob; "the best jumper in the valley" never jumps; no double
+take at the board; the trophy vanishes without visibly reaching the mouth. Applied for 0012: Nibs jumps on "jumper"
+(s01) and on "jump" (s19, now a closer side lead), a dead stop and double take at the board (s07, closer), s16b
+tight on Duke's head at the post, s30 close on Duke facing the lens, s26 a 1 s beat, s29 2.6 s.
