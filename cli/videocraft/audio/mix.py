@@ -24,6 +24,7 @@ import csv
 import fnmatch
 import json
 import math
+import os
 import time
 from array import array
 from dataclasses import dataclass, asdict
@@ -69,12 +70,13 @@ class Placed:
 
 
 def _mode(edit, original):
-    if original:
+    """game | original | none. `original=True` (or VIDEOCRAFT_AUDIO=original, for `cut --original-audio`) wins."""
+    if original or os.environ.get('VIDEOCRAFT_AUDIO', '').strip().lower() == 'original':
         return 'original'
     mode = edit.get('audio', 'game')
-    if mode in (False, None):
+    if mode in (False, None) or str(mode).lower() in ('none', 'silent', 'off'):
         return 'none'
-    if mode not in ('game', 'original', 'none'):
+    if mode not in ('game', 'original'):
         raise SystemExit(f'[edit] audio = "{mode}": one of game, original, none')
     return mode
 
@@ -504,7 +506,7 @@ def build(it, original=None, keep_raw=False):
     report.update({
         'file': out.name, 'sample_rate': SR, 'channels': 2, 'loudness': measured, 'black_gaps': gaps,
         'events': [p.to_json() for p in placed], 'voice': [p.to_json() for p in voices], 'skipped': skipped,
-        'game_assets_used': mode == 'game' and any(p.source == 'game' for p in placed) or bool(report.get('music', {}).get('source') == 'game'),
+        'game_assets_used': any(p.source == 'game' for p in placed) or report.get('music', {}).get('source') == 'game',
         'build_seconds': round(time.time() - started, 2),
     })
     (it.cut / 'audio.json').write_text(json.dumps(report, indent=2) + '\n')

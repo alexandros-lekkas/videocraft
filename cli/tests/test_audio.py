@@ -62,6 +62,19 @@ class TimelineTests(unittest.TestCase):
         self.assertEqual(t.clips[0].fade_out, 12)
 
 
+    def test_the_edits_timeline_with_black_nulls_and_a_speed_ramp(self):
+        data = {'fps': 60, 'frames': 14, 'clips': [
+            {'index': 0, 'kind': 'black', 'shot': None, 'src_in': None, 'src_out': None, 'out_start': 0, 'out_frames': 4, 'speed': None},
+            # Source frames 10..19 over 10 output frames, slow then fast: 10, 10, 11, 12, 12, 13, 15, 17, 18, 19.
+            {'index': 1, 'kind': 'shot', 'shot': 's', 'src_in': 10, 'src_out': 20, 'out_start': 4, 'out_frames': 10, 'speed': 1.0,
+             'src_map': [10, 10, 11, 12, 12, 13, 15, 17, 18, 19]}]}
+        t = tl.from_json(data)
+        self.assertEqual(t.clips[0].kind, 'black')
+        self.assertAlmostEqual(tl.out_time(t, 's', 10), 4 / 60)
+        self.assertAlmostEqual(tl.out_time(t, 's', 13), 9 / 60)
+        self.assertAlmostEqual(tl.out_time(t, 's', 14), 10 / 60)  # skipped by the ramp: the next frame shown
+        self.assertAlmostEqual(tl.out_time(t, 's', 19), 13 / 60)
+
     def test_the_picture_envelope_steps_at_hard_cuts_and_ramps_with_fades(self):
         t = tl.trivial({'clip': [{'shot': 'a'}, {'black': 0.5}, {'shot': 'a', 'fade_in': 30}]}, {'shots': [{'name': 'a', 'frames': 60}]}, 60)
         n = dsp.seconds_to_samples(t.seconds)

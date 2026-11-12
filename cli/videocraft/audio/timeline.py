@@ -7,6 +7,7 @@ Frames throughout; src_* in the shot's own frames (src_out exclusive), out_* in 
 not written one (an older cut, or the audio commands run on their own) the trivial timeline is built from edit.json:
 clips in order with their trims, `black = <seconds>` clips as gaps.
 """
+import bisect
 import json
 from dataclasses import dataclass
 
@@ -23,6 +24,7 @@ class Clip:
     speed: float = 1.0
     fade_in: int = 0
     fade_out: int = 0
+    src_map: list | None = None  # speed ramps: the source frame shown on each output frame of the clip (the edit's)
 
     @property
     def out_end(self):
@@ -32,7 +34,10 @@ class Clip:
         return self.kind == 'shot' and self.src_in <= frame < self.src_out
 
     def out_frame(self, frame):
-        """The cut frame (fractional, unclamped) at which this shot's `frame` plays."""
+        """The cut frame (fractional, unclamped) at which this shot's `frame` plays: through the edit's src_map when the
+        clip's speed ramps (the first output frame that shows it), else at the clip's constant speed."""
+        if self.src_map and self.src_in <= frame < self.src_out:
+            return self.out_start + bisect.bisect_left(self.src_map, frame)
         return self.out_start + (frame - self.src_in) / self.speed
 
 
@@ -50,15 +55,16 @@ class Timeline:
         return [c for c in self.clips if c.kind == 'shot' and c.shot == shot]
 
     def to_json(self):
-        return {'fps': self.fps, 'frames': self.frames, 'clips': [c.__dict__ for c in self.clips]}
+        return {'fps': self.fps, 'frames': self.frames, 'clips': [{k: v for k, v in c.__dict__.items() if v is not None} for c in self.clips]}
 
 
 def from_json(data):
     clips = []
     for i, c in enumerate(data['clips']):
-        clips.append(Clip(index=int(c.get('index', i)), kind=c.get('kind', 'shot'), shot=c.get('shot'), src_in=int(c.get('src_in', 0)),
-                          src_out=int(c.get('src_out', 0)), out_start=int(c['out_start']), out_frames=int(c['out_frames']),
-                          speed=float(c.get('speed') or 1.0), fade_in=int(c.get('fade_in') or 0), fade_out=int(c.get('fade_out') or 0)))
+        clips.append(Clip(index=int(c.get('index', i)), kind=c.get('kind', 'shot'), shot=c.get('shot'), src_in=int(c.get('src_in') or 0),
+                          src_out=int(c.get('src_out') or 0), out_start=int(c['out_start']), out_frames=int(c['out_frames']),
+                          speed=float(c.get('speed') or 1.0), fade_in=int(c.get('fade_in') or 0), fade_out=int(c.get('fade_out') or 0),
+                          src_map=c.get('src_map') or None))
     frames = int(data.get('frames') or max((c.out_end for c in clips), default=0))
     return Timeline(fps=int(data['fps']), frames=frames, clips=clips)
 
