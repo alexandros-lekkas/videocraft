@@ -143,9 +143,30 @@ class Resolver(unittest.TestCase):
         out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5, 'pause_after': 0.3},
                                                 {'do': 'say', 'actor': 'duke', 'text': 'Three.'}])))
         caps = [c for c in out['shot'][0]['cue'] if c['do'] == 'caption']
-        # the first ends at 0.5 + 0.8 = 1.3; + 0.3 pause
-        self.assertAlmostEqual(caps[1]['at'], 1.6)
+        # the first voice ends at 0.5 + 0.8 = 1.3; + 0.3 pause: the second voice's first word at 1.6
+        self.assertAlmostEqual(caps[1]['at'] + caps[1]['words'][0]['at'], 1.6)
         self.assertEqual(caps[1]['speaker']['name'], 'Duke')
+
+    def test_lines_are_packed_with_the_default_gap(self):
+        out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5},
+                                                {'do': 'say', 'actor': 'duke', 'text': 'Three four.', 'at': 3.0},
+                                                {'do': 'say', 'actor': 'nibs', 'text': 'Five.', 'gap': 0.3}], duration=None)))
+        d = out['edit']['dialogue']
+        starts = [x['at'] + x['words'][0]['start'] for x in d]
+        ends = [x['at'] + x['words'][-1]['end'] for x in d]
+        # the first at its at; the second's written at = 3.0 is packed GAP after the first; the third after its gap
+        self.assertAlmostEqual(starts[0], 0.6)
+        self.assertAlmostEqual(starts[1] - ends[0], resolve.GAP)
+        self.assertAlmostEqual(starts[2] - ends[1], 0.3)
+        self.assertTrue(any('packed' in l for l in self.log))
+        # the shot ends `tail` after the last word: no dead air at its end
+        self.assertAlmostEqual(out['shot'][0]['duration'], math.ceil((ends[2] + resolve.TAIL) * 60 - 1e-6) / 60)
+
+    def test_a_beat_keeps_its_at(self):
+        out = self.run_resolve(scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'One two.', 'at': 0.5},
+                                                {'do': 'say', 'actor': 'duke', 'text': 'Three.', 'at': 3.0, 'beat': True}])))
+        self.assertEqual(out['edit']['dialogue'][1]['at'], 3.0)
+        self.assertTrue(out['edit']['dialogue'][1]['beat'])
 
     def test_cache_makes_a_rerun_free_and_identical(self):
         raw = scene(shot('a', [{'do': 'say', 'actor': 'nibs', 'text': 'Hey.'}, {'do': 'say', 'actor': 'duke', 'text': 'Hm.'}]))
