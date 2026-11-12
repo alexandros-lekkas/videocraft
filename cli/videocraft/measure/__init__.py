@@ -8,7 +8,8 @@ picture (shots, cut statistics, black, frozen, duplicated frames at cuts), cut_c
 cut's own boundaries; runs only), loudness (null without audio), camera and framing (per shot, from frames.csv and
 actors.csv), text (DESIGN.md section 5 rules from text.json), dialogue (words a second per line, the share of the
 runtime with a voice, the longest silences and dead air, from voice.json and cut/audio.json; runs with say lines
-only), warnings (what a reviewer should look at).
+only), balance (voice over music per line, the music between lines, the effects' loudest: cut/audio.json's, measured
+on the mix's buses), warnings (what a reviewer should look at).
 `checks` decides PASS: only the format, so a weak but correct cut still passes; the rest is for review and lint.
 Owned by workstream (d).
 """
@@ -115,6 +116,8 @@ def _warnings(m):
     for l in dl.get('slow_lines', []):
         if not l['slow_style']:
             w.append(f'slow line {l["id"]}: {l["wps"]:.2f} words a second (under {dialogue.SLOW_WPS})')
+    from videocraft.audio import balance
+    w += balance.warnings(m.get('balance'))
     ld = m.get('loudness')
     if ld and ld.get('true_peak') is not None and ld['true_peak'] > -1.0:
         w.append(f'true peak {ld["true_peak"]} dBFS (over -1)')
@@ -163,6 +166,14 @@ def _dialogue(it, total):
     return dialogue.summary(lines, segments, shots, total) if lines else None
 
 
+def _balance(it):
+    """The mix's balance as the mix measured it (cut/audio.json); None for a cut mixed before it was measured."""
+    af = it.cut / 'audio.json'
+    if not af.exists():
+        return None
+    return json.loads(af.read_text()).get('balance')
+
+
 def measure(it):
     plan, result = it.plan(), it.result()
     out = plan['output']
@@ -196,6 +207,7 @@ def measure(it):
                'loudness': loudness.measure(master) if vid['audio'] else None,
                'camera': cams, 'framing': framing, 'text': texts}
     metrics['dialogue'] = _dialogue(it, vid['seconds'])
+    metrics['balance'] = _balance(it)
     cards = {}
     for t in texts['items']:
         if t['kind'] == 'card':     # a full-frame card hides the camera: a still picture under it is right

@@ -74,6 +74,44 @@ and/or inline `[[cast.character]]` tables. A character the script's cast does no
 instruction ("Flat and deadpan, completely unimpressed, no emotion at all."); for Kokoro, a pace (`sleepy` 0.82x,
 `excited` 1.1x). The list is `STYLES` in `cli/videocraft/voice/cast.py`.
 
+## Different people, different voices
+
+The owner, after the first films: "use different voices for different people". Measured on the finished takes
+(median f0 of each character's lines, `cli/videocraft/voice/pitch.py`), the two leads of Nibs vs Duke came out
+237 Hz (Nibs, `ryan`) and 200 Hz (Duke, `aiden`), under 3 semitones apart: the voice lab's 225 against 131 Hz was
+Duke's old "slow, smug and low" instruction, and the brisk delivery every line now gets lifted him most of the way
+to Nibs. A second film's two leads (`aiden`, `ryan`, both "fast, punchy") measured 250 and 218 Hz, its narrator and
+one board member (`bm_george`, `am_puck`) 146 and 133 Hz, and two board members shared one on-screen name. So lint
+checks every script's cast (rule `cast_voice`, `cli/videocraft/voice/cast.py`):
+
+- **error**: two characters with the same engine, preset and instruction (one voice for two people);
+- **warn**: two characters sharing a preset (an instruction alone does not make a second person), a speaking
+  character in no cast (a generic voice), two characters with one display name, two draft voices that collide;
+- **warn**: two characters whose synthesized lines measure under 3 semitones apart (when the lines are in the voice
+  cache; each line's pitch is cached beside it as `<line>.wav.f0.json`).
+
+Each names a fix: another preset chosen by measured pitch (the most distinct from every voice already in the cast,
+counting up to 6 semitones), `pitch = ±2` or instructions that pull apart for Qwen3, or an English Kokoro voice
+when Qwen3 has no English preset left. The story pipeline gives each bible character a preset no one else has.
+
+Every preset on one neutral line ("Well, I told you the bridge would hold, and look at it now. Nobody believed
+me.", seed 7, no pacing; Qwen3 with the instruction "Natural, conversational."), median f0 by autocorrelation
+(a YIN estimate agrees within about a semitone). Measured, not listened to; an instruction moves a Qwen3 voice a
+long way (Nibs' "cocky, brash and bright" puts `ryan` near 230 Hz):
+
+| Engine | Male (Hz) | Female (Hz) |
+|:--|:--|:--|
+| Qwen3, English-native | `aiden` 128, `ryan` 130 (alike: their instructions must part them) | none |
+| Qwen3, other languages (accented English) | `dylan` 145, `eric` 174, `uncle_fu` 226 (high for its billing: check it) | `serena` 231, `vivian` 238, `sohee` 240, `ono_anna` 261 |
+| Kokoro, American | `am_onyx` 88, `am_puck` 109, `am_echo` 113, `am_michael` 115, `am_liam` 118, `am_adam` 121, `am_fenrir` 122, `am_eric` 148, `am_santa` 162 | `af_kore` 135, `af_alloy` 140, `af_nicole` 148, `af_sky` 154, `af_nova` 160, `af_aoede` 169, `af_river` 177, `af_sarah` 182, `af_heart` 194, `af_bella` 200, `af_jessica` 207 |
+| Kokoro, British | `bm_lewis` 99, `bm_daniel` 129, `bm_george` 143, `bm_fable` 146 | `bf_lily` 169, `bf_emma` 179, `bf_isabella` 194, `bf_alice` 222 |
+
+Clearly different pairs, by these numbers: a Qwen3 lead (`ryan` or `aiden`, acted) against a Kokoro `am_onyx` (88)
+or `bm_lewis` (99) heavy; `am_santa` (162) or `am_eric` (148) against `am_onyx`; `bm_george` (143) narrating
+against `am_puck` (109) or `am_onyx`; for women `af_kore` (135) against `bf_alice` (222) or `af_jessica` (207). Two
+Qwen3 leads need instructions that pull apart in pitch (one "bright and high", one "low and gruff") and, if lint
+still warns, `pitch = -2` on the lower one.
+
 ## How a line is made
 
 The CLI core stays standard-library only: `cli/videocraft/voice/` never imports a model. It runs
