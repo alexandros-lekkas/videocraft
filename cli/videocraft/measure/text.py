@@ -1,12 +1,9 @@
 """Text on screen against the layout rules of docs/DESIGN.md section 5, from each shot's text.json.
 
-What is read (the text workstream writes it; these spellings and a few obvious variants are accepted):
-
-    {"width": 1920, "height": 1080, "fps": 60,
-     "items": [{"kind": "caption", "text": "Hey. It's me. Nibs.", "start": 12, "end": 140,   # frames, end exclusive
-                "box": [x, y, w, h],                                                         # pixels of the frame
-                "cap_height": 58,                                                            # pixels
-                "words": [{"w": "Hey.", "frame": 12}, ...]}]}                                # when each word appears
+What is read: the text layer's shots/<name>/text.json ({"width", "height", "fps", "items": [...]}), each item
+{kind, text, first_frame, last_frame (inclusive), shown_frame (complete), box [x0, y0, x1, y1], cap_height,
+words_count, words [{w, frame, key}]}; a simpler {start, end (exclusive), box [x, y, w, h], cap_height, words} shape
+is read too (tests and hand-made fixtures).
 
 Frames are the shot's own. Rules, all at the frame's own size (the 1920x1080 numbers scale with the frame):
 safe area x 5-95 %, y 5-85 % (96-1824, 54-918); one message at a time; complete on screen (from its last word)
@@ -33,13 +30,22 @@ def _get(d, *names, default=None):
 
 
 def normalise(item, fps):
-    start = _get(item, 'start', 'from', 'first')
-    end = _get(item, 'end', 'to', 'last')
-    if 'frames' in item and isinstance(item['frames'], list) and len(item['frames']) == 2:
-        start, end = item['frames']
+    """One text item in a common shape. The text layer's own records (first_frame/last_frame inclusive, shown_frame
+    when complete, box as corners [x0, y0, x1, y1]) and the simpler start/end/box [x, y, w, h] shape are both read."""
+    layer = 'first_frame' in item
+    if layer:
+        start = item.get('first_frame')
+        end = None if item.get('last_frame') is None else item['last_frame'] + 1
+    else:
+        start = _get(item, 'start', 'from', 'first')
+        end = _get(item, 'end', 'to', 'last')
+        if 'frames' in item and isinstance(item['frames'], list) and len(item['frames']) == 2:
+            start, end = item['frames']
     box = _get(item, 'box', 'rect', default=None)
     if isinstance(box, dict):
         box = [box.get('x', 0), box.get('y', 0), box.get('w', box.get('width', 0)), box.get('h', box.get('height', 0))]
+    elif layer and isinstance(box, list) and len(box) == 4:
+        box = [box[0], box[1], box[2] - box[0], box[3] - box[1]]
     words = []
     for w in _get(item, 'words', default=[]) or []:
         if isinstance(w, dict):
@@ -52,16 +58,17 @@ def normalise(item, fps):
     text = _get(item, 'text', default=' '.join(w for w, _ in words))
     if isinstance(text, list):
         text = ' '.join(text)
-    count = len(words) or len(str(text).split())
-    complete = max((f for _, f in words), default=start)
+    count = item.get('words_count') or len(words) or len(str(text).split())
+    complete = item.get('shown_frame') if layer and item.get('shown_frame') is not None else max((f for _, f in words), default=start)
     return {'kind': _get(item, 'kind', 'type', default='text'), 'text': str(text), 'start': int(start or 0), 'end': int(end or 0),
-            'box': box, 'cap': _get(item, 'cap_height', 'capHeight', 'cap'), 'words': words, 'count': count,
+            'box': box, 'cap': _get(item, 'cap_height', 'capHeight', 'cap'), 'words': words, 'count': int(count),
             'complete': int(complete or 0)}
 
 
 def load(path, fps):
     data = json.loads(Path(path).read_text())
     items = data if isinstance(data, list) else _get(data, 'items', 'text', default=[])
+    items = [i for i in items if not ('first_frame' in i and i['first_frame'] is None)]   # never drawn on a recorded frame
     size = (data.get('width'), data.get('height')) if isinstance(data, dict) else (None, None)
     return [normalise(i, fps) for i in items], size
 

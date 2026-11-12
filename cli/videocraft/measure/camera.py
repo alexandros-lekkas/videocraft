@@ -112,7 +112,9 @@ def kinematics(rows, fps):
 
 def subject_track(frames, actors, subject, height, aspect=16 / 9):
     """Per frame: (frame, x, y, h) of the subject's feet-to-head line in frame fractions, x and y of its middle, h its
-    height as a fraction of the frame height; None for frames where it is behind the camera or not logged."""
+    height as a fraction of the frame height; None for frames where it is behind the camera or not logged. Feet come
+    from actors.csv, else frames.csv's subject columns (the rig's subject), else the player columns; the head from
+    subject_head_y when logged, else feet + height. The lens is lens_fov when logged, else fov."""
     feet = {}
     for row in actors:
         if str(row.get('actor')) == subject:
@@ -122,13 +124,18 @@ def subject_track(frames, actors, subject, height, aspect=16 / 9):
         n = int(r['frame'])
         if subject == 'player' and n not in feet and 'player_x' in r:
             feet[n] = (r['player_x'], r['player_y'], r['player_z'])
+        head_y = None
+        if n not in feet and str(r.get('subject')) == subject and isinstance(r.get('subject_x'), float):
+            feet[n] = (r['subject_x'], r['subject_y'], r['subject_z'])     # the rig's own log of its subject
+            head_y = r.get('subject_head_y') if isinstance(r.get('subject_head_y'), float) else None
         p = feet.get(n)
         if p is None:
             out.append((n, None))
             continue
-        cam, yaw, pitch, fov = (r['cam_x'], r['cam_y'], r['cam_z']), r['cam_yaw'], r['cam_pitch'], r['fov']
+        fov = r['lens_fov'] if isinstance(r.get('lens_fov'), float) else r['fov']   # the exact lens, when logged
+        cam, yaw, pitch = (r['cam_x'], r['cam_y'], r['cam_z']), r['cam_yaw'], r['cam_pitch']
         a = project(p, cam, yaw, pitch, fov, aspect)
-        b = project((p[0], p[1] + height, p[2]), cam, yaw, pitch, fov, aspect)
+        b = project((p[0], head_y if head_y is not None and head_y > p[1] else p[1] + height, p[2]), cam, yaw, pitch, fov, aspect)
         if a is None or b is None:
             out.append((n, None))
             continue

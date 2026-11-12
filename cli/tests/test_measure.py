@@ -51,6 +51,14 @@ class Projection(unittest.TestCase):
         self.assertTrue(any('middle third' in x for x in f['flags']))
         self.assertTrue(any('size changes' in x for x in f['flags']))
 
+    def test_subject_from_the_rigs_own_columns(self):
+        frames = [{'frame': 0, 'cam_x': 0, 'cam_y': 65, 'cam_z': 0, 'cam_yaw': 0, 'cam_pitch': 0, 'fov': 70, 'lens_fov': 105.0,
+                   'subject': 'nibs', 'subject_x': 0.0, 'subject_y': 64.0, 'subject_z': 5.0, 'subject_head_y': 65.3}]
+        (n, v), = camera.subject_track(frames, [], 'nibs', 9.9)
+        self.assertAlmostEqual(v[0], 0.5)
+        expect = (1.3 / 5) / math.tan(math.radians(52.5)) / 2        # head - feet over the 105-degree lens
+        self.assertAlmostEqual(v[2], expect, places=6)
+
     def test_kinematics_of_constant_velocity_has_no_jerk(self):
         rows = [{'cam_x': n * 0.05, 'cam_y': 64, 'cam_z': 0, 'cam_yaw': 350 + n * 2, 'cam_pitch': 0, 'fov': 70} for n in range(40)]
         k = camera.kinematics(rows, 60)
@@ -139,6 +147,15 @@ class Text(unittest.TestCase):
         self.assertEqual(table[0]['complete_seconds'], 2.0)
         self.assertEqual(table[0]['reading_seconds'], 1.7)
         self.assertEqual(text.reading_seconds(1), 1.2)
+
+    def test_the_text_layers_own_records(self):
+        record = {'kind': 'caption', 'first_frame': 12, 'last_frame': 131, 'shown_frame': 40, 'box': [400, 800, 1500, 900],
+                  'cap_height': 56, 'words_count': 3, 'text': 'Hey. Its me.', 'words': [{'w': 'Hey.', 'frame': 12, 'key': False}]}
+        it = text.normalise(record, 60)
+        self.assertEqual((it['start'], it['end'], it['complete'], it['box'], it['count']), (12, 132, 40, [400, 800, 1100, 100], 3))
+        table, problems = text.check([it], 60)
+        self.assertEqual(table[0]['complete_seconds'], round(92 / 60, 3))
+        self.assertEqual(problems, [])
 
     def test_variants_are_read(self):
         it = text.normalise({'type': 'title', 'frames': [10, 70], 'rect': {'x': 1, 'y': 2, 'w': 3, 'h': 4}, 'capHeight': 50,
