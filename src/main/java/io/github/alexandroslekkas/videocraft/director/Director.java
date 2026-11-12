@@ -111,6 +111,11 @@ public final class Director {
 		return a;
 	}
 
+	void addActor(Actor actor) {
+		if (cast.containsKey(actor.id())) throw new IllegalArgumentException("the actor '" + actor.id() + "' is staged twice");
+		cast.put(actor.id(), actor);
+	}
+
 	Vec3 anchor(String name) {
 		Vec3 at = anchors.get(name);
 		if (at == null) throw new IllegalArgumentException("no anchor '" + name + "'; known: " + anchors.keySet());
@@ -132,7 +137,11 @@ public final class Director {
 	void command(String command) {
 		var server = Minecraft.getInstance().getSingleplayerServer();
 		if (server == null) throw new IllegalStateException("no integrated server for the command: " + command);
-		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command));
+		Vec3 at = anchors.get("spawn");
+		server.execute(() -> {
+			String error = Commands.run(server, at, command);
+			if (error != null) VideocraftLog.LOGGER.warn("VIDEOCRAFT command \"{}\" failed: {}", command, error);
+		});
 	}
 
 	void fail(String reason) {
@@ -221,7 +230,7 @@ public final class Director {
 		// From here the clock is fixed: staging and shots run on frames, not on wall time.
 		fixed = true;
 		go(Step.STAGE);
-		shot = new ShotRun(this, "stage", 0, plan.world().stage(), false, plan.seed());
+		shot = new ShotRun(this, "stage", 0, 0, plan.world().stage(), false, plan.seed());
 	}
 
 	// ---- Frames: staging and shots ----
