@@ -75,23 +75,34 @@ def _summary(values):
     return {'median': round(statistics.median(s), 4), 'p95': round(s[min(len(s) - 1, int(0.95 * len(s)))], 4), 'max': round(s[-1], 4)}
 
 
+def _step_diff(values, h, dt):
+    """Differences over h frames, per second: (v[i+h] - v[i]) / (h dt), for tuples or numbers."""
+    if values and isinstance(values[0], tuple):
+        return [tuple((b[k] - a[k]) / (h * dt) for k in range(len(a))) for a, b in zip(values, values[h:])]
+    return [(b - a) / (h * dt) for a, b in zip(values, values[h:])]
+
+
 def kinematics(rows, fps):
-    """Camera speed (blocks/s), acceleration (blocks/s²) and jerk (blocks/s³), overall and vertical; view turn rate
-    (degrees/s) and its jerk. Summaries are median, 95th percentile and max of magnitudes."""
+    """Camera speed (blocks/s) per frame; acceleration (blocks/s²) and jerk (blocks/s³), overall and vertical, over
+    0.1 s steps; view turn rate (degrees/s) and its jerk the same way. frames.csv rounds positions to 1e-4 blocks and
+    angles to 1e-3 degrees, so frame-to-frame third differences would be rounding noise (1e-3 x 60³ = 216 °/s³);
+    0.1 s steps divide that noise by 216 and keep any jerk a viewer could see. Summaries: median, p95, max."""
     if len(rows) < 4:
         return {'frames': len(rows)}
     dt = 1 / fps
+    h = max(1, round(fps / 10))
     pos = [(r['cam_x'], r['cam_y'], r['cam_z']) for r in rows]
-    vel = [tuple((b[k] - a[k]) / dt for k in range(3)) for a, b in zip(pos, pos[1:])]
-    acc = [tuple((b[k] - a[k]) / dt for k in range(3)) for a, b in zip(vel, vel[1:])]
-    jerk = [tuple((b[k] - a[k]) / dt for k in range(3)) for a, b in zip(acc, acc[1:])]
+    vel = _step_diff(pos, 1, dt)
+    vel_h = _step_diff(pos, h, dt)
+    acc = _step_diff(vel_h, h, dt)
+    jerk = _step_diff(acc, h, dt)
     mag = lambda v: math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
     yaw, pitch = _unwrap([r['cam_yaw'] for r in rows]), [r['cam_pitch'] for r in rows]
     turn = [math.hypot(a, b) for a, b in zip(_diff(yaw, dt), _diff(pitch, dt))]
-    yaw_acc = _diff(_diff(yaw, dt), dt)
-    turn_jerk = [abs(x) for x in _diff(yaw_acc, dt)]
+    yaw_acc = _step_diff(_step_diff(yaw, h, dt), h, dt)
+    turn_jerk = [abs(x) for x in _step_diff(yaw_acc, h, dt)]
     travel = sum(mag(v) * dt for v in vel)
-    return {'frames': len(rows), 'travel': round(travel, 3),
+    return {'frames': len(rows), 'travel': round(travel, 3), 'step_frames': h,
             'speed': _summary([mag(v) for v in vel]), 'acceleration': _summary([mag(a) for a in acc]),
             'jerk': _summary([mag(j) for j in jerk]), 'vertical_jerk': _summary([abs(j[1]) for j in jerk]),
             'turn': _summary(turn), 'turn_jerk': _summary(turn_jerk),

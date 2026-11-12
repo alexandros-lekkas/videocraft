@@ -59,6 +59,15 @@ class Projection(unittest.TestCase):
         self.assertAlmostEqual(k['turn']['median'], 120.0, places=2)   # unwrapped across 360
         self.assertAlmostEqual(k['yaw_range'], 78.0, places=3)
 
+    def test_rounding_in_frames_csv_is_not_jerk(self):
+        # a smooth ease, written with frames.csv's rounding (1e-4 blocks, 1e-3 degrees)
+        ease = lambda t: t * t * (3 - 2 * t)
+        rows = [{'cam_x': round(10 * ease(n / 179), 4), 'cam_y': 64, 'cam_z': 0, 'cam_yaw': round(70 * ease(n / 179), 3),
+                 'cam_pitch': 0, 'fov': 70} for n in range(180)]
+        k = camera.kinematics(rows, 60)
+        self.assertLess(k['jerk']['max'], 25)          # the true smoothstep jerk: 6 x 10 / 3³ = 2.2 b/s³, plus residual noise
+        self.assertLess(k['turn_jerk']['max'], 40)     # per-frame differencing gave multiples of 216
+
 
 class Shots(unittest.TestCase):
     def synthetic(self):
