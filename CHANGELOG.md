@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The story pipeline (`docs/STORY.md`): `story new/draft/revise/build/show/diff/lock/list`, `series new/status`
+  and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
+  `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
+  `stories/nibs-vs-duke/` holds the benchmark's script.
 - `AGENTS.md`: a "Working with agents" section (orchestrator, builders in worktrees, reviewer agents, probing
   accounts); T3 Craft is linked by its public repository.
 - Command groups: `cli.py` loads `videocraft.<group>.commands` (`register(subparsers)`) for `edit`, `audio`, `voice`,

@@ -76,3 +76,11 @@ Cues at the same time start in the order written.
 Today: `[[edit.clip]]` with `shot` and `trim = [head, tail]` (frames), in order; default all shots in script order.
 The master export is `cut/master.mp4` (H.264, CRF 18, BT.709, the plan's size and rate). Push-ins, speed ramps,
 music, sound effects and export presets: [c], see DESIGN.md.
+
+## Appendix: commands that write shot scripts
+
+| Command | What it does |
+|:--|:--|
+| `story` | `story new "<premise>"`, `draft`, `revise`, `build`, `show`, `diff`, `lock`, `list`: premise → bible → outline → script → a shot script (`stories/<id>/shots.toml`, named after the story) that compiles; every revision kept. [STORY.md](STORY.md) |
+| `series` | `series new <story> --episodes N`, `series status <story>`: episode stories that share the story's bible. [STORY.md](STORY.md#series) |
+| `make` | `make "<prompt>" [--format short\|episode\|long] [--vertical] [--dry-run]`: every story stage, then `run` (take, cut, measure); stops at the first stage that fails. [STORY.md](STORY.md) |
