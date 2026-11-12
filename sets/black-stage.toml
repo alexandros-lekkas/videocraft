@@ -1,0 +1,55 @@
+# A subject on black: for character cards and "on black" shots. A closed box of black concrete, far enough from
+# every light that its walls get no light at all; the subject stands on an invisible barrier pad in a pool of hidden
+# light (no lamp, no floor in the frame). Background pixels behind a lit mob measure near black.
+#   videocraft sets preview black-stage
+name = "black-stage"
+description = "A lit subject on pure black: no floor, no visible light, nothing behind"
+time = 18000
+seed = 3
+
+# The box: 49 wide, 41 high; the walls are 24 blocks from the subject, past the reach of light level 15.
+[[build]]
+do = "box"
+from = [-24, -16, -24]
+to = [24, 24, 24]
+block = "black_concrete"
+hollow = true
+
+# The pad the subject stands on: barriers are solid and never drawn.
+[[build]]
+do = "box"
+from = [-2, -1, -2]
+to = [2, -1, 2]
+block = "barrier"
+
+# Hidden light round the subject: a key in front, a fill to each side, one above and behind.
+[[build]]
+do = "light"
+at = [[0, 1, 2], [-2, 1, 0], [2, 1, 0], [0, 2, -1], [0, 1, 0]]
+level = 15
+
+[[mark]]
+name = "subject"
+at = [0, 0, 0]
+facing = "south"
+
+# Front three-quarter, medium: the character card (benchmark shot 29).
+[[mark]]
+name = "card"
+eye = [1.6, 1.0, 3.2]
+look = [0, 0.45, 0]
+fov = 45
+
+# Straight on, the subject small and centred (shot 30).
+[[mark]]
+name = "small"
+eye = [0, 1.1, 7.5]
+look = [0, 0.4, 0]
+fov = 40
+
+# Straight on, close.
+[[mark]]
+name = "close"
+eye = [0, 0.8, 2.2]
+look = [0, 0.5, 0]
+fov = 40

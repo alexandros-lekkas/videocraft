@@ -1,0 +1,9 @@
+# An office engineer: a green hoodie-coloured top, grey trousers, a ponytail, slim arms.
+description = "office engineer"
+model = "slim"
+skin = "#a8724f"
+hair = { style = "ponytail", color = "#2a1b12" }
+mouth = "flat"
+top = { color = "#3f7a4e", sleeves = "long" }
+trousers = { color = "#5b5f66" }
+shoes = { color = "#2a2a2a" }

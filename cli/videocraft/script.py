@@ -13,7 +13,8 @@ PLAN_VERSION = 1
 NAME = re.compile(r'^[a-z0-9][a-z0-9_-]{0,47}$')
 TOP = {'name', 'seed', 'output', 'world', 'actor', 'shot', 'edit', 'description', 'cast'}
 WORLD = {'seed', 'save', 'gamemode', 'time', 'weather', 'settle', 'stage', 'preset'}
-SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather'}
+WORLD |= {'set', 'sets', 'anchors', 'paths', 'views'}  # [[world.set]]: sets/expand.py (sets workstream)
+SHOT = {'name', 'duration', 'camera', 'cue', 'hud', 'bob', 'note', 'preroll', 'time', 'weather', 'vertical'}
 GAMEMODES = {'survival', 'creative', 'adventure', 'spectator'}
 WEATHER = {'clear', 'rain', 'thunder'}
 
@@ -57,10 +58,22 @@ def _cues(cues, where, duration=None, preroll=0.0):
     return sorted(out, key=lambda c: c['at'])
 
 
+def _expand_sets(raw, source):
+    """[[world.set]] → staging cues, and `<set>:<mark>` references → positions (docs/SETS.md; sets workstream)."""
+    if not isinstance(raw.get('world'), dict) or not raw['world'].get('set'):
+        return raw
+    from videocraft.sets import SetError, expand
+    try:
+        return expand.expand(raw, source)
+    except SetError as e:
+        raise ScriptError(f'{source}: {e}') from e
+
+
 def compile_script(raw, source='script'):
     """Returns (plan, edit): plan is what the mod plays, edit is the cut (order, trims, music, exports)."""
     if not isinstance(raw, dict):
         raise ScriptError(f'{source}: the script is a table')
+    raw = _expand_sets(raw, source)
     _unknown(raw, TOP, source)
     from videocraft.voice import resolve as dialogue  # `say` cues -> captions on the words, edit.voice, shot lengths
     if dialogue.has_say(raw):
@@ -109,6 +122,10 @@ def compile_script(raw, source='script'):
         camera = shot.get('camera')
         if not isinstance(camera, dict) or 'rig' not in camera:
             raise ScriptError(f'shot {sname}: camera = {{ rig = "orbit", ... }} is required')
+        vertical = shot.get('vertical') or {}  # [shot.vertical]: camera keys for a vertical take (docs/CLIPS.md)
+        _unknown(vertical, {'camera', 'subject', 'note'}, f'shot {sname}.vertical')
+        if output['height'] > output['width'] and isinstance(vertical.get('camera'), dict):
+            camera = {**camera, **vertical['camera']}
         preroll = float(shot.get('preroll', 0))
         if preroll < 0:
             raise ScriptError(f'shot {sname}: preroll = <seconds> is >= 0')
