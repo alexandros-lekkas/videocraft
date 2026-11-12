@@ -53,6 +53,7 @@ world in `run-game/saves/`; `--timeout`, `--window WxH`, `--port`, `--parent`, `
 | `cli/videocraft/edit/` | The cut and exports | c |
 | `cli/videocraft/<group>/commands.py` | A command group's commands: `register(subparsers)`; groups `edit`, `audio`, `voice`, `sets`, `story`, `review`, `series`, `clips` | the group's owner |
 | `examples/` | Scripts that must keep passing | d (text.toml: c) |
+| `cli/videocraft/story/`, `cli/videocraft/series/`, `stories/` | The story pipeline (premise → shots.toml), series, `make`; prompts in `story/prompts/` ([docs/STORY.md](docs/STORY.md)) | story |
 | `modpack/pack.toml` | The distributable pack definition | d |
 
 A new CLI command lives in its own subpackage's `commands.py` with `register(subparsers)`; do not add commands to
@@ -122,6 +123,10 @@ They protect the owner's machine and game. They are not preferences.
   `javap -cp ~/.gradle/caches/fabric-loom/26.3/minecraft-merged.jar <class>` (`-p` for private) before assuming an API.
 - **Threads.** World edits and commands belong to the server thread (`Director.command` posts them); screens,
   entities and the camera to the render thread. Actions and rigs run on the render thread.
+- **Model calls are slow and big.** One `claude -p` draft of a 30-shot shot script took about 10 minutes and came
+  back as about 1000 lines of TOML; the story pipeline allows 30 minutes a call (`VIDEOCRAFT_ASK_TIMEOUT`). A
+  not-yet placeholder command (`lint`) takes no arguments, so calling it with a file is an argparse usage error
+  (exit 2), not a verdict.
 
 - **Sound log.** `SoundEngine.play` calls its `SoundEventListener`s after it has resolved the variant and *before* it
   drops a zero-volume sound, so a listener logs everything with master volume 0. The variant (and any sampled volume or

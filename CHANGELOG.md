@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The story pipeline (`docs/STORY.md`): `story new/draft/revise/build/show/diff/lock/list`, `series new/status`
+  and `make "<prompt>"`: premise → bible → outline → script → a shot script that compiles, every revision kept in
+  `runs/story/`, the chosen ones in `stories/`; `--from-file` for hand-written stages; model repairs on failed checks.
+  `stories/nibs-vs-duke/` holds the benchmark's script.
 - Sound: the muted client logs every sound a shot plays to `shots/<name>/sounds.csv` (frame, event, the variant
   chosen, volume, pitch, position; deterministic per seed); actions `sound`, `tune` (a melody on note blocks with
   their particles), `ambience`, `particles`; `cli/videocraft/audio` mixes them onto their frames with distance and

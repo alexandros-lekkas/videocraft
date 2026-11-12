@@ -206,3 +206,11 @@ Recipes (the benchmark's sound column):
 Commands: `videocraft audio mix <run> [--original] [--mux]`, `videocraft audio events <run> [--onsets]` (what was
 logged and where it was placed; `--onsets` measures each onset in a render against its frame, ±1 frame),
 `videocraft audio synth -o bed.wav --style sneaky --seconds 30 [--stems]`.
+
+## Appendix: commands that write shot scripts
+
+| Command | What it does |
+|:--|:--|
+| `story` | `story new "<premise>"`, `draft`, `revise`, `build`, `show`, `diff`, `lock`, `list`: premise → bible → outline → script → a shot script (`stories/<id>/shots.toml`, named after the story) that compiles; every revision kept. [STORY.md](STORY.md) |
+| `series` | `series new <story> --episodes N`, `series status <story>`: episode stories that share the story's bible. [STORY.md](STORY.md#series) |
+| `make` | `make "<prompt>" [--format short\|episode\|long] [--vertical] [--dry-run]`: every story stage, then `run` (take, cut, measure); stops at the first stage that fails. [STORY.md](STORY.md) |
