@@ -90,10 +90,14 @@ def _map_push(push, width, height):
     return push
 
 
-def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60):
+def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0, fps=60, from_start=False):
     """The vertical re-shoot of `pieces` ([(segment, src_in, src_out, frames)]) as a script dict."""
     width, height = plan['output']['width'], plan['output']['height']
     needed = [s.shot for s, *_ in pieces if s.kind == 'shot']
+    if from_start and needed:    # every shot up to the last one needed: state a shot leaves for the next is kept
+        names = [s.get('name') for s in raw.get('shot', [])]
+        last = max(names.index(n) for n in needed if n in names)
+        needed = names[:last + 1]
     out = copy.deepcopy({k: v for k, v in raw.items() if k not in ('shot', 'edit', 'output')})
     out['name'] = name
     out['output'] = {'width': OUT_W, 'height': OUT_H, 'fps': fps}
@@ -150,13 +154,13 @@ def vertical_script(raw, plan, edit, timeline, pieces, name, hook=None, pull=1.0
     return out
 
 
-def reshoot(it, m, pieces, folder, hook, pull, say, timeout):
+def reshoot(it, m, pieces, folder, hook, pull, say, timeout, from_start=False):
     """Takes the vertical script; returns (picture path, vertical iteration, notes)."""
     raw = script_.load(it.path / 'script.toml') if (it.path / 'script.toml').exists() else script_.load(it.path / 'script.json')
     plan, edit = it.plan(), it.edit()
     timeline = json.loads((it.cut / 'timeline.json').read_text()) if (it.cut / 'timeline.json').exists() else {'clips': []}
     name = re.sub(r'[^a-z0-9_-]', '-', f'{plan["name"][:39]}-vertical')
-    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps)
+    vs = vertical_script(raw, plan, edit, timeline, pieces, name, hook, pull, m.fps, from_start)
     path = folder / 'vertical.json'
     path.write_text(json.dumps(vs, indent=2) + '\n')
     script_.compile_script(script_.load(path), str(path))   # fails here, not in the game, if the vertical script is wrong
@@ -383,7 +387,8 @@ def vertical_text(vit, shots, fps):
     return table, problems
 
 
-def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', subject=None, hook=None, pull=1.0, say=print, timeout=900):
+def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', subject=None, hook=None, pull=1.0, say=print, timeout=900,
+        from_start=False):
     if aspect != '9:16':
         raise SystemExit('only --aspect 9:16 is made today')
     if not (it.cut / 'master.mp4').exists():
@@ -409,7 +414,7 @@ def cut(it, moment=None, start=None, end=None, method='auto', aspect='9:16', sub
     vit, plan, cw = None, None, None
     if chosen == 'reshoot':
         try:
-            picture, vit = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout)
+            picture, vit = reshoot(it, m, pieces, folder, hook_text, pull, say, timeout, from_start)
             record['reshoot'] = str(vit.path)
         except (RuntimeError, script_.ScriptError, SystemExit) as err:
             if method == 'reshoot':

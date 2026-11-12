@@ -8,7 +8,7 @@ and chapters) and **vertical shorts** (9:16, at most 60 s, cut from a moment of 
 bin/videocraft assemble <series-id | run run ...> -o <name> [--title "…" ...] [--cards game|plain|none] [--cold-open]
 bin/videocraft clips find <run> [--min 15] [--max 60] [--ask]            # rank moments → clips/moments.json
 bin/videocraft clips cut <run> --moment N | --from s --to s [--method auto|reshoot|reframe] [--aspect 9:16]
-                                [--subject <actor id | x,y,z>] [--hook "…" | --hook none] [--pull 1.2]
+                                [--subject <actor id | x,y,z>] [--hook "…" | --hook none] [--pull 1.2] [--from-start]
 bin/videocraft clips pack <run> [--ask]                                   # title, description, hashtags, thumbnail
 ```
 
@@ -73,7 +73,8 @@ layout and subject measurements, text problems, loudness), `audio.wav`, and the 
 **Re-shoot** (the default when the run has its script; the one only this tool can do): the shots in the range are
 taken again at 1080x1920 from the same script, so the performance is the same and the game lays the text out for
 the vertical frame itself. Per shot, `[shot.vertical]` adjusts the camera for 9:16 (below); `--pull` scales every
-rig's `radius`, `distance` and `min_distance`; captions without a `size` get 77 (the default is 63); screen
+rig's `radius`, `distance` and `min_distance`; only the shots in the range are taken, or with `--from-start` every
+shot from the first up to the last one needed (when a shot leaves state the next one starts from); captions without a `size` get 77 (the default is 63); screen
 positions (`x`, `y` of a keycap or other text) keep their place in the frame. The edit is the same edit cut to the
 range: each clip's `in`/`out` frames, its speed, look and frame; push-in points are mapped into the vertical frame;
 a fade is kept only where the range keeps that clip's edge. The vertical take is an ordinary iteration of
