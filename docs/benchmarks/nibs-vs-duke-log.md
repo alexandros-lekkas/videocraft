@@ -102,6 +102,40 @@ shots were first checked in short test takes of only those shots (about a minute
 | 0002 | Test takes: s02 head-on (`face`), s15 back and low in profile, s16 a medium, s16b up onto the pedestal on purpose (the anchor is the block centre; `face = "camera"` on the climb), gentler montage pushes | PASS; 29 shots (s14-s16 merge: three frames on the same red curtain, 9.7 s); silence between crickets in the bow | Every new beat reads |
 | 0003 | s16 over Duke's shoulder to the hens (a new background for the detector; the bow plays to the unmoved audience); crickets every 0.35 s through s16-s17 | PASS 73.58 s; **30 shots**, median 2.39 s, longest 6.2 s; six under 0.6 s; black 0:26.15-0:27.03 and 1:05.37-1:06.03; silence only at the dips; −14.2 LUFS, −1.5 dBTP | Reviewed: round 7 |
 | 0004 | Round 7's fixes: the montage cut on the voice's word onsets (23/28/22/21/17 frames after SIX, HIM held 0.5 s), words in the lower band and Nibs to the lens on each; s16 the bow in profile along the note row (barn windows behind, not the curtain); s11 pan lag 0.7; no punch-in on the s19 jump (it cropped the head) and a wider lead; Nibs stops and looks to the lens on "Nibs." then struts on; the stamp on "jump-off!"; one hen's lone flap-hop is the whole ovation; the goat's own eat and long-jump sounds; crickets under s12 | PASS 73.58 s; 29 shots (s14/s15 and s17/s18 joins not seen), median 2.40 s; six under 0.6 s; −14.2 LUFS | Stop on "Nibs.", the flap, the stamp read in the frames |
+| 0005-0006 | s14 2.5 s at 3 blocks/s, s15 three hops filmed from the stage toward the audience (a new background), s17 the hen glances at her egg, quieter crickets; then a 0.7 s second dip and the card's sting 0.15 s in | PASS; 0005 measured 69.98 s without the end card (under 70) and its second dip not silent; 0006 72.6 s, both dips silent | |
+| 0007-0008 | **The voice pass** (the owner: "prefer voices over captions", "you go super slow with the voice lines"): narration over every walking shot and the flashback, the narrator on Duke's card and the end card, commas where the TTS paused a second, cut_on into the horn and onto "Duke", every action retimed to the new onsets; then main's pace pass (lines trimmed, packed 0.12 s apart, 3.2 words/s target) and joke pauses marked `beat = true` | 0008: PASS 72.88 s, 29 shots, median 2.32 s; **26 voiced lines, a voice for 62% of the runtime, median 3.06 words a second, no dead air inside dialogue** (0006: 17 lines, about a third voiced, Nibs 1.9-4.4 and Duke 1.5-1.7 words a second) | |
+| 0009 | **The side-by-side pass** (shot-by-shot against the reference): lead tracks pitched 20° down from 1.5 blocks at 108°; s02 a true face cut-in; s12 and s15 inserts with the block filling the frame; s16 and s18 from just behind the hens' heads, Duke small on the stage; s07, s19 wide; the montage three-quarter from near the ground; Duke large on the cards; s10 0.8 s, s26 0.25 s, s30 1.9 s; s06, s07, s14, s15, s19 longer. Sound: a mood-picked Minecraft track (`mood = "playful"`), a record-scratch on the poster, a rimshot after "standing ovation", a dramatic sting on the scream, the game's dings, boings, whooshes and bass drums | | |
+
+Words a second per line on 0008 (from voice.json: words over first onset to last end):
+
+| Shot | Who | Line | Words | Words/s |
+|:--|:--|:--|--:|--:|
+| s01-nibs | nibs | Hey, it's me, Nibs. | 4 | 3.42 |
+| s01-nibs | nibs | Best jumper in the whole valley. | 6 | 3.40 |
+| s01-nibs | nibs | Ask anyone, nobody jumps like me. | 6 | 2.92 |
+| s01-nibs | nibs | This horn. Look at it. | 5 | 2.94 |
+| s03-bridge | nibs | One's plenty. | 2 | 2.28 |
+| s04-market | nibs | Anyway, I was heading to the market... | 7 | 2.81 |
+| s05-snacks | nibs | ...for snacks, obviously. | 3 | 2.47 |
+| s06-notice | nibs | Then I strolled past the notice board, totally normal day. | 10 | 3.09 |
+| s07-saw | nibs | And then I saw it. | 5 | 4.88 |
+| s07-saw | nibs | Duke, again, three years running. | 5 | 2.42 |
+| s09-remember | nibs | I remember last year's show like it was yesterday. | 9 | 3.06 |
+| s10-duke | nibs | There he was, the champ. | 5 | 2.79 |
+| s11-trot | nibs | Strutting around like he owns it. | 6 | 3.58 |
+| s13-hit | duke | Hit it. | 2 | 6.62 |
+| s14-notes | nibs | Then he played the notes, with his feet. | 8 | 3.58 |
+| s15-note-one | nibs | Total show-off. | 2 | 2.29 |
+| s16-bow | duke | Thank you, thank you, you're too kind. | 7 | 3.04 |
+| s16b-trophy | nibs | Then he just took the trophy. | 6 | 4.25 |
+| s18-ovation | duke | A standing ovation. | 3 | 3.09 |
+| s19-jump | nibs | That fox can't even jump. | 5 | 2.93 |
+| s19-jump | nibs | Watch me fly. | 3 | 3.47 |
+| s20-least | nibs | Honestly? I'm at least six times more goat than him! | 10 | 3.14 |
+| s27-today | nibs | So today, in front of everyone, | 6 | 2.86 |
+| s28-challenge | nibs | I challenge Duke to a jump-off! | 6 | 2.89 |
+| s29-card | narrator | Duke, three-time Talent Night champion. | 5 | 3.06 |
+| end | narrator | Nibs versus Duke, the Jump-Off. | 5 | 3.12 |
 
 Round 7 (0003 of the second climb, the first with the sound sheet in the packet): sound 7 for the first time
 (the reviewer could check every effect against its frame: "sharp hits on jumps, hops, the egg and the trophy"),

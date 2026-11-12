@@ -1180,7 +1180,6 @@ do = "say"
 actor = "duke"
 style = "smug"
 text = "A *standing ovation."
-position = "top"
 speed = 1.15
 
 [[shot.cue]]
@@ -1786,6 +1785,13 @@ volume = 0.7
 
 [[shot.cue]]
 at = 3.0
+do = "sound"
+palette = "dramatic-sting"
+relative = true
+volume = 0.8
+
+[[shot.cue]]
+at = 3.0
 do = "voice"
 actor = "nibs"
 sound = "scream"
@@ -2166,13 +2172,6 @@ fade = 0.05
 shot = "end"
 at = 0.0
 do = "hit"
-
-# The scream's sting, placed by the edit.
-[[edit.sfx]]
-shot = "s28-challenge"
-at = 3.0
-palette = "dramatic-sting"
-gain = -2
 
 [edit.mix]
 duck = ["entity.goat.screaming.*"]
