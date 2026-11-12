@@ -108,7 +108,8 @@ In short:
 
 - **Ground and paths:** `ground` (a plate with seeded patches), `paint` (repaint the top layer, an area or a
   stretch of a lane: `along`, `d = [from, to]`, `width`, `only`), `lane` (a smooth curve with a centre line and a
-  ragged edge; `mark` exports it), `stream`, `bridge` (straight, or `along` a curving lane), `crops` (`avoid` a lane).
+  ragged edge; `mark` exports it; a dark `mix`, a dashed white `center` and a solid `edge` make an asphalt road with
+  kerbs), `crossing` (zebra stripes across a lane at `d`), `stream`, `bridge` (straight, or `along` a curving lane), `crops` (`avoid` a lane).
 - **Buildings:** `house` (walls with trim and window rhythm, shutters, window boxes, a door on the lane, gabled or
   hipped roof with overhang, chimney, a lit inside), `roof`, `shell` (a room: floor, walls, ceiling, posts, beams,
   windows), `box`, `carve`, `blocks`, `column`.

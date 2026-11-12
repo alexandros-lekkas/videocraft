@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `texture = "x.png"` on a mob actor draws it with a local texture instead of its own (a vanilla texture with a
+  painted change); `lens = { barrel = 0.4 }` on an edit clip or look bows the picture like a wide fisheye-like lens,
+  filled to the frame; a `crossing` set op paints zebra stripes across a lane; `[[edit.sfx]]` takes `start`,
+  `length` and `fade`, so a long sound plays under one stretch of the cut; lint knows a placed set by its `as`.
 - Sounds by meaning, Minecraft first: a committed catalog of all 1991 sound events and 92 music tracks of 26.3 (names,
   tags, measured lengths, tempo, entries and loops; no audio), a comedy palette (`palette = "drumroll"`), `tag = "pop"`
   on sound cues, `[edit.music] mood = "playful"` with `source = "auto"`, `[[edit.sfx]]`, `tag:` patterns in
