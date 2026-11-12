@@ -76,7 +76,7 @@ actor id (its head), `"camera"` (the lens of the frame) or a position; a **headi
 
 | `do` | Keys | Meaning |
 |:--|:--|:--|
-| `place` | `to`, `facing` | Puts it there at once (a jump cut), feet on the ground. Use it at the start of a shot. |
+| `place` | `to`, `facing` | Puts it there at once (a jump cut), feet on the ground, ending any walk. Use it at the start of a shot. A walk still going when its shot cuts carries on into the next shot until that shot moves the actor: `place` or a new `walk` replace it at once, a `turn`, `state` or `pose` brings it to rest in a quarter second first (a turn is made once it stands). |
 | `walk` | `path` (positions) or `to`; `gait` (`walk`, `strut`, `trot`, `run`) or `speed` (blocks/s); `accel` (0.35 s), `arrive` (0.5 s braking; 0 stops dead), `face` (a heading after arriving), `mark` (label on arrival) | A smooth curve through the points from where it is, eased in and out, pace varied a little by the seed. A strut carries the head high and swings the shoulders. Ends when it arrives. `run` is `walk` with `gait = "run"`. |
 | `stop` | `arrive` (0.35 s) | Brakes and stops where it comes to rest. |
 | `turn` | `to` (a heading), `pace` (1; 2 snaps), `follow` (keep turning toward a moving target), `mark` | Head first, body after a short delay; ends when settled. |

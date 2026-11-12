@@ -9,6 +9,9 @@ import java.util.Random;
  * tick; the seed makes each walk a little different (pace, ramp) but the same take every time.
  */
 public final class Stride {
+	/** Seconds a walk carried over a cut takes to stop when the new shot gives its walker another movement cue. */
+	public static final double CUT_STOP = 0.25;
+
 	private final Path path;
 	private final double cruise, accel, arrive, from, wobble, phase;
 	private double s, v, t;

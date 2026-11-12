@@ -147,6 +147,8 @@ public final class Actions {
 		Vec3 at = shot.position(params, "to");
 		double yaw = params.has("facing") ? facing(p, shot, params, at) : p.heading();
 		p.place(at, yaw);
+		// The puppet ticked (and was logged) before this frame's cues: its row for this frame is where it was put.
+		if (shot.recording()) ActorLog.amend(shot, p);
 		return done();
 	}
 
@@ -226,6 +228,7 @@ public final class Actions {
 		double pace = params.number("pace", 1);
 		if (pace <= 0 || pace > 4) throw new IllegalArgumentException(params.where() + ": pace is 0 to 4 (1 a calm turn)");
 		boolean follow = params.bool("follow", false);
+		p.endCarriedWalk();
 		p.turn(yawTo(p, shot, params, "to"), pace);
 		String mark = params.string("mark", null);
 		return new Action() {
@@ -318,6 +321,7 @@ public final class Actions {
 			p.flap(Double.isNaN(seconds) ? 0.6 : seconds);
 			return done();
 		}
+		p.endCarriedWalk();
 		p.state(name, on, params.where());
 		if (Double.isNaN(seconds)) return done();
 		double start = p.time();
@@ -399,6 +403,7 @@ public final class Actions {
 	private static Action pose(Params params, ShotContext shot) {
 		Puppet p = puppet(params, shot);
 		String name = params.string("pose").toLowerCase(Locale.ROOT);
+		p.endCarriedWalk();
 		switch (name) {
 			case "sit", "crouch", "sleep" -> { return namedState(params, shot, name); }
 			case "none", "stand" -> {

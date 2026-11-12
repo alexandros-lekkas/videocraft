@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A walk carried over a cut ends cleanly on the next shot's first movement cue (`turn`, `state`, `pose` brake it in
+  0.25 s, a turn follows once it stands; `place` and `walk` replace it), and a `place` rewrites that frame's
+  `actors.csv` row, which was logged at the old walk's spot.
 - `measure` finds hard cuts in dark, graded footage (a brightness-scaled minimum when the jump stands ten times
   over the stillness around it), and warns of a repeated frame at a cut only when it straddles the cut inside a
   moving shot, not when one side is a locked-off still.
