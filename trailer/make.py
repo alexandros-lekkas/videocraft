@@ -728,6 +728,8 @@ def pacing(spec):
             add('heading', sc['heading'], kin(sc['heading'], f0 + 0.15), sc['heading_until'] - 0.2)
         if ty == 'mcedit':
             add('timeline title', sc['title'], sc['slide_at'], f1)
+            if sc.get('note_v'):
+                add('editor note (9:16)', sc['note_v'].replace('\n', ' '), kin(sc['note_v'].split('\n')[-1], sc['slide_at'] + 0.7, 0.07), f1)
             ed = edit_data('nibs-vs-duke/0012')
             cuts = [c for c in ed['cuts'] if c[0] <= sc['scrub_to']]
             ts = [edit_reach(sc, c[0]) for c in cuts]

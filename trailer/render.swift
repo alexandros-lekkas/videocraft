@@ -2100,6 +2100,14 @@ func sceneMCEdit(_ o: Obj, _ t: Double) {
 			cutChip(word.trimmingCharacters(in: .punctuationCharacters), x: x, top: laneY(3) + gx(laneH + 10), t: t, at: landed)
 		}
 	}
+	if V {
+		// The editor's own line under the timeline, in the trailer's type.
+		let lines = s(o, "note_v").components(separatedBy: "\n")
+		for (i, l) in lines.enumerated() where !l.isEmpty {
+			kinetic(l, x: CW / 2, baseline: 1640 + CGFloat(i) * 96, size: 80, weight: .semibold, color: C("text"), t: t,
+				at: d(o, "slide_at") + 0.5 + Double(i) * 0.2, stagger: 0.07, dur: 0.8, kern: -1.5)
+		}
+	}
 	if t >= scrubAt {
 		let x = snap(X(Double(ph)))
 		fill(CGRect(x: x, y: laneY(0) - gx(2), width: G, height: laneY(3) + gx(laneH + 2) - laneY(0)), hex("#FFFFFF"))
@@ -2307,18 +2315,19 @@ func t3Rows(_ o: Obj, _ col: CGRect) -> [T3Row] {
 			rows.append(T3Row(kind: "gap", text: "", at: at, h: V ? 26 : 18, extra: ""))
 		} else {
 			// A tool call the way the app draws one: small, normal weight, the command muted beside "Ran".
-			let cols = Int((col.width - (V ? 60 : 70)) / width("M", t3Mono)) - (V ? 3 : 0)
+			let cols = Int((col.width - (V ? 24 : 70)) / width("M", t3Mono))
 			if V {
 				rows.append(T3Row(kind: "tool", text: s(m, "title"), at: at, h: CTFontGetSize(t3Tool) * 1.45, extra: ""))
-				for (j, p) in wrap(s(m, "command"), cols).enumerated() {
-					rows.append(T3Row(kind: "cmd", text: j > 0 ? "  " + p : p, at: at, h: CTFontGetSize(t3Mono) * 1.3, extra: ""))
+				// The vertical column fits about 26 mono characters: wrapped lines start flush (no hanging indent).
+				for p in wrap(s(m, "command"), cols) {
+					rows.append(T3Row(kind: "cmd", text: p.trimmingCharacters(in: .whitespaces), at: at, h: CTFontGetSize(t3Mono) * 1.3, extra: ""))
 				}
 			} else {
 				rows.append(T3Row(kind: "tool", text: s(m, "title"), at: at, h: CTFontGetSize(t3Tool) * 2.1, extra: s(m, "command")))
 			}
 			for l in arr(m, "lines") {
 				for (j, p) in wrap(s(l, "text"), cols).enumerated() {
-					rows.append(T3Row(kind: "out", text: j > 0 ? "  " + p : p, at: d(l, "t"), h: CTFontGetSize(t3Mono) * (V ? 1.3 : 1.7), extra: ""))
+					rows.append(T3Row(kind: "out", text: V ? p.trimmingCharacters(in: .whitespaces) : (j > 0 ? "  " + p : p), at: d(l, "t"), h: CTFontGetSize(t3Mono) * (V ? 1.3 : 1.7), extra: ""))
 				}
 			}
 			rows.append(T3Row(kind: "toolend", text: "", at: at, h: V ? 26 : 14, extra: ""))
@@ -2329,7 +2338,7 @@ func t3Rows(_ o: Obj, _ col: CGRect) -> [T3Row] {
 /// The thread's column inside the window.
 func t3Column() -> CGRect {
 	let w = t3Window()
-	if V { return CGRect(x: w.minX + 46, y: w.minY + 160, width: w.width - 92, height: w.height - 160 - 250) }
+	if V { return CGRect(x: w.minX + 30, y: w.minY + 160, width: w.width - 60, height: w.height - 160 - 250) }
 	let sideW: CGFloat = 300
 	return CGRect(x: w.minX + sideW + 90, y: w.minY + 90, width: w.width - sideW - 180, height: w.height - 90 - 190)
 }
@@ -2344,7 +2353,7 @@ func t3Layout(_ rows: [T3Row], _ t: Double, _ col: CGRect) -> [CGFloat] {
 /// The slow push-in while the agent works (about 8 %), toward the upper part of the thread where the work is.
 func t3Push(_ o: Obj, _ t: Double) -> (CGFloat, CGPoint) {
 	let col = t3Column()
-	let k = 1 + 0.14 * inOutCubic(prog(t, d(o, "send_at"), d(o, "cut_at") - d(o, "send_at")))
+	let k = 1 + (V ? 0.025 : 0.14) * inOutCubic(prog(t, d(o, "send_at"), d(o, "cut_at") - d(o, "send_at")))
 	return (k, CGPoint(x: col.midX, y: col.minY + col.height * (V ? 0.2 : 0.15)))
 }
 /// The row the match-cut dives into, in layout coordinates.
@@ -2376,6 +2385,16 @@ func sceneT3(_ o: Obj, _ t: Double) {
 		ctx.translateBy(x: win.midX, y: win.midY)
 		ctx.scaleBy(x: s0, y: s0)
 		ctx.translateBy(x: -win.midX, y: -win.midY)
+		// While the prompt is typed the camera sits on the composer (larger, nearer the middle of the frame), then
+		// eases back out to the thread as it is sent.
+		let zt = inOutCubic(prog(t, d(o, "type_from") - 1.1, 1.0)) * (1 - inOutCubic(prog(t, sendAt + 0.1, 0.9)))
+		if zt > 0 {
+			let ca = V ? CGPoint(x: col.midX, y: win.maxY - 210) : CGPoint(x: col.midX, y: win.maxY - 91)
+			let kz: CGFloat = 1 + (V ? 0.04 : 0.3) * zt
+			ctx.translateBy(x: ca.x, y: ca.y - (V ? 560 : 330) * zt)
+			ctx.scaleBy(x: kz, y: kz)
+			ctx.translateBy(x: -ca.x, y: -ca.y)
+		}
 		ctx.translateBy(x: pp.x, y: pp.y)
 		ctx.scaleBy(x: pk, y: pk)
 		ctx.translateBy(x: -pp.x, y: -pp.y)
@@ -2451,7 +2470,7 @@ func sceneT3(_ o: Obj, _ t: Double) {
 				let y = ys[i]
 				lastY = max(lastY, y + r.h)
 				let a = inOutCubic(prog(t, r.at, 0.3))
-				let ind: CGFloat = V ? 30 : 42
+				let ind: CGFloat = V ? 12 : 42
 				switch r.kind {
 				case "user":
 					if i == rows.firstIndex(where: { $0.kind == "user" }) {
@@ -2472,7 +2491,7 @@ func sceneT3(_ o: Obj, _ t: Double) {
 					} else {
 						text("✓", col.minX + (V ? 10 : 14), cy + CTFontGetSize(t3Tool) * 0.35, t3Tool, t3c(T3.green), alpha: a)
 					}
-					let tw = text(r.text, col.minX + ind + (V ? 30 : 4), cy + CTFontGetSize(t3Tool) * 0.35, t3Tool, t3c(T3.muted), alpha: a)
+					let tw = text(r.text, col.minX + ind + (V ? 62 : 4), cy + CTFontGetSize(t3Tool) * 0.35, t3Tool, t3c(T3.muted), alpha: a)
 					if !r.extra.isEmpty {
 						text(r.extra, col.minX + ind + 4 + tw + 10, cy + CTFontGetSize(t3Tool) * 0.35, t3Mono, t3c(T3.muted), alpha: a)
 					}

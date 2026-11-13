@@ -146,6 +146,7 @@ heading_until = 41.7
 media = "nibs"
 title = "§fcut/timeline.json §7nibs-vs-duke 0012: 34 clips, 76.87 s"
 title_v = "§ftimeline.json §734 clips"
+note_v = "Cuts land on\nthe spoken word."
 step = 4
 slide_at = 41.5
 lanes_at = 41.9
@@ -161,7 +162,7 @@ fade_in = 0.4
 heading = "Then it reviews itself."
 heading_v = "Then it\nreviews itself."
 heading_until = 53.8
-clip = { media = "nibs", in = 55.6, media_v = "fu_orbit_v", in_v = 0.5 }
+clip = { media = "nibs", in = 36.7, media_v = "fu_orbit_v", in_v = 0.5 }
 panel_at = 53.6
 
 [[scene]]
