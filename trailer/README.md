@@ -1,17 +1,21 @@
 # The videocraft trailer
 
-A 60-second launch trailer for the CLI, in **Minecraft's own visual language** and told as the owner asked: a prompt
-typed into the game's chat → the film made inside Minecraft → the agent at work. One world throughout, Nibs vs Duke's:
+A 90-second launch trailer for the CLI: a calm, modern motion-graphics wrapper (a warm charcoal canvas, large type,
+eased moves, one idea per beat) around Minecraft-native footage and overlays, at a human pace. One world throughout,
+Nibs vs Duke's barn and market lane:
 
-| Time | What | How it looks |
-|:--|:--|:--|
-| 0-5 s | The prompt (that story's real request) typed in the vanilla chat over the barn at dusk; the agent answers with real `story show` and `run` output | the game's chat and edit line, the game font, CLI colours as chat colours |
-| 5-25 s | The chat closes on the world: the barn set built block by block, the camera flying in, five actors walking to their marks, a take with voiced captions, then the film's own takes | REC and the frame count from frames.csv as a boss bar; the script line as a toast; the camera and actors on a held map |
-| 25-30 s | A voiced line | the game's subtitle box listing each word on its onset (real word timings) |
-| 30-40 s | The edit, over the film scrubbing | timeline.json's clips in dye colours, voice lines, the bed ducked under each line, every sound, cuts on words |
-| 40-45 s | The review and the climb | each criterion a boss bar filling to its score; the climb's best step (6.50 → 6.61) as a toast |
-| 45-55 s | The finished film with its own sound | nothing over it |
-| 55-60 s | The command line and the repository over the barn at sunset | the game font, the chat's edit line |
+| Time | Beat |
+|:--|:--|
+| 0-3.6 s | Card: "Ask for a film." |
+| 3.3-24.6 s | A rebuild of the T3 Code window (sidebar, thread, composer): the prompt typed at about 7.5 characters a second with word pauses and a think-pause before Enter; the agent's reply streaming at reading speed; its two real tool calls (`story show nibs-vs-duke`, `run examples/nibs-vs-duke.toml`). The window pushes into the line where the game starts recording. |
+| 24-43.5 s | The take opens out of that line: the barn set built block by block (a toast with its script key), the camera flying in (REC and the frame count as a boss bar), five actors walking to their marks (the held map), a take with voiced captions (REC). One overlay besides the game's captions. |
+| 43.5-56.9 s | Card "Then it edits.", then the film scrubbing under its timeline (clips, voice, the ducked bed, sounds, cuts on words). |
+| 56.9-71.3 s | Card "Then it reviews itself.", then each criterion as a boss bar, then the climb's best step as a toast. |
+| 71.3-81.8 s | The finished film with its own sound. |
+| 81.8-89.6 s | The name, one line, the command typed, the repository. |
+
+`python3 trailer/make.py --check` lists every text element's time fully on screen against its reading time
+(0.5 s + 0.3 s a word, at least 1.5 s) and how many panels ask to be read each second (`runs/trailer/pacing.md`).
 
 The font (the game's bitmap glyphs, their shadow, the caption outline) and the GUI sprites (toasts, boss bars, the map,
 the menu chrome) are drawn by `render.swift` from the local client jar, unpacked into `runs/trailer/mc/` at build time;
