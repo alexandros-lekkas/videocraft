@@ -1,0 +1,6 @@
+STORY    nibs-vs-duke  short
+  premise  r1 locked  1 revision(s)  ./stories/nibs-vs-duke/premise.md
+  bible    r1 locked  1 revision(s)  ./stories/nibs-vs-duke/bible.toml
+  outline  r1 locked  1 revision(s)  STALE: bible changed since  ./stories/nibs-vs-duke/outline.md
+  script   r1 locked  1 revision(s)  STALE: bible changed since  ./stories/nibs-vs-duke/script.md
+  shots    -

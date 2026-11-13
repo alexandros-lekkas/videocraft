@@ -1,0 +1,235 @@
+# The videocraft launch trailer: timeline, data sources and the trailer's own takes. trailer/README.md says how.
+
+seconds = 89.6
+fps = 60
+poster = 87.2
+
+# ---------------------------------------------------------------- the trailer's own takes (trailer/footage.py)
+# Footage the finished runs do not have, filmed by videocraft, each with the game's own captions.
+
+[[footage.take]]
+name = "keynote"
+script = "trailer/footage/keynote.toml"
+
+[[footage.take]]
+name = "panorama"
+script = "trailer/footage/panorama.toml"
+
+[[footage.take]]
+name = "build"
+run = "trailer-build"
+set = "keynote-stage"
+at = [0, 230, 0]
+staged = 7
+order = [[16, 17], [12, 15], [18, 33], [41, 46], [47, 59], [119, 131], [34, 40], [99, 118], [7, 10]]
+start = 0.6
+span = 5.6
+duration = 7.5
+camera = '{ rig = "dolly", from = [0.5, 262.0, 46.0], to = [0.5, 252.0, 30.0], at = [0.5, 233.0, -8.0], ease = "smooth", fov = 62 }'
+caption = [{ shot = "build", at = 0.8, text = "Building *keynote-stage, block by block." }]
+
+[[footage.take]]
+name = "bees"
+from = "examples/bees.toml"
+run = "trailer-bees"
+caption = [
+  { shot = "swarm", at = 0.5, text = "Oh. Hi, *bees.", speaker = "Ben", color = "#9fe0a0" },
+  { shot = "swarm", at = 5.7, text = "Okay. *Angry bees.", speaker = "Ben", color = "#9fe0a0" },
+]
+
+# ---------------------------------------------------------------- the piece
+
+[exports]
+h = "videocraft-trailer-1080p60.mp4"
+v = "videocraft-trailer-9x16.mp4"
+poster = "videocraft-trailer-poster.png"
+
+# Deep warm charcoal, warm off-white type, one accent: the grass green of the videocraft block.
+[colors]
+bg = "#141312"
+bg2 = "#1d1b19"
+panel = "#1c1b19"
+panel2 = "#23221f"
+line = "#34312d"
+text = "#f2eee6"
+muted = "#a39d93"
+dim = "#57534c"
+accent = "#86d36a"
+warn = "#e06c5a"
+
+# Captured output and measured data (trailer/data/, written by `make.py capture` from the commands in README.md).
+[data]
+story = "story-show.txt"
+gamelog = "game-log.txt"
+make = "make.txt"
+run = "run-story2.txt"
+voice = "voice-nibs.json"
+voice_check = "voice-check.txt"
+review = "review.json"
+
+# Footage, under runs/ (README.md: which runs, and how each was made). *_v: the tool's own 9:16 re-frames.
+[media]
+fu_headroom = "fu-beauty/0002/take/shots/headroom/video.mp4"
+fu_orbit = "fu-beauty/0002/take/shots/orbit/video.mp4"
+fu_pair = "fu-beauty/0002/take/shots/pair/video.mp4"
+fu_flyin = "fu-flyin/0003/take/shots/flyin/video.mp4"
+fu_take = "fu-take/0002/cut/master.mp4"
+marks = "fu-marks/0006/take/shots/wide/video.mp4"
+barn_build = "fu-build-barn-stage/0003/take/shots/build/video.mp4"
+pano = "trailer-panorama/0001/cut/master.mp4"
+nibs_v_s04 = "nibs-vs-duke/0012/clips/r2/short-1080x1920.mp4"
+story = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/cut/master.mp4"
+story_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r1/short-1080x1920.mp4"
+nibs = "nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
+short = "nibs-vs-duke/0012/clips/r1/short-1080x1920.mp4"
+lane_v = "nibs-vs-duke/0012/clips/r2/short-1080x1920.mp4"
+barn_v = "nibs-vs-duke/0012/clips/r3/short-1080x1920.mp4"
+card_v = "nibs-vs-duke/0012/clips/r4/short-1080x1920.mp4"
+challenge_v = "nibs-vs-duke/0012/clips/r5/short-1080x1920.mp4"
+bees = "trailer-bees/0001/cut/master.mp4"
+bees_v = "trailer-bees/0001/clips/r1/short-1080x1920.mp4"
+keynote = "trailer-keynote/0002/cut/master.mp4"
+hall_v = "trailer-keynote/0002/clips/r1/short-1080x1920.mp4"
+presenter_v = "trailer-keynote/0002/clips/r2/short-1080x1920.mp4"
+talk = "talk/0001/cut/master.mp4"
+build = "trailer-build/0001/cut/master.mp4"
+build_v = "trailer-build/0001/clips/r1/short-1080x1920.mp4"
+story_walk_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r2/short-1080x1920.mp4"
+hall_dolly_v = "trailer-keynote/0002/clips/r3/short-1080x1920.mp4"
+
+# The story, at a human pace, one idea per beat: a calm card; the prompt typed into the agent app and its reply; the
+# match-cut into the barn world, where the film is built, cast and shot (one overlay at a time besides the game's own
+# captions); the edit; the review and the climb; the finished film; the command and the repository.
+
+[[scene]]
+type = "card"
+from = 0.0
+to = 3.6
+kicker = "videocraft"
+text = "Ask for a film."
+
+[[scene]]
+type = "t3"
+from = 3.3
+to = 24.6
+thread = "Nibs vs Duke"
+project_path = "~/videocraft"
+projects = [
+  { name = "videocraft", threads = ["Nibs vs Duke", "Trailer", "Voice pass", "Sets"] },
+]
+placeholder = "Ask anything, @ to mention files"
+composer_hint = "Opus 5.5 · Full access"
+prompt = "a one-horned goat challenges a snow fox to a jump-off"
+type_from = 5.0
+type_to = 11.9
+send_at = 12.9
+cut_at = 23.6
+focus = "recording at"
+messages = [
+  { kind = "text", t = 13.6, wps = 4.0, text = "On it. I'll draft the story, then film it in a hidden Minecraft." },
+  { kind = "tool", t = 17.0, title = "Ran", command = "bin/videocraft story show nibs-vs-duke", lines = [
+    { t = 17.6, data = "story", match = '^STORY' },
+    { t = 17.9, data = "story", match = '^  premise ' },
+    { t = 18.2, data = "story", match = '^  bible ' },
+  ] },
+  { kind = "tool", t = 19.8, title = "Ran", command = "bin/videocraft run examples/nibs-vs-duke.toml", lines = [
+    { t = 20.6, data = "gamelog", match = 'shot s01-nibs recording at', strip = '^.*\(videocraft\) ' },
+  ] },
+]
+
+[[scene]]
+type = "mcmonitor"
+from = 24.0
+to = 43.5
+ease_out = 0.8
+clips = [
+  { at = 24.0, dur = 4.5, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", intro_from = "t3", intro = 0.9, overlay = "toast", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]]', 'name = "barn-stage"'] },
+  { at = 28.5, dur = 4.0, media = "fu_flyin", in = 0.4, step = 2, shot_dir = "fu-flyin/0003/take/shots/flyin", overlay = "rec" },
+  { at = 32.5, dur = 4.5, media = "marks", in = 2.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", overlay = "map" },
+  { at = 37.0, dur = 6.5, media = "fu_take", in = 0.15, run = "fu-take/0002", overlay = "rec" },
+]
+
+[[scene]]
+type = "card"
+from = 43.5
+to = 46.9
+text = "Then it edits."
+
+[[scene]]
+type = "mcedit"
+from = 46.9
+to = 56.9
+ease_in = 0.8
+ease_out = 0.8
+media = "nibs"
+title = "§fcut/timeline.json §7nibs-vs-duke 0012: 34 clips, 76.87 s"
+title_v = "§ftimeline.json §734 clips"
+step = 4
+slide_at = 47.2
+lanes_at = 47.8
+scrub_at = 48.2
+scrub_dur = 8.5
+scrub_to = 34.0
+
+[[scene]]
+type = "card"
+from = 56.9
+to = 60.3
+text = "Then it reviews itself."
+text_v = "Then it\nreviews itself."
+
+[[scene]]
+type = "mcscores"
+from = 60.3
+to = 71.3
+ease_in = 0.8
+ease_out = 0.8
+clip = { media = "fu_pair", in = 0.6 }
+bars_at = 60.9
+bars_out = 65.7
+toast_title = "Climb: kept the better take"
+toast = ["average 6.50 -> 6.61 (+0.11)"]
+toast_at = 66.1
+
+[[scene]]
+type = "mcfilm"
+from = 71.3
+to = 81.8
+ease_in = 0.8
+ease_out = 0.8
+clip = { media = "nibs", in = 58.7, media_v = "short", in_v = 3.2 }
+
+[[scene]]
+type = "endmodern"
+from = 81.8
+to = 89.6
+name = "videocraft"
+tagline = "Agent-directed films, shot inside Minecraft."
+tagline_v = "Agent-directed films,\nshot inside Minecraft."
+command = '$ bin/videocraft make "<prompt>"'
+type_from = 83.2
+type_to = 87.0
+url_at = 86.6
+url = "github.com/alexandros-lekkas/videocraft"
+disclaimer = "Unofficial. Not affiliated with Mojang or Microsoft."
+disclaimer_v = "Unofficial. Not affiliated\nwith Mojang or Microsoft."
+
+# ---------------------------------------------------------------- sound
+# An original bed (videocraft audio synth), stems faded by section; original library sounds; the two voiced lines
+# of runs/talk/0001. No Mojang audio anywhere. make.py adds the typing, node, tick and check sounds from the scenes.
+[audio]
+lufs = -14.0
+ceiling = -1.5
+# The main sound track is the game's own: music picked from the mood map, the GUI's sounds, the film's own mix.
+# The `-original-audio` twin swaps each for an original one (synth bed, library sounds, the film's original mix).
+mood = "upbeat"
+style = "keynote"
+bpm = 120
+seed = 7
+film = [
+  { t = 37.0, start = 0.15, dur = 6.5, db = 0.0, game = "runs/fu-take/0002/cut/master.mp4" },
+  { t = 71.3, start = 58.7, dur = 10.5, db = 0.0 },
+]
+film_game = "runs/nibs-vs-duke/0012/cut/x-1080p60.mp4"
+film_original = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
+music = [[0.0, -60], [0.4, -9], [3.3, -9], [12.9, -9], [13.4, -6], [23.4, -6], [24.0, -1], [36.8, -1], [37.0, -15], [43.4, -15], [43.6, -4], [46.9, -2], [56.9, -4], [60.3, -2], [71.1, -2], [71.3, -60], [81.7, -60], [82.0, -5], [88.3, -5], [89.6, -60]]

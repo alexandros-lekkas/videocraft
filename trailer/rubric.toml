@@ -1,0 +1,57 @@
+# The trailer's rubric, for trailer/review.py (fresh `claude -p` reviewers through videocraft.agents.ask), after the
+# owner's direction: Minecraft's own visual language, the T3 Craft trailer as the bar. Six criteria scored 1-10 on the
+# 5 and 9 anchors. Reviewers see stills only (contact sheets and strips of consecutive frames) and must say so.
+name = "trailer"
+title = "videocraft launch trailer: prompt, the film made inside Minecraft, the agent at work"
+
+[pass]
+average = 8.0
+minimum = 7
+
+[[criterion]]
+id = "native"
+name = "Minecraft-native look"
+measures = "Does every element look like it belongs in Minecraft: the game's font, vanilla chrome (chat, toasts, boss bars, buttons, map), pixel-crisp at GUI scale"
+anchor_5 = "Footage is the game, but the UI around it is a generic app or dashboard (other fonts, rounded cards, pills)"
+anchor_9 = "Every word is the game's font with its shadow or outline, every panel is vanilla chrome, nothing could not appear in the game or its own trailers"
+role = "design"
+
+[[criterion]]
+id = "slop"
+name = "Absence of AI slop"
+measures = "No glassmorphism, neon gradients, floating rounded cards, glowing particles, generic techy HUDs"
+anchor_5 = "No neon, but template habits: rounded translucent cards, big generic headlines, a dark void end card"
+anchor_9 = "Nothing generic: every choice comes from the game or the tool's real output"
+role = "design"
+
+[[criterion]]
+id = "story"
+name = "Story clarity"
+measures = "Prompt in, the film made inside Minecraft, the agent at work (filming, editing, reviewing), the finished film, the command and the repo"
+anchor_5 = "The order is there but the prompt does not become the world shown, or the steps are labels rather than events"
+anchor_9 = "Unmistakable in order: the prompt becomes its world; the viewer sees the set built, actors on marks, takes recorded, the edit, the scores and the result"
+role = "story"
+
+[[criterion]]
+id = "real"
+name = "Real data and footage"
+measures = "Are the commands, output, numbers, files and footage real and honestly labelled"
+anchor_5 = "Mostly real, but some labels overclaim or numbers are shown out of context"
+anchor_9 = "Everything on screen is real output or a real take, labelled truthfully"
+role = "story"
+
+[[criterion]]
+id = "legibility"
+name = "Typography and legibility, both cuts"
+measures = "Can each word be read at its size and time, in the 16:9 and on a phone in the 9:16 (capitals at least 44 px there)"
+anchor_5 = "Readable on a monitor; the 9:16 has text too small or cut by the frame"
+anchor_9 = "Every line reads at a glance in both cuts; nothing clipped, nothing colliding"
+role = "motion"
+
+[[criterion]]
+id = "pacing"
+name = "Pacing"
+measures = "Hard cuts every 2-3 s on new framing, sections that do not drag, the finished film given room, a short end card"
+anchor_5 = "Slow open, static holds, a long end card"
+anchor_9 = "Brisk and rhythmic like the T3 Craft trailer; the payoff gets its time; the end is short"
+role = "motion"

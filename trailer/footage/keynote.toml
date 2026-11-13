@@ -1,0 +1,62 @@
+# Footage for the trailer: the keynote-stage set (sets/keynote-stage.toml) with a presenter crossing the stage,
+# filmed by videocraft itself. Run it from the repo root:
+#   bin/videocraft run trailer/footage/keynote.toml
+# Two moving shots: a slow crane-down from the back of the hall, and a side dolly on the presenter.
+name = "trailer-keynote"
+seed = 11
+description = "The keynote hall for the videocraft trailer: a crane down the aisle, a side dolly on the presenter."
+
+[world]
+seed = "videocraft"
+
+[[world.set]]
+name = "keynote-stage"
+at = [0, 230, 0]
+
+[[actor]]
+id = "ana"
+kind = "mannequin"
+skin = "../../examples/skins/ana.png"
+model = "slim"
+at = [-7.5, 232, -12.5]
+facing = -90
+
+[[shot]]
+name = "hall"
+duration = 5.0
+camera = { rig = "dolly", from = [0.5, 241.0, 21.5], to = [0.5, 236.0, 4.5], at = [0.5, 235.5, -14.5], ease = "smooth", fov = 62 }
+
+[[shot.cue]]
+at = 0.2
+do = "walk"
+actor = "ana"
+path = [[-7.5, 232, -12.5], [-2.0, 232, -12.0], [0.5, 232, -11.8]]
+
+[[shot.cue]]
+at = 0.6
+do = "caption"
+text = "Good morning, and welcome to the *keynote."
+speaker = { name = "Ana", color = "#ffb38a" }
+
+[[shot]]
+name = "presenter"
+duration = 4.5
+camera = { rig = "dolly", from = [11.5, 234.2, -3.5], to = [6.5, 233.8, -5.5], subject = "ana", fov = 45, ease = "smooth" }
+
+[[shot.cue]]
+at = 0.0
+do = "turn"
+actor = "ana"
+to = 0
+
+[[shot.cue]]
+at = 1.2
+do = "pose"
+actor = "ana"
+pose = "wave"
+
+[[shot.cue]]
+at = 0.3
+do = "caption"
+text = "Everything here was *filmed in the game."
+speaker = { name = "Ana", color = "#ffb38a" }

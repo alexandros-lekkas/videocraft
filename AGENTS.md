@@ -245,6 +245,12 @@ They protect the owner's machine and game. They are not preferences.
   films in about a minute instead of eight to fifteen; a cast or camera change can be checked in a few takes.
 - **A `claude -p` reviewer can hang** past the ask timeout after a network outage (76 min, one role); stop it and
   rerun only the missing roles (`review run x --reviewers camera,pacing`): the score reads every review file.
+- **An enclosed set is not automatically deterministic.** Two takes of `trailer/footage/keynote.toml` (the
+  keynote hall, a mannequin) differed on all 570 frames by framemd5 while both `frames.csv` matched byte for byte;
+  two takes of the captioned rigs script matched on all 2460. Prove determinism per script, not per feature.
+- **Story drafts can pass compile and lint and still fail the take.** `make` drafts fail at STAGE or in a shot on
+  values only the mod validates (a `hop` of 5.5 blocks, over the 3-block limit). An actor's start `states` also
+  always failed until `Puppet.create` set its entity before applying them.
 
 - **A mob texture may be larger than vanilla's.** The model samples it by UV, so a 256x128 copy of a sheep's 64x32
   texture (`texture = "x.png"`) draws at four times the detail: a face can carry a curved moustache six pixels cannot.

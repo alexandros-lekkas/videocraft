@@ -1,0 +1,67 @@
+{
+ "source": "runs/nibs-vs-duke/0012/score.json (round 9); docs/benchmarks/nibs-vs-duke-log.md (rounds 1-9)",
+ "run": "nibs-vs-duke 0012",
+ "rubric": "pinksheep-style",
+ "reviewers": [
+  "camera",
+  "legibility",
+  "pacing",
+  "sound",
+  "story",
+  "technical"
+ ],
+ "criteria": {
+  "pacing": 8.0,
+  "camera": 7.0,
+  "staging": 6.5,
+  "acting": 5.0,
+  "comedic_timing": 7.0,
+  "text": 5.5,
+  "sound": 8.0,
+  "technical": 6.0,
+  "energy": 6.5
+ },
+ "average": 6.611,
+ "pass_line": 7.0,
+ "pass": false,
+ "rounds": [
+  {
+   "round": 1,
+   "average": 6.5
+  },
+  {
+   "round": 2,
+   "average": 6.61
+  },
+  {
+   "round": 3,
+   "average": 6.61
+  },
+  {
+   "round": 4,
+   "average": 6.61
+  },
+  {
+   "round": 5,
+   "average": 6.56
+  },
+  {
+   "round": 6,
+   "average": 6.61
+  },
+  {
+   "round": 7,
+   "average": 6.5
+  },
+  {
+   "round": 8,
+   "average": 6.28
+  },
+  {
+   "round": 9,
+   "average": 6.61
+  }
+ ],
+ "quote": "Six-shot montage of 0.20-0.35 s shots. Every word starts exactly on its cut frame (six@3672, times@3688, more@3709, goat@3724, than@3739, him@3751), with a basedrum on each and Nibs close to the lens. This is the best-cut stretch in the film.",
+ "quote_by": "pacing reviewer, round 9, on s21-s26"
+}

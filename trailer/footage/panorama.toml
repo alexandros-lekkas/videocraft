@@ -1,0 +1,29 @@
+# Footage for the trailer: the market-lane set with nobody in it, as the living world behind the trailer's menu screens
+# (Minecraft's own screens blur the world behind them) and under its end card at dusk.
+#   bin/videocraft run trailer/footage/panorama.toml
+name = "trailer-panorama"
+seed = 2
+description = "The market lane from above, a slow orbit at golden hour, then at dusk."
+
+[world]
+seed = "videocraft"
+
+[[world.set]]
+name = "market-lane"
+at = [0, 230, 0]
+
+[[shot]]
+name = "golden"
+duration = 22.0
+camera = { rig = "orbit", center = [-30, 232, 4], look = [-30, 231, 4], radius = 46, height = 20, from = 150, sweep = 50, ease = "linear", fov = 62 }
+
+[[shot]]
+name = "dusk"
+duration = 12.0
+preroll = 1.0
+camera = { rig = "orbit", center = [-30, 232, 4], look = [-30, 232, 4], radius = 40, height = 14, from = 200, sweep = 22, ease = "linear", fov = 58 }
+
+[[shot.cue]]
+at = -1.0
+do = "command"
+command = "time set 12900"

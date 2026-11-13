@@ -1,0 +1,35 @@
+voice: synthesizing 4 line(s) in the voice worker
+voice: 755bd32d051d32fbf447.wav seed 7: unscripted sound before a word at [[0.077, 1.218]]; re-rolling
+VOICE    4 line(s), worker
+  nibs-1           nibs     nibs         at   0.30   3.15 s  qwen3    
+  challenge-1      nibs     challenge    at   0.20   2.96 s  qwen3      cut on "*Duke" f124
+  duke-1           duke     duke         at   1.17   2.42 s  qwen3    
+  reply-1          nibs     reply        at   0.35   1.77 s  qwen3    
+videocraft 0.1.0: talk iteration 0001, 4 shot(s), 1920x1080 60 fps, hidden
+  control port 25750 (slot 0 of 3)
+  VIDEOCRAFT creating world videocraft-talk from seed -1614224763 (default)
+  VIDEOCRAFT world videocraft-talk
+  VIDEOCRAFT step BOOT -> WORLD (5.5 s)
+  VIDEOCRAFT step WORLD -> ARRIVE (1.4 s)
+  VIDEOCRAFT step ARRIVE -> SETTLE (1.0 s)
+  VIDEOCRAFT step SETTLE -> STAGE (4.0 s)
+  VIDEOCRAFT step STAGE -> SHOTS (0.1 s)
+  VIDEOCRAFT shot nibs (3.7 s)
+  VIDEOCRAFT shot nibs recording at 1920x1080 60 fps
+  VIDEOCRAFT shot challenge (2.066666666666667 s)
+  VIDEOCRAFT shot nibs closed: 222 frames, ffmpeg exit 0
+  VIDEOCRAFT shot challenge recording at 1920x1080 60 fps
+  VIDEOCRAFT shot duke (3.85 s)
+  VIDEOCRAFT shot challenge closed: 124 frames, ffmpeg exit 0
+  VIDEOCRAFT shot duke recording at 1920x1080 60 fps
+  VIDEOCRAFT shot reply (2.3833333333333333 s)
+  VIDEOCRAFT shot duke closed: 231 frames, ffmpeg exit 0
+  VIDEOCRAFT shot reply recording at 1920x1080 60 fps
+  VIDEOCRAFT step SHOTS -> FINISH (13.3 s)
+  VIDEOCRAFT shot reply closed: 143 frames, ffmpeg exit 0
+  VIDEOCRAFT RESULT PASS 720 frames
+RESULT   PASS 1920x1080 60 fps 720 frames 12.00 s; capture 64.9 fps real time
+VIDEO    ./runs/talk/0001/cut/master.mp4
+RUN      ./runs/talk/0001
+LOG      ./runs/talk/0001/take/game.log
+TIME     41 s

@@ -1,0 +1,4 @@
+videocraft clips cut: nibs-vs-duke/0012 55.50-65.62 s (607 frames) by reframe -> ./runs/nibs-vs-duke/0012/clips/r1
+RESULT   PASS 1080x1920 10.12 s by reframe; 607 frames 12.0 MB; subject inside the crop 100.0%, inside its centre 60% 100.0%; 6 of 11 clip(s) fit over a blurred fill (two subjects 1015 px apart (the crop is 608 px)); -14.1 LUFS
+VIDEO    ./runs/nibs-vs-duke/0012/clips/r1/short-1080x1920.mp4
+CLIP     ./runs/nibs-vs-duke/0012/clips/r1
