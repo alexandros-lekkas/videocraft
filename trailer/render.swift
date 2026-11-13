@@ -2044,13 +2044,15 @@ func sceneMCScores(_ o: Obj, _ t: Double) {
 	let gap: CGFloat = V ? 31 : 19
 	let cols = V ? 1 : 1
 	_ = cols
-	for (i, c) in crit.enumerated() {
+	let barsOut = d(o, "bars_out", 1e9)
+	let ba = 1 - inOutCubic(prog(t, barsOut, 0.35))
+	for (i, c) in crit.enumerated() where ba > 0 {
 		let name = (c[0] as? String) ?? "", v = (c[1] as? Double) ?? Double((c[1] as? Int) ?? 0)
-		let at = from + 0.3 + Double(i) * 0.22
+		let at = d(o, "bars_at", from + 0.3) + Double(i) * 0.25
 		if t < at { continue }
 		let p = outCubic(prog(t, at, 0.5))
 		let color = v >= 7 ? "green" : (v >= 6 ? "yellow" : "pink")
-		mcBossBar(String(format: "§f%@ §7%.1f", name, v * Double(p)), CGFloat(v / 10) * p, color: color, y: y0 + gap * CGFloat(i))
+		mcBossBar(String(format: "§f%@ §7%.1f", name, v * Double(p)), CGFloat(v / 10) * p, color: color, y: y0 + gap * CGFloat(i), alpha: ba)
 	}
 	mcToast(s(o, "toast_title"), (o["toast"] as? [String]) ?? [], icon: "experience_bottle", at: d(o, "toast_at"), until: d(o, "to") + 0.3,
 		t: t, sprite: "toast/advancement", titleColor: "#FFFF00")
@@ -2102,7 +2104,7 @@ func t3c(_ k: String, _ a: CGFloat = 1) -> CGColor { hex(k, a) }
 func t3Window() -> CGRect { V ? CGRect(x: 30, y: 200, width: 1020, height: 1520) : CGRect(x: 150, y: 80, width: 1620, height: 920) }
 
 struct T3Row { let kind: String; let text: String; let at: Double; let h: CGFloat; let extra: String }
-let t3Sans = font(V ? 34 : 24, .regular), t3SansB = font(V ? 34 : 24, .semibold), t3Mono = font(V ? 25 : 19, .regular, .mono)
+let t3Sans = font(V ? 36 : 30, .regular), t3SansB = font(V ? 36 : 30, .semibold), t3Mono = font(V ? 26 : 23, .regular, .mono)
 func t3Rows(_ o: Obj, _ col: CGRect) -> [T3Row] {
 	var rows: [T3Row] = []
 	let sent = d(o, "send_at")

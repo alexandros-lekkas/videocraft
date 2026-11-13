@@ -129,6 +129,17 @@ def timeline(spec, layout):
             sc['lines'] = sorted(lines, key=lambda l: l['t'])
             story = find_line(data_lines(spec['data']['make']), '^STORY')
             sc['footer'] = sc['footer'].format(story=story.split()[1] if story else '?')
+        if sc['type'] == 't3':
+            sc['keys'] = human_keys(sc['prompt'], sc['type_from'], sc['type_to'])
+            for m in sc['messages']:
+                for l in m.get('lines', []):
+                    if 'text' not in l:
+                        text = find_line(data_lines(spec['data'][l.get('data', 'make')]), l['match'])
+                        if l.get('strip'):
+                            text = re.sub(l['strip'], '', text)
+                        l['text'] = re.sub(r'\s+\./stories/\S+$', '', text or '')
+        if sc['type'] == 'endmodern':
+            sc['keys'] = human_keys(sc['command'], sc['type_from'], sc['type_to'])
         if sc['type'] == 'mcchat':
             for l in sc['lines']:
                 if 'mc' in l:
@@ -211,6 +222,27 @@ def timeline(spec, layout):
         'ffmpeg': tools.ffmpeg(), 'colors': spec['colors'], 'media': media(spec), 'scenes': scenes,
         'chapters': spec.get('chapter', []), 'logo': logo_quads(), 'mc': str(mc_assets()),
     }
+
+
+def human_keys(text, start, end, seed=7):
+    """When each character of `text` is typed, between `start` and `end`: a human rhythm (intervals that vary, a
+    pause after each word, a longer one after punctuation), scaled to fit; about 7-8 characters a second."""
+    import random
+    rnd = random.Random(f'{seed}:{text}')
+    gaps = []
+    for i, ch in enumerate(text):
+        g = rnd.uniform(0.7, 1.35)
+        if i and text[i - 1] == ' ':
+            g += rnd.uniform(0.6, 1.3)
+        if i and text[i - 1] in ',.:;!?':
+            g += 1.2
+        gaps.append(g)
+    scale = (end - start) / sum(gaps)
+    out, at = [], start
+    for g in gaps:
+        at += g * scale
+        out.append(round(at, 3))
+    return out
 
 
 def mc_assets():
@@ -426,25 +458,38 @@ UI = {'send': ('ui.button.click', 'click', -10), 'line': ('block.note_block.hat'
       'toast_in': ('ui.toast.in', 'whoosh-fast', -8), 'toast_out': ('ui.toast.out', None, -10),
       'bar': ('entity.experience_orb.pickup', 'tick', -20), 'climb': ('ui.toast.challenge_complete', 'success-chime', -8),
       'end': ('entity.player.levelup', 'sparkle', -10), 'clip': ('block.note_block.hat', 'tick', -24),
-      'cut': ('ui.button.click', 'click', -18)}
+      'cut': ('ui.button.click', 'click', -18), 'key': (None, 'click-soft', -24), 'whoosh': (None, 'whoosh', -14),
+      'card': (None, 'whoosh-fast', -20)}
 
 
 def ui_events(spec):
     out = []
     for sc in spec['scene']:
         ty = sc['type']
+        if ty == 't3':
+            out += [(k, 'key') for k in human_keys(sc['prompt'], sc['type_from'], sc['type_to'])]
+            out.append((sc['send_at'], 'send'))
+            for m in sc['messages']:
+                out += [(l['t'], 'line') for l in m.get('lines', [])]
+            out.append((sc['cut_at'] + 0.3, 'whoosh'))
+        if ty == 'endmodern':
+            out += [(k, 'key') for k in human_keys(sc['command'], sc['type_from'], sc['type_to'])]
+            out.append((sc['from'] + 0.2, 'end'))
+        if ty == 'card':
+            out.append((sc['from'] + 0.15, 'card'))
         if ty == 'mcchat':
             out.append((sc['send_at'], 'send'))
             out += [(l['t'], 'line') for l in sc['lines']]
         if ty == 'mcmonitor':
             for c in sc['clips']:
-                out += [(c['at'] + 0.05, 'toast_in'), (c['at'] + c['dur'] - 0.5, 'toast_out')]
+                if c.get('overlay', 'toast') == 'toast':
+                    out += [(c['at'] + 0.15, 'toast_in'), (c['at'] + c['dur'] - 0.5, 'toast_out')]
         if ty == 'mcedit':
             out += [(sc['slide_at'] + i * 0.04 * 3, 'clip') for i in range(12)]
             ed = edit_data('nibs-vs-duke/0012')
             out += [(sc['scrub_at'] + sc['scrub_dur'] * c[0] / ed['seconds'], 'cut') for c in ed['cuts']]
         if ty == 'mcscores':
-            out += [(sc['from'] + 0.3 + i * 0.22, 'bar') for i in range(9)]
+            out += [(sc.get('bars_at', sc['from'] + 0.3) + i * 0.25, 'bar') for i in range(9)]
             out.append((sc['toast_at'], 'climb'))
         if ty == 'mcend':
             out.append((sc['from'] + 0.1, 'end'))
@@ -483,7 +528,7 @@ def sound(spec, variant='game'):
         right[i] += r[i] * env[i]
     for t0, what in ui_events(spec):
         event, stand_in, db = UI[what]
-        if variant == 'game':
+        if variant == 'game' and event:
             mono = game_sound(event)
         elif stand_in:
             mono = library.render(stand_in, 1)
@@ -576,6 +621,91 @@ def strip(spec, layout, a, b, every=4, cols=8):
     return out
 
 
+def need(words):
+    """Reading time for a piece of text: 0.5 s and 0.3 s a word, never under 1.5 s."""
+    return max(1.5, 0.5 + 0.3 * words)
+
+
+def pacing(spec):
+    """Every text element with the time it is complete on screen against its reading time, and how many elements
+    ask to be read in each second. Writes runs/trailer/pacing.md; returns the number of failures."""
+    rows = []   # (name, text, complete_from, until)
+    def add(name, text, a, b):
+        rows.append((name, re.sub(r'§.', '', text), a, b))
+    for sc in spec['scene']:
+        ty, f0, f1 = sc['type'], sc['from'], sc['to']
+        if ty == 'card':
+            lines = sc['text'].split('\n')
+            add('card', ' '.join(lines), f0 + 0.2 + 0.25 * (len(lines) - 1) + 0.9, f1 - 0.55)
+        if ty == 't3':
+            keys = human_keys(sc['prompt'], sc['type_from'], sc['type_to'])
+            # Typed, then sent: it stays on screen throughout, moving from the composer to the thread.
+            add('prompt', sc['prompt'], keys[-1], sc['cut_at'])
+            for m in sc['messages']:
+                if m['kind'] == 'text':
+                    add('agent reply', m['text'], m['t'] + len(m['text'].split()) / m['wps'], sc['cut_at'])
+                else:
+                    add('tool call', m['title'] + ' ' + m['command'], m['t'] + 0.3, sc['cut_at'])
+                    for l in m['lines']:
+                        add('tool output', l.get('text') or l.get('match', ''), l['t'] + 0.3, sc['cut_at'])
+        if ty == 'mcmonitor':
+            for c in sc['clips']:
+                ov = c.get('overlay', 'toast')
+                if 'toast' in ov:
+                    add('toast', c['toast_title'] + ' ' + ' '.join(c['toast']), c['at'] + 0.15 + 0.6, c['at'] + c['dur'] - 0.5)
+                if 'rec' in ov:
+                    add('boss bar (REC)', 'REC shot frame/frames', c['at'], c['at'] + c['dur'])
+                if 'map' in ov:
+                    add('map (graphic)', 'top view', c['at'], c['at'] + c['dur'])
+        if ty == 'mcedit':
+            add('timeline title', sc['title'], sc['from'] + 0.25, sc['to'])
+            ed = edit_data('nibs-vs-duke/0012')
+            cuts = [c for c in ed['cuts'] if c[0] <= sc['scrub_to']]
+            def when(sec):   # the eased playhead (inOutCubic) reaching `sec`
+                lo, hi = 0.0, 1.0
+                for _ in range(40):
+                    mid = (lo + hi) / 2
+                    u = 4 * mid ** 3 if mid < 0.5 else 1 - (-2 * mid + 2) ** 3 / 2
+                    lo, hi = (mid, hi) if u * sc['scrub_to'] < sec else (lo, mid)
+                return sc['scrub_at'] + sc['scrub_dur'] * lo
+            ts = [when(c[0]) for c in cuts]
+            for i, c in enumerate(cuts):
+                add('cut label', f'cut on "{c[1]}"', ts[i], ts[i + 1] if i + 1 < len(cuts) else sc['to'] - sc.get('ease_out', 0))
+        if ty == 'mcscores':
+            for i in range(9):
+                add('score bar', 'name 0.0', sc['bars_at'] + i * 0.25 + 0.5, sc['bars_out'])
+            add('climb toast', sc['toast_title'] + ' ' + ' '.join(sc['toast']), sc['toast_at'] + 0.6, sc['to'] - sc.get('ease_out', 0))
+        if ty == 'endmodern':
+            add('name', sc['name'], f0 + 1.2, f1 - 0.8)
+            add('tagline', sc['tagline'], f0 + 1.6, f1 - 0.8)
+            add('command', sc['command'], sc['type_to'], f1 - 0.8)
+            add('url', sc['url'], sc['url_at'] + 0.7, f1 - 0.8)
+    out = ['| Element | Text | On screen complete | Needs | |', '|:--|:--|--:|--:|:--|']
+    fails = 0
+    for name, text, a, b in rows:
+        n = need(len(text.split()))
+        ok = (b - a) >= n - 1e-6
+        fails += not ok
+        out.append(f'| {name} | {text[:60]} | {a:.2f}-{b:.2f} s = {b - a:.2f} s | {n:.2f} s | {"ok" if ok else "SHORT"} |')
+    out += ['', '| Second | Panels with text on screen |', '|--:|--:|']
+    worst = 0
+    for s in range(int(spec['seconds']) + 1):
+        panel = {'prompt': 'app', 'agent reply': 'app', 'tool call': 'app', 'tool output': 'app', 'score bar': 'scores',
+                 'timeline title': 'timeline', 'cut label': 'timeline', 'name': 'end', 'tagline': 'end', 'command': 'end',
+                 'url': 'end'}
+        c = len({panel.get(name, name) for name, _, a, b in rows if a <= s + 0.5 <= b})
+        worst = max(worst, c)
+        out.append(f'| {s} | {c} |')
+    (OUT / 'pacing.md').parent.mkdir(parents=True, exist_ok=True)
+    (OUT / 'pacing.md').write_text('\n'.join(out) + '\n', encoding='utf-8')
+    say(f'PACING  {len(rows)} elements, {fails} short of their reading time; at most {worst} panel(s) asking to be read at '
+        f'once; runs/trailer/pacing.md')
+    for l in out[2:2 + len(rows)]:
+        if 'SHORT' in l:
+            say('  ' + l)
+    return fails
+
+
 def main(argv):
     if argv[:1] == ['capture']:
         capture(argv[1:])
@@ -588,9 +718,12 @@ def main(argv):
     ap.add_argument('--audio-only', action='store_true')
     ap.add_argument('--no-audio', action='store_true')
     ap.add_argument('--mux-only', action='store_true', help='reuse runs/trailer/picture-<layout>.mp4')
+    ap.add_argument('--check', action='store_true', help='the pacing self-check only (runs/trailer/pacing.md)')
     args = ap.parse_args(argv)
     spec = tomllib.loads((HERE / 'trailer.toml').read_text(encoding='utf-8'))
     layouts = ['h', 'v'] if args.layout == 'both' else [args.layout]
+    if argv[:1] == ['check'] or args.check:
+        return 1 if pacing(spec) else 0
     if args.stills:
         for lay in layouts:
             for p in stills(spec, lay, [int(x) for x in args.stills.split(',')]):

@@ -1,8 +1,8 @@
 # The videocraft launch trailer: timeline, data sources and the trailer's own takes. trailer/README.md says how.
 
-seconds = 60.0
+seconds = 89.6
 fps = 60
-poster = 56.6
+poster = 87.2
 
 # ---------------------------------------------------------------- the trailer's own takes (trailer/footage.py)
 # Footage the finished runs do not have, filmed by videocraft, each with the game's own captions.
@@ -97,94 +97,120 @@ build_v = "trailer-build/0001/clips/r1/short-1080x1920.mp4"
 story_walk_v = "a-goat-challenges-a-fox-to-a-jump-off-2/0002/clips/r2/short-1080x1920.mp4"
 hall_dolly_v = "trailer-keynote/0002/clips/r3/short-1080x1920.mp4"
 
-# The story, in the game's own look: you ask the agent in the game's chat; the chat closes on the world it becomes;
-# the agent films it (REC as a boss bar, the script line as a toast, the camera on a held map); a voiced line with
-# the game's subtitle box; the edit over the film scrubbing; the reviewers' scores as boss bars and the climb's toast;
-# the finished film; the end over the same lane at dusk. One world throughout: Nibs vs Duke's market lane and barn.
+# The story, at a human pace, one idea per beat: a calm card; the prompt typed into the agent app and its reply; the
+# match-cut into the barn world, where the film is built, cast and shot (one overlay at a time besides the game's own
+# captions); the edit; the review and the climb; the finished film; the command and the repository.
 
 [[scene]]
-type = "mcchat"
+type = "card"
 from = 0.0
-to = 5.1
-bg = { media = "fu_headroom", in = 0.5 }
-prompt = "a one-horned goat challenges the three-time Talent Night champion, a snow fox, to a jump-off"
-type_at = 0.3
-cps = 44
-send_at = 2.55
-close_at = 4.9
-lines = [
-  { t = 2.85, mc = "§f<agent> On it: the story first, then I film it." },
-  { t = 3.25, data = "story", match = '^STORY' },
-  { t = 3.45, data = "story", match = '^  premise ', cut = 20 },
-  { t = 3.65, data = "story", match = '^  bible ', cut = 20 },
-  { t = 3.95, text = "$ bin/videocraft run examples/nibs-vs-duke.toml" },
-  { t = 4.35, data = "gamelog", match = 'shot s01-nibs recording at', strip = '^.*\(videocraft\) ' },
+to = 3.6
+kicker = "videocraft"
+text = "Ask for a film."
+
+[[scene]]
+type = "t3"
+from = 3.3
+to = 24.6
+thread = "Nibs vs Duke"
+project_path = "~/videocraft"
+projects = [
+  { name = "videocraft", threads = ["Nibs vs Duke", "Trailer", "Voice pass", "Sets"] },
+]
+placeholder = "Ask anything, @ to mention files"
+composer_hint = "Opus 5.5 · Full access"
+prompt = "a one-horned goat challenges a snow fox to a jump-off"
+type_from = 5.0
+type_to = 11.9
+send_at = 12.9
+cut_at = 23.6
+focus = "recording at"
+messages = [
+  { kind = "text", t = 13.6, wps = 4.0, text = "On it. I'll draft the story, then film it in a hidden Minecraft." },
+  { kind = "tool", t = 17.0, title = "Ran", command = "bin/videocraft story show nibs-vs-duke", lines = [
+    { t = 17.6, data = "story", match = '^STORY' },
+    { t = 17.9, data = "story", match = '^  premise ' },
+    { t = 18.2, data = "story", match = '^  bible ' },
+  ] },
+  { kind = "tool", t = 19.8, title = "Ran", command = "bin/videocraft run examples/nibs-vs-duke.toml", lines = [
+    { t = 20.6, data = "gamelog", match = 'shot s01-nibs recording at', strip = '^.*\(videocraft\) ' },
+  ] },
 ]
 
 [[scene]]
 type = "mcmonitor"
-from = 5.0
-to = 25.1
+from = 24.0
+to = 43.5
+ease_out = 0.8
 clips = [
-  { at = 5.0, dur = 3.4, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]]', 'name = "barn-stage"'] },
-  { at = 8.4, dur = 2.8, media = "fu_flyin", in = 0.4, step = 2, shot_dir = "fu-flyin/0003/take/shots/flyin", icon = "compass_00", toast_title = "flyin", toast = ['rig = "dolly"', 'fov = [72, 56]'] },
-  { at = 11.2, dur = 2.6, media = "marks", in = 3.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", icon = "name_tag", toast_title = "five actors, five marks", toast = ['do = "walk"', 'face = "camera"'] },
-  { at = 13.8, dur = 4.2, media = "fu_take", in = 0.15, run = "fu-take/0002", icon = "writable_book", toast_title = "take", toast = ['rig = "two_shot"', 'do = "say", actor = "nibs"'] },
-  { at = 18.0, dur = 2.4, media = "nibs", in = 9.9, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s04-market", toast = ['rig = "lead"', 'subject = "nibs"', 'fov = 108'] },
-  { at = 20.4, dur = 2.3, media = "nibs", in = 37.1, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s14-notes", toast = ['[[edit.look]]', 'an amber frame'] },
-  { at = 22.7, dur = 2.4, media = "nibs", in = 55.8, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s19-jump", toast = ['rig = "lead"', 'subject = "nibs"'] },
+  { at = 24.0, dur = 4.5, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", intro_from = "t3", intro = 0.9, overlay = "toast", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]]', 'name = "barn-stage"'] },
+  { at = 28.5, dur = 4.0, media = "fu_flyin", in = 0.4, step = 2, shot_dir = "fu-flyin/0003/take/shots/flyin", overlay = "rec" },
+  { at = 32.5, dur = 4.5, media = "marks", in = 2.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", overlay = "map" },
+  { at = 37.0, dur = 6.5, media = "fu_take", in = 0.15, run = "fu-take/0002", overlay = "rec" },
 ]
 
 [[scene]]
-type = "mcvoice"
-from = 25.0
-to = 30.1
-clip = { media = "nibs", in = 0.0 }
-offset = 0.0
-box_title = "Subtitles: Nibs (qwen3, voice ryan)"
-box_title_v = "Nibs, word by word"
-shot = "s01-nibs"
+type = "card"
+from = 43.5
+to = 46.9
+text = "Then it edits."
 
 [[scene]]
 type = "mcedit"
-from = 30.0
-to = 40.1
+from = 46.9
+to = 56.9
+ease_in = 0.8
+ease_out = 0.8
 media = "nibs"
 title = "§fcut/timeline.json §7nibs-vs-duke 0012: 34 clips, 76.87 s"
 title_v = "§ftimeline.json §734 clips"
-step = 8
-slide_at = 30.1
-lanes_at = 31.3
-scrub_at = 30.0
-scrub_dur = 10.0
+step = 4
+slide_at = 47.2
+lanes_at = 47.8
+scrub_at = 48.2
+scrub_dur = 8.5
+scrub_to = 34.0
+
+[[scene]]
+type = "card"
+from = 56.9
+to = 60.3
+text = "Then it reviews itself."
+text_v = "Then it\nreviews itself."
 
 [[scene]]
 type = "mcscores"
-from = 40.0
-to = 45.1
+from = 60.3
+to = 71.3
+ease_in = 0.8
+ease_out = 0.8
 clip = { media = "fu_pair", in = 0.6 }
+bars_at = 60.9
+bars_out = 65.7
 toast_title = "Climb: kept the better take"
-toast = ["average 6.50 -> 6.61 (+0.11)", "best of 9 review rounds"]
-toast_v = ["6.50 -> 6.61", "(+0.11), kept"]
-toast_at = 43.0
+toast = ["average 6.50 -> 6.61 (+0.11)"]
+toast_at = 66.1
 
 [[scene]]
 type = "mcfilm"
-from = 45.0
-to = 55.0
-clip = { media = "nibs", in = 59.4, media_v = "short", in_v = 3.9 }
+from = 71.3
+to = 81.8
+ease_in = 0.8
+ease_out = 0.8
+clip = { media = "nibs", in = 58.7, media_v = "short", in_v = 3.2 }
 
 [[scene]]
-type = "mcend"
-from = 55.0
-to = 60.0
-clip = { media = "fu_orbit", in = 1.0 }
+type = "endmodern"
+from = 81.8
+to = 89.6
 name = "videocraft"
 tagline = "Agent-directed films, shot inside Minecraft."
 tagline_v = "Agent-directed films,\nshot inside Minecraft."
 command = '$ bin/videocraft make "<prompt>"'
+type_from = 83.2
+type_to = 87.0
+url_at = 86.6
 url = "github.com/alexandros-lekkas/videocraft"
-url_v = "github.com/\nalexandros-lekkas/\nvideocraft"
 disclaimer = "Unofficial. Not affiliated with Mojang or Microsoft."
 disclaimer_v = "Unofficial. Not affiliated\nwith Mojang or Microsoft."
 
@@ -201,10 +227,9 @@ style = "keynote"
 bpm = 120
 seed = 7
 film = [
-  { t = 13.8, start = 0.15, dur = 4.2, db = 0.0, game = "runs/fu-take/0002/cut/master.mp4" },
-  { t = 25.0, start = 0.0, dur = 5.1, db = 0.0 },
-  { t = 45.0, start = 59.4, dur = 10.0, db = 0.0 },
+  { t = 37.0, start = 0.15, dur = 6.5, db = 0.0, game = "runs/fu-take/0002/cut/master.mp4" },
+  { t = 71.3, start = 58.7, dur = 10.5, db = 0.0 },
 ]
 film_game = "runs/nibs-vs-duke/0012/cut/x-1080p60.mp4"
 film_original = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
-music = [[0.0, -60], [0.3, -7], [4.9, -7], [5.0, -1], [13.6, -1], [13.8, -14], [17.9, -14], [18.0, -1], [24.8, -1], [25.0, -16], [29.9, -16], [30.0, -3], [44.8, -3], [45.0, -60], [54.9, -60], [55.0, -4], [59.0, -4], [60.0, -60]]
+music = [[0.0, -60], [0.4, -9], [3.3, -9], [12.9, -9], [13.4, -6], [23.4, -6], [24.0, -1], [36.8, -1], [37.0, -15], [43.4, -15], [43.6, -4], [46.9, -2], [56.9, -4], [60.3, -2], [71.1, -2], [71.3, -60], [81.7, -60], [82.0, -5], [88.3, -5], [89.6, -60]]
