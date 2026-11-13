@@ -81,7 +81,7 @@ def write_report(m, path, title='', plan=None):
                 for g in dl['longest_silences']) + '.')
         L += ['', '| Line | Character | Shot | Start | Words | Words/s |', '|:--|:--|:--|--:|--:|--:|']
         for l in dl['lines']:
-            L.append(f'| {l["id"]} | {l["character"]} | {l["shot"]} | {_tc(l["start"])} | {l["words"]} | {"-" if l["wps"] is None else f"{l['wps']:.2f}"}'
+            L.append(f'| {l["id"]} | {l["character"]} | {l["shot"]} | {_tc(l["start"])} | {l["words"]} | {"-" if l["wps"] is None else format(l["wps"], ".2f")}'
                      + (' (beat)' if l.get('beat') else '') + (f' ({l["style"]})' if l.get('style') else '') + ' |')
         L.append('')
     if m.get('camera'):

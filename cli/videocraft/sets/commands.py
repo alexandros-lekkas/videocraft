@@ -97,7 +97,8 @@ def cmd_build(args):
     say(f'BLOCKS   {summary["blocks"]} in {c["fill"]} fills and {c["setblock"]} setblocks; {summary["entities"]} entities; '
         f'{c["total"]} commands')
     say(f'BOX      {summary["box"]["from"]} to {summary["box"]["to"]} ({"x".join(map(str, summary["size"]))})')
-    say(f'LOOK     time {summary["time"]}, {summary["weather"]}, biome {summary["biome"] or "(the world\'s)"}')
+    biome = summary["biome"] or "(the world's)"
+    say(f'LOOK     time {summary["time"]}, {summary["weather"]}, biome {biome}')
     kinds = {}
     for k, v in summary['marks'].items():
         kinds.setdefault(v, []).append(k)
