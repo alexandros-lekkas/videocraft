@@ -6,6 +6,7 @@ Videos are hosted outside the repository (GitHub releases); `runs/` is never com
 | Video | Script | What it shows | Made with |
 |:--|:--|:--|:--|
 | [Nibs vs Duke](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-2/nibs-vs-duke-720p30.mp4) (75 s, [1080p60](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-2/nibs-vs-duke-1080p60.mp4)) | [examples/nibs-vs-duke.toml](../examples/nibs-vs-duke.toml) | The benchmark comedy short: two sets, mob actors, lead tracks, flashback, montage, voices, captions; reviewed 6.6/10 ([log](benchmarks/nibs-vs-duke-log.md)) | `6272b65`, second production, take 12 |
+| [The videocraft trailer](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-720p30.mp4) (84 s, [1080p60](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-1080p60.mp4), [9:16](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-9x16.mp4)) | [trailer/](../trailer/) | A launch trailer cut from real runs: the set built on camera, a fly-in, actors to marks, a voiced take, the edit from a real timeline, real review scores, a filmed jump-off | `01adb59` |
 
 To add one: link the published video, the script (in `examples/`, `stories/<id>/shots.toml`, or a gist), one line
 on what it shows, and the videocraft commit it was made with (`meta.json` in the run records it). Only original

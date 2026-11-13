@@ -10,6 +10,14 @@ the script and try again.
 It is a tool for people and coding agents who want repeatable, scriptable Minecraft video. It is early, verified on
 one platform, and not affiliated with Mojang ([below](#credits-and-trademarks)).
 
+## Trailer
+
+[![The videocraft trailer: a prompt in, a film shot inside Minecraft out](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-poster.jpg)](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-720p30.mp4)
+
+**The trailer** ([720p, 13 MB](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-720p30.mp4) · [1080p60](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-1080p60.mp4) · [9:16](https://github.com/alexandros-lekkas/videocraft/releases/download/trailer-1/videocraft-trailer-9x16.mp4)):
+84 seconds, made with videocraft itself from real runs ([trailer/](trailer/)). A prompt goes to an agent, which
+builds the set and films the take inside Minecraft, edits on the spoken word and has reviewers score the cut.
+
 ## Demo
 
 [![Nibs vs Duke: a 75-second comedy short made with videocraft](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-2/nibs-vs-duke-poster.jpg)](https://github.com/alexandros-lekkas/videocraft/releases/download/demo-nibs-vs-duke-2/nibs-vs-duke-720p30.mp4)

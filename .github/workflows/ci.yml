@@ -66,6 +66,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      # Some checks run ffmpeg on short generated audio (pitch, pacing); a contributor's machine has it too.
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - name: Unit checks
         run: python3 -m unittest discover -s cli/tests -v
 
