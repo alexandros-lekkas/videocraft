@@ -1782,28 +1782,29 @@ func fullFrame(_ c: Obj, _ t: Double, since: Double, step: Int = 1, speed: Doubl
 
 /// The vanilla chat: lines over a translucent black band bottom-left, the edit line along the bottom with its `_`.
 func mcChatLines(_ lines: [(String, Double)], _ t: Double, open: Bool, typed: String, caret: Bool, closeAt: Double) {
-	let chatW: CGFloat = V ? GW - 4 : 320
-	let lineH: CGFloat = 9 * TK
+	let ck: CGFloat = V ? 2 : 1.5
+	let chatW: CGFloat = V ? GW - 4 : 460
+	let lineH: CGFloat = 9 * ck
 	var rows: [(String, CGFloat)] = []
 	for (str, at) in lines where t >= at {
-		for piece in mcWrap(str, gx(chatW - 4), TK) { rows.append((piece, CGFloat(min(1, (t - at) / 0.12)))) }
+		for piece in mcWrap(str, gx(chatW - 4), ck) { rows.append((piece, CGFloat(min(1, (t - at) / 0.12)))) }
 	}
 	let bottom: CGFloat = GH - (open ? 14 : 2) - (V ? 40 : 0)
 	let shown = rows.suffix(V ? 12 : 14)
 	for (i, row) in shown.enumerated() {
 		let y = bottom - CGFloat(shown.count - i) * lineH
 		mcPanel(CGRect(x: 0, y: gx(y), width: gx(chatW + 2), height: gx(lineH)), 0.5 * row.1)
-		mcText(row.0, gx(2), gx(y + 1 + (TK - 1) * 0.5), k: TK, alpha: row.1)
+		mcText(row.0, gx(2), gx(y + 1 + (ck - 1) * 0.5), k: ck, alpha: row.1)
 	}
 	if open {
-		let barH: CGFloat = 12 * (V ? 1.6 : 1)
+		let barH: CGFloat = 12 * (V ? 1.6 : 1.3)
 		let by = GH - 2 - barH - (V ? 40 : 0)
 		mcPanel(CGRect(x: gx(2), y: gx(by), width: gx(GW - 4), height: gx(barH)), 0.5)
 		let maxW = gx(GW - 12)
 		var shownTyped = typed
-		while mcWidth(shownTyped, TK) > maxW && !shownTyped.isEmpty { shownTyped.removeFirst() }
-		let w = mcText(shownTyped, gx(4), gx(by + 2), k: TK)
-		if caret { mcText("_", gx(4) + w + (typed.isEmpty ? 0 : G * TK), gx(by + 2), k: TK) }
+		while mcWidth(shownTyped, ck) > maxW && !shownTyped.isEmpty { shownTyped.removeFirst() }
+		let w = mcText(shownTyped, gx(4), gx(by + 2), k: ck)
+		if caret { mcText("_", gx(4) + w + (typed.isEmpty ? 0 : G * ck), gx(by + 2), k: ck) }
 	}
 }
 func sceneMCChat(_ o: Obj, _ t: Double) {

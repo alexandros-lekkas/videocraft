@@ -47,7 +47,7 @@ def build(round_dir, spec):
     if v.exists():
         images.append(frames_png(v, [i + 1.0 for i in range(0, int(secs), 2)], (216, 384), 12, pk / '02-contact-9x16.png'))
     starts = sorted({sc['from'] for sc in spec['scene']} | {c['at'] for sc in spec['scene'] for c in sc.get('clips', [])})
-    entrances = [0.6, 3.5, 4.6, 7.8] + [s for s in starts if s > 8] + [33.0, 59.0]
+    entrances = [0.6, 2.5, 4.7] + [s for s in starts if s > 5] + [32.0, 43.0, 56.0]
     for i, t0 in enumerate(sorted(set(entrances))):
         times = [max(0.0, t0 - 0.15) + k * 0.05 for k in range(16)]
         images.append(frames_png(h, times, (480, 270), 4, pk / f'1{i:02d}-strip-16x9-{t0:05.2f}s.png'))
@@ -123,17 +123,12 @@ def main(argv):
     rd = OUT / 'review' / f'{args.round:02d}'
     images, facts = build(rd, spec)
     print(f'PACKET   {rd / "packet"} ({len(images)} images)', flush=True)
-    brief = ('"a Claude motion-graphicsy trailer showing off the videocraft CLI": calm, premium, editorial motion '
-             'design; a deep charcoal canvas, one accent colour, generous whitespace, a crisp sans-serif plus a '
-             'monospace for code, smooth eased kinetic typography, a terminal that types real commands and prints real '
-             'output, full-bleed cuts to real footage made by the tool; no third-party logos; ends on the videocraft '
-             'logo, the repo URL and an unofficial/not-affiliated line. The owner\'s story for it: open on a prompt typed '
-             'into a generic, code-drawn agent chat (no real product\'s UI or marks) and the agent\'s real videocraft '
-             'output; match-cut into Minecraft and show the agent at work there (a set built block by block, actors '
-             'walking to marks, a camera rig flying, a take recording with REC and a frame counter, captions in the '
-             'game\'s own style, a voice waveform); then the agent editing (the timeline assembling, cuts snapping to '
-             'words, music ducking under lines, reviewer scores, a climb step); the finished film playing; end on the '
-             'command line and the repo URL.')
+    brief = ('a 60-75 s launch trailer for the videocraft CLI. The owner\'s story: a prompt typed into an agent chat '
+             '(drawn in the game\'s own chat), the film made inside Minecraft (the set built block by block, actors walking '
+             'to marks, takes recording with REC and a frame counter, captions in the game\'s style, a voiced line), the '
+             'agent editing (the timeline, cuts on words, music under lines, reviewer scores, a climb step), the finished '
+             'film, then the command line and the repo URL. The owner\'s look: Minecraft\'s own visual language (the game '
+             'font, vanilla chat, toasts, boss bars, map), pixel-crisp, no AI-slop UI; the T3 Craft launch trailer is the bar.')
     for role in args.roles.split(','):
         crits = [c for c in rubric['criterion'] if c['role'] == role]
         out = rd / f'{role}.json'
