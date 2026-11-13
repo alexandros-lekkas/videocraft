@@ -2104,7 +2104,7 @@ func t3c(_ k: String, _ a: CGFloat = 1) -> CGColor { hex(k, a) }
 func t3Window() -> CGRect { V ? CGRect(x: 30, y: 200, width: 1020, height: 1520) : CGRect(x: 150, y: 80, width: 1620, height: 920) }
 
 struct T3Row { let kind: String; let text: String; let at: Double; let h: CGFloat; let extra: String }
-let t3Sans = font(V ? 36 : 30, .regular), t3SansB = font(V ? 36 : 30, .semibold), t3Mono = font(V ? 26 : 23, .regular, .mono)
+let t3Sans = font(V ? 48 : 30, .regular), t3SansB = font(V ? 48 : 30, .semibold), t3Mono = font(V ? 33 : 23, .regular, .mono)
 func t3Rows(_ o: Obj, _ col: CGRect) -> [T3Row] {
 	var rows: [T3Row] = []
 	let sent = d(o, "send_at")
@@ -2212,7 +2212,7 @@ func sceneT3(_ o: Obj, _ t: Double) {
 			}
 		}
 		// Header of the thread.
-		let hx = win.minX + sideW + 30
+		let hx = win.minX + sideW + (V ? 110 : 30)
 		text(s(o, "thread"), hx, win.minY + 33, font(V ? 26 : 18, .semibold), t3c(T3.text))
 		text(s(o, "project_path"), hx + width(s(o, "thread"), font(V ? 26 : 18, .semibold)) + 14, win.minY + 33, font(V ? 22 : 15, .regular, .mono), t3c(T3.dim))
 		fill(CGRect(x: win.minX + sideW + 1, y: win.minY + 50, width: win.width - sideW - 2, height: 1.2), t3c(T3.line))
@@ -2298,7 +2298,7 @@ func sceneT3(_ o: Obj, _ t: Double) {
 /// A beat on the calm canvas: one line or two, large, easing in and holding, then easing out.
 func sceneCard(_ o: Obj, _ t: Double) {
 	let from = d(o, "from"), to = d(o, "to")
-	let lines = s(o, V ? "text_v" : "text").components(separatedBy: "\n")
+	let lines = s(o, V ? "text_v" : "text", s(o, "text")).components(separatedBy: "\n")
 	let size: CGFloat = CGFloat(d(o, "size", V ? 104 : 96))
 	let lh = size * 1.12
 	let top = CH / 2 - CGFloat(lines.count - 1) * lh / 2 + size * 0.35
