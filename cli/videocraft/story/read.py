@@ -139,7 +139,7 @@ def transcript(raw, source=None):
             camera = f'{cam["rig"]}' + (f' on {cam["subject"]}' if cam.get('subject') else '')
         entry = {'shot': name, 'note': str(shot.get('note') or '').strip(), 'camera': camera, 'seen': [], 'heard': [],
                  'shown': [], 'lines': []}
-        cues = sorted((c for c in shot.get('cue') or [] if isinstance(c, dict)), key=lambda c: float(c.get('at', 0) or 0))
+        cues = _timeline(shot.get('cue') or [])
         for c in cues:
             do = c.get('do')
             if do == 'say':
@@ -170,6 +170,22 @@ def transcript(raw, source=None):
                 entry['seen'].append(_picture(c, actors))
         out.append(entry)
     return out
+
+
+def _timeline(cues):
+    """A shot's cues in the order they play. A `say` without `at` is packed after the line before it (SCRIPT.md,
+    Dialogue), so it sorts just after that line, not at 0; any other cue without `at` is at 0."""
+    timed, last = [], None
+    for i, c in enumerate(x for x in cues if isinstance(x, dict)):
+        at = c.get('at')
+        if at is None and c.get('do') == 'say' and last is not None:
+            t = last
+        else:
+            t = float(at or 0)
+        if c.get('do') == 'say':
+            last = t
+        timed.append((t, i, c))
+    return [c for _t, _i, c in sorted(timed, key=lambda x: (x[0], x[1]))]
 
 
 def cast_lines(raw, source=None):

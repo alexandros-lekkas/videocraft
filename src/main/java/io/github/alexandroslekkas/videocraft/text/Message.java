@@ -71,11 +71,13 @@ abstract class Message implements Action {
 	@Override
 	public boolean frame(ShotContext shot) {
 		if (!started) {
-			started = true;
 			this.shot = shot;
 			this.layout = Ink.layout();
 			startFrame = now();
 			start();
+			// Started only once laid out: a message whose start() throws (text that does not fit) is never ended
+			// at the cut, so the take fails with that message instead of a NullPointerException from its record.
+			started = true;
 			TextLayer.show(this);
 		}
 		if (ended) return true;

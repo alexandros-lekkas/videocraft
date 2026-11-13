@@ -262,6 +262,14 @@ They protect the owner's machine and game. They are not preferences.
   200 Hz against Nibs' 237 (median f0 of their lines). A pitch estimator that takes the strongest autocorrelation
   lag reads a pure tone an octave low; take the shortest lag within 90 % of the best (`voice/pitch.py`).
 
+- **Text displays in front of block displays often do not draw** (26.3). In probes, text 0.01 to 0.3 blocks in
+  front of a block display (glowing or not) was hidden in every frame, while the same text alone or in front of
+  real blocks drew. Back text with real blocks lit by `light` blocks, or give the text display its own `background`.
+- **Display entities summoned while staging a far-off area are unreliable.** A studio built 400 blocks from spawn
+  in `[[world.stage]]` showed none, some or all of its display entities, varying from take to take and shot to
+  shot. Displays summoned in the preroll of the shot that enters the area always drew, so summon set dressing
+  there (kill and summon again by tag).
+
 ## Working with agents
 
 - **Orchestrated work.** One orchestrator plans, briefs, reviews and merges. Builders each work in their own git

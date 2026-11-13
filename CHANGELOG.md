@@ -5,6 +5,14 @@
 - `wool = "#rrggbb"` on a sheep actor: wool of any colour, not only the sixteen dyes.
 - A `say` line with `fit = "none"` that runs over its shot's end keeps its caption on screen across the cut (and
   over a run of short shots): the whole line, the words said before the cut already landed, the rest popping on time.
+- A caption's speaker tag is drawn at a 49 px cap height (was 42, under the 44 px floor every other text keeps):
+  reviewers could not read name and "dramatization" tags at phone width.
+- A caption or title that does not fit now fails the take with its own message ("does not fit on two lines");
+  the cut's clean-up hit a NullPointerException on the unlaid message and reported that instead.
+- `story read` keeps packed `say` lines (no `at`) after the line before them; it sorted them to 0 s, so a cold
+  reader heard every split sentence backwards and scored a script 4/10 for it.
+- `clips cut --max S` lets a vertical short run past 60 s (the platforms now take longer shorts); the default
+  stays 60 s.
 - The mix balances by measurement, by default: dialogue is king. Each bus is measured in LUFS; the voice at −16
   before the master, the bed at −24 LUFS between lines and ducked under each line as deep as it needs to sit 18 LU
   under the voice (down 50 ms before the first word), game tracks 2 dB lower, effects held under the voice, music
