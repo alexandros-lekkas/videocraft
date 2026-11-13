@@ -1,0 +1,132 @@
+# Footage unit: a take being recorded. The goat and the fox face off in the barn yard and trade three voiced lines,
+# the game's own captions popping word by word on the voice's onsets, the hens watching from the barn wall.
+#   bin/videocraft run trailer/footage-unit/take.toml
+name = "fu-take"
+seed = 5
+description = "A take being recorded: a voiced challenge in the barn yard, captions word by word"
+
+[cast]
+file = "cast/nibs-vs-duke.toml"
+
+[world]
+seed = "videocraft"
+time = 11000
+
+[[world.set]]
+name = "barn-stage"
+at = [0, 230, 0]
+
+[[world.stage]]
+do = "command"
+commands = [
+  "fill 12 230 -1 12 231 0 air strict",
+  "fill 13 230 -12 31 231 9 air replace minecraft:tall_grass strict",
+  "fill 13 230 -12 31 230 9 air replace minecraft:short_grass strict",
+  "setblock 19 230 -4 yellow_carpet strict",
+  "setblock 19 230 2 yellow_carpet strict",
+  "setblock 22 230 -6 yellow_carpet strict",
+  "setblock 22 230 -1 yellow_carpet strict",
+  "setblock 22 230 4 yellow_carpet strict",
+  "fill 24 230 -6 24 231 -6 spruce_fence strict",
+  "summon minecraft:block_display 23.62 232.0 -6.3 {block_state:\"minecraft:black_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.76f,0.5f,0.6f]}}",
+  "summon minecraft:block_display 23.4 232.1 -6.15 {block_state:\"minecraft:gray_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.24f,0.3f,0.3f]}}",
+  "summon minecraft:block_display 23.75 232.5 -6.22 {block_state:\"minecraft:red_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.1f,0.1f,0.1f]}}",
+]
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "goat"
+at = [19.5, 230, -1.4]
+facing = 0
+left_horn = false
+tint = "#8c9fc2"
+
+[[actor]]
+id = "duke"
+kind = "mob"
+entity = "fox"
+variant = "snow"
+at = [19.5, 230, 1.6]
+facing = 180
+
+[[actor]]
+id = "hen-1"
+kind = "mob"
+entity = "chicken"
+at = [15.5, 230, -3.5]
+facing = -60
+
+[[actor]]
+id = "hen-2"
+kind = "mob"
+entity = "chicken"
+at = [14.8, 230, 2.6]
+facing = -110
+
+[[actor]]
+id = "hen-3"
+kind = "mob"
+entity = "chicken"
+at = [16.0, 230, 4.2]
+facing = -130
+
+[[shot]]
+name = "take"
+preroll = 0.5
+camera = { rig = "two_shot", subjects = ["nibs", "duke"], side = -1, height = 1.7, look = 0.6, margin = 1.4, fov = 55 }
+
+[[shot.cue]]
+at = 0.3
+do = "say"
+actor = "nibs"
+style = "excited"
+text = "Today, I challenge *Duke to a jump-off!"
+
+[[shot.cue]]
+do = "say"
+actor = "duke"
+style = "smug"
+text = "You? You trip over *flowers."
+
+[[shot.cue]]
+do = "say"
+actor = "nibs"
+text = "That was *one time."
+
+[[shot.cue]]
+at = 0.3
+do = "hop"
+actor = "nibs"
+height = 0.4
+
+[[shot.cue]]
+at = 0.5
+do = "talk"
+actor = "nibs"
+seconds = 2.1
+
+[[shot.cue]]
+at = 1.2
+do = "look"
+actor = "hen-2"
+target = "nibs"
+
+[[shot.cue]]
+at = 3.1
+do = "state"
+actor = "duke"
+state = "tilt"
+seconds = 1.2
+
+[[shot.cue]]
+at = 2.9
+do = "talk"
+actor = "duke"
+seconds = 1.6
+
+[[shot.cue]]
+at = 4.7
+do = "talk"
+actor = "nibs"
+seconds = 1.4
