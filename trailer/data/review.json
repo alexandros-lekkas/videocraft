@@ -63,5 +63,43 @@
   }
  ],
  "quote": "Six-shot montage of 0.20-0.35 s shots. Every word starts exactly on its cut frame (six@3672, times@3688, more@3709, goat@3724, than@3739, him@3751), with a basedrum on each and Nibs close to the lens. This is the best-cut stretch in the film.",
- "quote_by": "pacing reviewer, round 9, on s21-s26"
+ "quote_by": "pacing reviewer, round 9, on s21-s26",
+ "climb": {
+  "source": "docs/benchmarks/nibs-vs-duke-log.md: review rounds 8 (run 0010) and 9 (run 0012), and the iteration table for 0011-0012",
+  "from_round": 8,
+  "to_round": 9,
+  "from_run": "0010",
+  "to_run": "0012",
+  "improved": [
+   [
+    "pacing",
+    7.0,
+    8.0
+   ],
+   [
+    "sound",
+    7.0,
+    8.0
+   ],
+   [
+    "comedic timing",
+    6.5,
+    7.0
+   ],
+   [
+    "energy",
+    6.0,
+    6.5
+   ]
+  ],
+  "changed": [
+   "Every caption whole while it is spoken",
+   "A real jump on “fly”, all four hens in the ovation"
+  ],
+  "average": [
+   6.28,
+   6.61
+  ],
+  "pass_line": 7.0
+ }
 }

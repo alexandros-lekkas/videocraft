@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Trailer, third cut: the payoff is the jump-off itself (new barn-yard takes: the leap, the faceplant, "Huh. Flowers.",
+  16:9 and true 9:16); beats dissolve over footage instead of through black; plain step labels; the review as four
+  criteria before → after; a live T3 status line; `make.py --check` also measures near-black seconds.
 - `wool = "#rrggbb"` on a sheep actor: wool of any colour, not only the sixteen dyes.
 - A `say` line with `fit = "none"` that runs over its shot's end keeps its caption on screen across the cut (and
   over a run of short shots): the whole line, the words said before the cut already landed, the rest popping on time.
