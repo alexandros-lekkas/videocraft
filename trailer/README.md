@@ -1,15 +1,22 @@
 # The videocraft trailer
 
-A 66-second launch trailer for the CLI in a calm motion-graphics style, told as the owner asked: **a prompt typed into
-an agent chat → the film made inside Minecraft → the agent at work**. A generic, code-drawn chat (no real product's
-UI or marks) takes the prompt and prints the agent's real `videocraft make` and `run` output; the line where the
-hidden game starts recording match-cuts into the game; a recording monitor (REC, the frame counter from
-`frames.csv`, a top view of the camera and every actor from `frames.csv` and `actors.csv`) rides over real takes: a
-set built block by block, the goat walking to his mark, a camera flying down an aisle, a lead track, a swarm; a voice
-line on its waveform with the game's own captions; the edit timeline of a finished run assembling from its
-`timeline.json` (clips, voice lines, the bed ducked −9 dB under every line, every sound event, the cuts that land on a
-word); the review scores and the climb; the finished film with its own sound; the command line and the repo.
-Everything is drawn by code; nothing is screen-captured.
+A 60-second launch trailer for the CLI, in **Minecraft's own visual language** and told as the owner asked: a prompt
+typed into the game's chat → the film made inside Minecraft → the agent at work. One world throughout, Nibs vs Duke's:
+
+| Time | What | How it looks |
+|:--|:--|:--|
+| 0-5 s | The prompt (that story's real request) typed in the vanilla chat over the barn at dusk; the agent answers with real `story show` and `run` output | the game's chat and edit line, the game font, CLI colours as chat colours |
+| 5-25 s | The chat closes on the world: the barn set built block by block, the camera flying in, five actors walking to their marks, a take with voiced captions, then the film's own takes | REC and the frame count from frames.csv as a boss bar; the script line as a toast; the camera and actors on a held map |
+| 25-30 s | A voiced line | the game's subtitle box listing each word on its onset (real word timings) |
+| 30-40 s | The edit, over the film scrubbing | timeline.json's clips in dye colours, voice lines, the bed ducked under each line, every sound, cuts on words |
+| 40-45 s | The review and the climb | each criterion a boss bar filling to its score; the climb's best step (6.50 → 6.61) as a toast |
+| 45-55 s | The finished film with its own sound | nothing over it |
+| 55-60 s | The command line and the repository over the barn at sunset | the game font, the chat's edit line |
+
+The font (the game's bitmap glyphs, their shadow, the caption outline) and the GUI sprites (toasts, boss bars, the map,
+the menu chrome) are drawn by `render.swift` from the local client jar, unpacked into `runs/trailer/mc/` at build time;
+nothing of the game's is committed. The main sound track is the game's own (music picked by the mood map, the GUI's
+sounds, the films' own mixes); every export has an `-original-audio` twin with a synth bed and library sounds instead.
 
 ```sh
 python3 trailer/footage.py            # the trailer's own takes (the set going up, the keynote, bees with captions)
@@ -29,7 +36,7 @@ footage is the tool's own 9:16 re-frames), `videocraft-trailer-poster.png`, `tim
 |:--|:--|
 | `trailer.toml` | The timeline: scenes with their times, every on-screen line, the footage clips and their script chips, colours, the sound (bed stems by section, effects, the voice lines), the trailer's own takes. |
 | `make.py` | Reads the timeline and `data/`, writes `runs/trailer/timeline-<layout>.json`, compiles and runs the renderer into x264, mixes and masters the sound (`videocraft.audio.loudness`: −14 LUFS, true peak under −1.5 dBTP), muxes the exports. Standard library only. |
-| `render.swift` | The motion graphics: CoreGraphics and CoreText (SF Pro and SF Mono, vector and antialiased), footage decoded by ffmpeg pipes into the same frame, raw BGRA frames to stdout. Every scene is a function of time, so any frame renders alone. `swiftc -O trailer/render.swift -o runs/trailer/bin/render` (make.py does it). |
+| `render.swift` | The frames: the game's font and GUI sprites drawn pixel-crisp at GUI scale 4 with CoreGraphics (nearest-neighbour), footage decoded by ffmpeg pipes into the same frame, raw BGRA frames to stdout. The `mc*` scenes are the trailer; the older scene types stay for reuse. Every scene is a function of time, so any frame renders alone. `swiftc -O trailer/render.swift -o runs/trailer/bin/render` (make.py does it). |
 | `footage.py`, `footage/keynote.toml` | The takes the finished runs did not have: a set built on camera from its own commands, the keynote set with a presenter, and a copy of `examples/bees.toml` with the game's own captions (the owner wants every clip in that caption style). |
 | `review.py`, `rubric.toml` | A packet of stills (contact sheets of both cuts, strips of 16 consecutive frames at every entrance, facts), one `claude -p` reviewer per role through `videocraft.agents.ask`, a score. |
 | `data/` | Real command output and measurements, local paths shortened to `./` and `~` by `make.py capture <file>`. |
@@ -38,32 +45,27 @@ footage is the tool's own 9:16 re-frames), `videocraft-trailer-poster.png`, `tim
 
 | On screen | Source | Made by |
 |:--|:--|:--|
-| The agent's `make` output | `data/make.txt` | `bin/videocraft make "a goat challenges a fox to a jump-off" --dry-run` (14 min 49 s, 2 attempts at the shot list) |
-| The agent's `run` output | `data/run-story2.txt` | `bin/videocraft run stories/a-goat-challenges-a-fox-to-a-jump-off-2/shots.toml` after one hand fix recorded as a story revision (`story draft shots … --from-file`: a `hop` of 5.5 blocks, over the 3-block limit, set to 3; take 0001 had failed on it) |
-| The set going up | `runs/trailer-build/0001` | `footage.py build`: the `keynote-stage` set's own 132 build commands (as `[[world.set]]` expands them), 7 in staging and 86 as timed `command` cues in one filmed shot (light blocks and the ceiling left out), played at 2x |
-| REC frame counters, the top views | each clip's `take/shots/<shot>/frames.csv` and `actors.csv` | mapped from the cut's time through `cut/timeline.json` |
-| The waveform and word ticks | `data/voice-nibs.json` | `runs/talk/0001/voice.json` (Qwen3-TTS voice `ryan`, word timings from the aligner) and the line's wav |
-| The `voice check` lines | `data/voice-check.txt` | `bin/videocraft voice check talk` |
-| The edit timeline | `runs/nibs-vs-duke/0012`: `cut/timeline.json`, `edit.json`, `cut/audio-original.json` | 34 clips, 28 voiced lines, 124 sound events, the music cues, the duck (−9 dB, the mix's default), 4 cuts on a word |
-| Scores, rounds, the quote | `data/review.json` | `runs/nibs-vs-duke/0012/score.json` (round 9) and the round table in `docs/benchmarks/nibs-vs-duke-log.md` |
-| The 9:16 footage | `data/clips-cut.txt`, `data/clips-v.txt` | `bin/videocraft clips cut <run> --method reframe --from … --to …` |
-
-The finished film at the end is **Nibs vs Duke** (the same premise, climbed for 12 iterations), not the prompt's
-own first take; its chip says so. It plays with its own original-audio track (synth bed, library sounds, its voices).
+| The prompt | `stories/nibs-vs-duke/story.json` | the story's own `request` |
+| The agent's output | `data/story-show.txt`, `data/game-log.txt` | `bin/videocraft story show nibs-vs-duke`; the take's `game.log` (`runs/nibs-vs-duke/0012`) |
+| REC frame counters, the maps | each clip's `frames.csv` and `actors.csv` | mapped from the cut's time through `cut/timeline.json`, or the shot's own frames for raw shots |
+| Toasts | each shot's script | the real keys of the shot (shortened to fit a toast) |
+| The subtitle box | `runs/nibs-vs-duke/0012/edit.json` | the s01 lines' word onsets (Qwen3-TTS, the aligner) |
+| The edit | `runs/nibs-vs-duke/0012`: `cut/timeline.json`, `edit.json`, `cut/audio-original.json` | 34 clips, 28 voiced lines, 124 sound events, the −9 dB duck, 4 cuts on a word |
+| Scores and the climb | `data/review.json` | `runs/nibs-vs-duke/0012/score.json` (round 9); rounds 1-9 from `docs/benchmarks/nibs-vs-duke-log.md` |
 
 ## The runs it needs (under `runs/`, never committed)
 
-`nibs-vs-duke/0012` (a copy of the finished Nibs vs Duke iteration; its `clips/r1-r5` are the re-frames),
-`talk/0001` (and its voice line in `cache/voice/lines/`), `trailer-build/0001`, `trailer-keynote/0002`,
-`trailer-bees/0001`, `a-goat-challenges-a-fox-to-a-jump-off-2/0002`. Paths are in `trailer.toml [media]`.
+`nibs-vs-duke/0012` (a copy of the finished Nibs vs Duke iteration, with its `clips/` re-frames), and the footage
+unit's barn-world takes: `fu-build-barn-stage/0003` (the set built on camera), `fu-flyin/0003`, `fu-marks/0006`,
+`fu-take/0002`, `fu-beauty/0002`. Paths are in `trailer.toml [media]`. `footage.py` and `footage/*.toml` film the
+trailer's own earlier takes (`trailer-panorama`, `trailer-keynote`, `trailer-bees`, `trailer-build`).
 
 ## Rules it keeps
 
 - **Real data only.** Every command, output line, path, hash, score and timing is captured, not typed in.
 - **No third-party marks.** The only logo is videocraft's own pixel block (`assets/icon.svg`, read as pixels and
   assembled); no Anthropic, Claude, Mojang or Minecraft marks. The end card says it is unofficial.
-- **No Mojang audio.** The bed is `videocraft audio synth --style keynote --bpm 120`, the effects come from the
-  original library (`audio library`), the voices are the tool's local TTS. Footage audio is never used.
-- **Captions are the game's.** Clips are chosen with their in-game captions on screen; the clean sans-serif and the
-  monospace are for titles and chrome only.
-- System fonts (SF Pro, SF Mono) are used to render; no font file is shipped.
+- **The game's assets are read, never committed.** Textures, font and sounds come from the local game install at
+  render time; the `-original-audio` exports contain no Mojang audio at all.
+- **Captions are the game's.** Clips are chosen with their in-game captions on screen; every other word is the
+  game's own font, drawn from its bitmap at render time.
