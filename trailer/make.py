@@ -132,6 +132,8 @@ def timeline(spec, layout):
         if sc['type'] == 't3':
             sc['keys'] = human_keys(sc['prompt'], sc['type_from'], sc['type_to'])
             for m in sc['messages']:
+                if m['kind'] == 'text':
+                    m['text'] = m['text'].format(story=story_line())
                 for l in m.get('lines', []):
                     if 'text' not in l:
                         text = find_line(data_lines(spec['data'][l.get('data', 'make')]), l['match'])
@@ -139,7 +141,8 @@ def timeline(spec, layout):
                             text = re.sub(l['strip'], '', text)
                         l['text'] = re.sub(r'\s+\./stories/\S+$', '', text or '')
         if sc['type'] == 'endmodern':
-            sc['keys'] = human_keys(sc['command'], sc['type_from'], sc['type_to'])
+            cmd = sc['command_v'] if layout == 'v' and 'command_v' in sc else sc['command']
+            sc['keys'] = human_keys(cmd.replace('\n', ''), sc['type_from'], sc['type_to'])
         if sc['type'] == 'mcchat':
             for l in sc['lines']:
                 if 'mc' in l:
@@ -169,6 +172,7 @@ def timeline(spec, layout):
         if sc['type'] == 'mcscores':
             r = json.loads((DATA / spec['data']['review']).read_text(encoding='utf-8'))
             sc['criteria'] = [[k.replace('_', ' '), v] for k, v in r['criteria'].items()]
+            sc['climb'] = r['climb']
             if layout == 'v' and 'toast_v' in sc:
                 sc['toast'] = sc['toast_v']
         if sc['type'] == 'chat':
@@ -222,6 +226,14 @@ def timeline(spec, layout):
         'ffmpeg': tools.ffmpeg(), 'colors': spec['colors'], 'media': media(spec), 'scenes': scenes,
         'chapters': spec.get('chapter', []), 'logo': logo_quads(), 'mc': str(mc_assets()),
     }
+
+
+def story_line(run='nibs-vs-duke/0012'):
+    """One plain line for the agent's story step, counted from the finished run: its shots and voiced lines."""
+    rd = ROOT / 'runs' / run
+    shots = sum(1 for l in (rd / 'script.toml').read_text(encoding='utf-8').splitlines() if l.strip() == '[[shot]]')
+    lines = len(json.loads((rd / 'voice.json').read_text(encoding='utf-8')))
+    return f'Story drafted: {shots} shots, {lines} voiced lines.'
 
 
 def human_keys(text, start, end, seed=7):
@@ -484,15 +496,47 @@ def ui_events(spec):
             for c in sc['clips']:
                 if c.get('overlay', 'toast') == 'toast':
                     out += [(c['at'] + 0.15, 'toast_in'), (c['at'] + c['dur'] - 0.5, 'toast_out')]
+                if c.get('label'):
+                    out.append((c['at'] + 0.2, 'clip'))
         if ty == 'mcedit':
             out += [(sc['slide_at'] + i * 0.04 * 3, 'clip') for i in range(12)]
             ed = edit_data('nibs-vs-duke/0012')
-            out += [(sc['scrub_at'] + sc['scrub_dur'] * c[0] / ed['seconds'], 'cut') for c in ed['cuts']]
+            out += [(edit_reach(sc, c[0]), 'cut') for c in ed['cuts'] if c[0] <= sc['scrub_to']]
         if ty == 'mcscores':
-            out += [(sc.get('bars_at', sc['from'] + 0.3) + i * 0.25, 'bar') for i in range(9)]
-            out.append((sc['toast_at'], 'climb'))
+            out += [(sc['panel_at'] + 0.7 + i * 0.35, 'bar') for i in range(4)]
+            out.append((sc['panel_at'] + 0.4 + 4 * 0.35 + 0.5, 'climb'))
         if ty == 'mcend':
             out.append((sc['from'] + 0.1, 'end'))
+    return out
+
+
+def edit_reach(sc, sec):
+    """When the edit scene's playhead reaches `sec` of the film (it plays at speed, then scrubs on, inOutCubic)."""
+    p0 = sc['scrub_at'] - sc['from']
+    if sec <= p0:
+        return sc['from'] + sec
+    lo, hi = 0.0, 1.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        u = 4 * mid ** 3 if mid < 0.5 else 1 - (-2 * mid + 2) ** 3 / 2
+        lo, hi = (mid, hi) if p0 + u * (sc['scrub_to'] - p0) < sec else (lo, mid)
+    return sc['scrub_at'] + sc['scrub_dur'] * lo
+
+
+def voice_lines(run, start, dur):
+    """A take's voiced lines alone (no game sound), as (seconds into the take's cut, wav): the original-audio twin's
+    stand-in for the take's own mix."""
+    rd = ROOT / run
+    tl = json.loads((rd / 'cut' / 'timeline.json').read_text(encoding='utf-8'))
+    fps = tl['fps']
+    out = []
+    for v in json.loads((rd / 'voice.json').read_text(encoding='utf-8')):
+        clip = next((c for c in tl['clips'] if c.get('shot') == v['shot']), None)
+        if clip is None:
+            continue
+        at = (clip['out_start'] + v['start_frame'] - clip.get('src_in', 0)) / fps
+        if start - 0.05 <= at < start + dur:
+            out.append((at - start, ROOT / v['file']))
     return out
 
 
@@ -540,6 +584,9 @@ def sound(spec, variant='game'):
         # (`game = …`) plays only in the game sound track.
         if 'game' in v:
             if variant != 'game':
+                for at, wav in voice_lines(v['voice_run'], v['start'], v['dur']) if v.get('voice_run') else []:
+                    l1, r1 = read_wav(wav)
+                    place(left, right, l1, v['t'] + at, v.get('db', 0) - 1.0, 0.0)
                 continue
             src = ROOT / v['game']
         else:
@@ -592,6 +639,21 @@ def export(spec, layout, pic, audio, suffix=''):
     return out
 
 
+# Where the owner watches the cuts: each new full cut is copied there as soon as it exists.
+DELIVER = {'h': ['videocraft-trailer-1080p60.mp4', 'videocraft-films/4-trailer.mp4'],
+           'v': ['videocraft-trailer-9x16.mp4', 'videocraft-films/4-trailer-9x16.mp4']}
+
+
+def deliver(out, layout):
+    if os.environ.get('VIDEOCRAFT_TRAILER_NO_DELIVER'):
+        return
+    for rel in DELIVER[layout]:
+        dest = Path.home() / 'Downloads' / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(out, dest)
+        say(f'COPY    {dest}')
+
+
 def poster(spec, layout):
     f = round(spec['poster'] * spec['fps'])
     png = stills(spec, layout, [f])[0]
@@ -632,18 +694,21 @@ def pacing(spec):
     rows = []   # (name, text, complete_from, until)
     def add(name, text, a, b):
         rows.append((name, re.sub(r'§.', '', text), a, b))
+    def kin(text, at, stagger=0.08, dur=0.8):   # a kinetic line is complete when its last word has risen
+        return at + stagger * (len(text.split()) - 1) + dur * 0.8
     for sc in spec['scene']:
         ty, f0, f1 = sc['type'], sc['from'], sc['to']
         if ty == 'card':
             lines = sc['text'].split('\n')
-            add('card', ' '.join(lines), f0 + 0.2 + 0.25 * (len(lines) - 1) + 0.9, f1 - 0.55)
+            add('card', ' '.join(lines), kin(lines[-1], f0 + 0.2 + 0.25 * (len(lines) - 1), dur=0.9), f1 - 0.55)
         if ty == 't3':
             keys = human_keys(sc['prompt'], sc['type_from'], sc['type_to'])
             # Typed, then sent: it stays on screen throughout, moving from the composer to the thread.
             add('prompt', sc['prompt'], keys[-1], sc['cut_at'])
             for m in sc['messages']:
                 if m['kind'] == 'text':
-                    add('agent reply', m['text'], m['t'] + len(m['text'].split()) / m['wps'], sc['cut_at'])
+                    text = m['text'].format(story=story_line())
+                    add('agent reply', text, m['t'] + len(text.split()) / m['wps'], sc['cut_at'])
                 else:
                     add('tool call', m['title'] + ' ' + m['command'], m['t'] + 0.3, sc['cut_at'])
                     for l in m['lines']:
@@ -651,35 +716,42 @@ def pacing(spec):
         if ty == 'mcmonitor':
             for c in sc['clips']:
                 ov = c.get('overlay', 'toast')
+                if c.get('label'):
+                    add('step label', c['label'], kin(c['label'], c['at'] + 0.15, 0.07, 0.7), c['at'] + c['dur'] - 0.35)
                 if 'toast' in ov:
                     add('toast', c['toast_title'] + ' ' + ' '.join(c['toast']), c['at'] + 0.15 + 0.6, c['at'] + c['dur'] - 0.5)
                 if 'rec' in ov:
-                    add('boss bar (REC)', 'REC shot frame/frames', c['at'], c['at'] + c['dur'])
+                    add('boss bar (REC)', 'REC frame/frames', c['at'], c['at'] + c['dur'])
                 if 'map' in ov:
                     add('map (graphic)', 'top view', c['at'], c['at'] + c['dur'])
+        if ty in ('mcedit', 'mcscores') and sc.get('heading'):
+            add('heading', sc['heading'], kin(sc['heading'], f0 + 0.15), sc['heading_until'] - 0.2)
         if ty == 'mcedit':
-            add('timeline title', sc['title'], sc['from'] + 0.25, sc['to'])
+            add('timeline title', sc['title'], sc['slide_at'], f1)
+            if sc.get('note_v'):
+                add('editor note (9:16)', sc['note_v'].replace('\n', ' '), kin(sc['note_v'].split('\n')[-1], sc['slide_at'] + 0.7, 0.07), f1)
             ed = edit_data('nibs-vs-duke/0012')
             cuts = [c for c in ed['cuts'] if c[0] <= sc['scrub_to']]
-            def when(sec):   # the eased playhead (inOutCubic) reaching `sec`
-                lo, hi = 0.0, 1.0
-                for _ in range(40):
-                    mid = (lo + hi) / 2
-                    u = 4 * mid ** 3 if mid < 0.5 else 1 - (-2 * mid + 2) ** 3 / 2
-                    lo, hi = (mid, hi) if u * sc['scrub_to'] < sec else (lo, mid)
-                return sc['scrub_at'] + sc['scrub_dur'] * lo
-            ts = [when(c[0]) for c in cuts]
+            ts = [edit_reach(sc, c[0]) for c in cuts]
             for i, c in enumerate(cuts):
-                add('cut label', f'cut on "{c[1]}"', ts[i], ts[i + 1] if i + 1 < len(cuts) else sc['to'] - sc.get('ease_out', 0))
+                add('cut chip', f'Cut on "{c[1].strip("*")}"', ts[i] + 0.2, ts[i + 1] if i + 1 < len(cuts) else f1)
         if ty == 'mcscores':
-            for i in range(9):
-                add('score bar', 'name 0.0', sc['bars_at'] + i * 0.25 + 0.5, sc['bars_out'])
-            add('climb toast', sc['toast_title'] + ' ' + ' '.join(sc['toast']), sc['toast_at'] + 0.6, sc['to'] - sc.get('ease_out', 0))
+            r = json.loads((DATA / spec['data']['review']).read_text(encoding='utf-8'))['climb']
+            at = sc['panel_at']
+            add('panel heading', 'REVIEW ROUND 8 → 9 Scored up by fresh reviewers', at + 0.6, f1)
+            for i, (name, x, y) in enumerate(r['improved']):
+                add('score row', f'{name} {x} → {y}', at + 0.4 + i * 0.35 + 1.1, f1)
+            done = at + 0.4 + len(r['improved']) * 0.35
+            for c in r['changed']:
+                add('what changed', c, done + 1.0, f1)
+            add('average / pass line', 'Average 6.28 → 6.61 · Pass line 7.0: not there yet', done + 1.7, f1)
         if ty == 'endmodern':
-            add('name', sc['name'], f0 + 1.2, f1 - 0.8)
-            add('tagline', sc['tagline'], f0 + 1.6, f1 - 0.8)
-            add('command', sc['command'], sc['type_to'], f1 - 0.8)
-            add('url', sc['url'], sc['url_at'] + 0.7, f1 - 0.8)
+            end = f1 - 0.8
+            add('name', sc['name'], f0 + 1.1, end)
+            add('tagline', sc['tagline'], kin(sc['tagline'], f0 + 0.8, 0.05), end)
+            add('command', sc['command'], sc['type_to'], end)
+            add('url', sc['url'], sc['url_at'] + 0.6, end)
+            add('disclaimer', sc['disclaimer'], sc['url_at'] + 1.0, end)
     out = ['| Element | Text | On screen complete | Needs | |', '|:--|:--|--:|--:|:--|']
     fails = 0
     for name, text, a, b in rows:
@@ -690,9 +762,10 @@ def pacing(spec):
     out += ['', '| Second | Panels with text on screen |', '|--:|--:|']
     worst = 0
     for s in range(int(spec['seconds']) + 1):
-        panel = {'prompt': 'app', 'agent reply': 'app', 'tool call': 'app', 'tool output': 'app', 'score bar': 'scores',
-                 'timeline title': 'timeline', 'cut label': 'timeline', 'name': 'end', 'tagline': 'end', 'command': 'end',
-                 'url': 'end'}
+        panel = {'prompt': 'app', 'agent reply': 'app', 'tool call': 'app', 'tool output': 'app', 'panel heading': 'scores',
+                 'score row': 'scores', 'what changed': 'scores', 'average / pass line': 'scores',
+                 'timeline title': 'timeline', 'cut chip': 'timeline', 'name': 'end', 'tagline': 'end', 'command': 'end',
+                 'url': 'end', 'disclaimer': 'end'}
         c = len({panel.get(name, name) for name, _, a, b in rows if a <= s + 0.5 <= b})
         worst = max(worst, c)
         out.append(f'| {s} | {c} |')
@@ -703,7 +776,54 @@ def pacing(spec):
     for l in out[2:2 + len(rows)]:
         if 'SHORT' in l:
             say('  ' + l)
-    return fails
+    black_fail = 0
+    for lay in ('h', 'v'):
+        got = near_black(OUT / f'picture-{lay}.mp4')
+        if got is None:
+            say(f'BLACK   {lay}: not rendered yet (runs/trailer/picture-{lay}.mp4)')
+            continue
+        total, spans = got
+        ok = total < BLACK_TARGET
+        black_fail += not ok
+        say(f'BLACK   {lay}: {total:.2f} s near-black (target under {BLACK_TARGET} s) {"ok" if ok else "OVER"}: '
+            + (', '.join(f'{a:.1f}-{b:.1f}' for a, b in spans) or 'none'))
+        (OUT / 'pacing.md').write_text((OUT / 'pacing.md').read_text(encoding='utf-8') +
+            f'\nNear-black ({lay}): {total:.2f} s; spans ' + (', '.join(f'{a:.1f}-{b:.1f} s' for a, b in spans) or 'none') + '\n',
+            encoding='utf-8')
+    return fails + black_fail
+
+
+BLACK_TARGET = 1.5
+
+
+def near_black(video, rate=10):
+    """Seconds of near-black picture: frames (sampled at `rate` a second) whose brightest pixel is under 80 of 255 in
+    video range, i.e. nothing on screen but a dark canvas or a fade. Returns (seconds, [(from, to), …]) or None."""
+    if not video.exists():
+        return None
+    p = subprocess.run([tools.ffmpeg(), '-v', 'error', '-i', str(video), '-vf',
+                        f'fps={rate},scale=480:-2,signalstats,metadata=print:key=lavfi.signalstats.YMAX:file=-',
+                        '-f', 'null', '-'], capture_output=True, text=True)
+    times, dark = [], []
+    t = None
+    for line in p.stdout.splitlines():
+        m = re.search(r'pts_time:([\d.]+)', line)
+        if m:
+            t = float(m.group(1))
+        m = re.search(r'YMAX=([\d.]+)', line)
+        if m and t is not None:
+            times.append(t)
+            dark.append(float(m.group(1)) < 80)
+    spans, start = [], None
+    for t, k in zip(times, dark):
+        if k and start is None:
+            start = t
+        if not k and start is not None:
+            spans.append((start, t))
+            start = None
+    if start is not None:
+        spans.append((start, times[-1] + 1 / rate))
+    return sum(dark) / rate, spans
 
 
 def main(argv):
@@ -740,8 +860,9 @@ def main(argv):
     for lay in layouts:
         pic = OUT / f'picture-{lay}.mp4' if args.mux_only else picture(spec, lay)
         if audio:
-            export(spec, lay, pic, audio['game'])
+            out = export(spec, lay, pic, audio['game'])
             export(spec, lay, pic, audio['original'], suffix='-original-audio')
+            deliver(out, lay)
     poster(spec, 'h')
     return 0
 

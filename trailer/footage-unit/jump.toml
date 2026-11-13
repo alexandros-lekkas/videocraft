@@ -1,0 +1,221 @@
+# The jump-off the trailer's payoff needs (Nibs vs Duke has no jump shot): the goat leaps, the fox faceplants into
+# the flowers he joked about, the goat reacts. Same barn yard, cast and marks as take.toml.
+#   bin/videocraft run trailer/footage-unit/jump.toml
+name = "fu-jump"
+seed = 5
+description = "The jump-off: the goat leaps, the fox faceplants, the goat reacts"
+
+[cast]
+file = "cast/nibs-vs-duke.toml"
+
+[world]
+seed = "videocraft"
+time = 11000
+
+[[world.set]]
+name = "barn-stage"
+at = [0, 230, 0]
+
+[[world.stage]]
+do = "command"
+strict = false                  # the doorway may already be clear; an empty fill is not a failure
+commands = [
+  "fill 12 230 -1 12 231 0 air strict",
+  "fill 13 230 -12 31 231 9 air replace minecraft:tall_grass strict",
+  "fill 13 230 -12 31 230 9 air replace minecraft:short_grass strict",
+  "setblock 19 230 -4 yellow_carpet strict",
+  "setblock 19 230 2 yellow_carpet strict",
+  "setblock 22 230 -6 yellow_carpet strict",
+  "setblock 22 230 -1 yellow_carpet strict",
+  "setblock 22 230 4 yellow_carpet strict",
+  "fill 24 230 -6 24 231 -6 spruce_fence strict",
+  "summon minecraft:block_display 23.62 232.0 -6.3 {block_state:\"minecraft:black_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.76f,0.5f,0.6f]}}",
+  "summon minecraft:block_display 23.4 232.1 -6.15 {block_state:\"minecraft:gray_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.24f,0.3f,0.3f]}}",
+  "summon minecraft:block_display 23.75 232.5 -6.22 {block_state:\"minecraft:red_concrete\",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.1f,0.1f,0.1f]}}",
+  "fill 17 230 0 21 230 3 poppy replace air strict",
+  "setblock 18 230 1 dandelion strict",
+  "setblock 20 230 3 cornflower strict",
+  "setblock 21 230 1 dandelion strict",
+]
+
+
+[[actor]]
+id = "nibs"
+kind = "mob"
+entity = "goat"
+at = [19.5, 230, -1.4]
+facing = 0
+left_horn = false
+tint = "#8c9fc2"
+
+[[actor]]
+id = "duke"
+kind = "mob"
+entity = "fox"
+variant = "snow"
+at = [19.5, 230, 1.6]
+facing = 180
+
+[[actor]]
+id = "hen-1"
+kind = "mob"
+entity = "chicken"
+at = [15.5, 230, -3.5]
+facing = -60
+
+[[actor]]
+id = "hen-2"
+kind = "mob"
+entity = "chicken"
+at = [14.8, 230, 2.6]
+facing = -110
+
+[[actor]]
+id = "hen-3"
+kind = "mob"
+entity = "chicken"
+at = [16.0, 230, 4.2]
+facing = -130
+
+# 1. Nibs goes first: a head-down wind-up and a 2.8-block leap (hop is limited to 3), the hens and Duke watching.
+[[shot]]
+name = "goat-jump"
+preroll = 0.5
+duration = 3.2
+camera = { rig = "fixed", eye = [23.2, 230.3, -2.9], at = [19.5, 231.9, -1.0], fov = 64 }
+
+[[shot.cue]]
+at = 0.15
+do = "say"
+actor = "nibs"
+style = "excited"
+text = "Watch me *fly!"
+
+[[shot.cue]]
+at = 0.2
+do = "talk"
+actor = "nibs"
+seconds = 0.8
+
+[[shot.cue]]
+at = 0.3
+do = "look"
+actor = "duke"
+target = "nibs"
+
+[[shot.cue]]
+at = 0.3
+do = "look"
+actor = "hen-2"
+target = "nibs"
+
+[[shot.cue]]
+at = 0.3
+do = "look"
+actor = "hen-3"
+target = "nibs"
+
+[[shot.cue]]
+at = 0.9
+do = "state"
+actor = "nibs"
+state = "lower"
+seconds = 0.45
+
+[[shot.cue]]
+at = 1.4
+do = "hop"
+actor = "nibs"
+height = 2.8
+seconds = 1.25
+
+[[shot.cue]]
+at = 1.4
+do = "voice"
+actor = "nibs"
+sound = "ambient"
+
+# 2. Duke's turn: "Easy.", a crouch, a pounce, and face first into the flowers.
+[[shot]]
+name = "fox-jump"
+preroll = 0.5
+duration = 3.6
+camera = { rig = "fixed", eye = [23.6, 232.2, 3.4], at = [19.5, 230.5, 1.5], fov = 46 }
+
+[[shot.cue]]
+at = 0.15
+do = "say"
+actor = "duke"
+style = "smug"
+text = "*Easy."
+
+[[shot.cue]]
+at = 0.7
+do = "state"
+actor = "duke"
+state = "crouch"
+seconds = 0.5
+
+[[shot.cue]]
+at = 1.25
+do = "state"
+actor = "duke"
+state = "pounce"
+seconds = 0.6
+
+[[shot.cue]]
+at = 1.25
+do = "hop"
+actor = "duke"
+height = 1.1
+seconds = 0.6
+
+[[shot.cue]]
+at = 1.9
+do = "state"
+actor = "duke"
+state = "faceplant"
+
+[[shot.cue]]
+at = 1.95
+do = "voice"
+actor = "duke"
+sound = "hurt"
+
+# 3. The reaction: Duke still face down in the flowers behind, Nibs turns to the lens.
+[[shot]]
+name = "react"
+preroll = 0.5
+duration = 2.6
+camera = { rig = "fixed", eye = [22.4, 231.9, -3.4], at = [19.4, 230.6, 0.0], fov = 52 }
+
+[[shot.cue]]
+at = -0.5
+do = "state"
+actor = "duke"
+state = "faceplant"
+
+[[shot.cue]]
+at = 0.0
+do = "turn"
+actor = "nibs"
+to = "camera"
+
+[[shot.cue]]
+at = 0.0
+do = "look"
+actor = "hen-2"
+target = "duke"
+
+[[shot.cue]]
+at = 0.35
+do = "say"
+actor = "nibs"
+style = "smug"
+text = "Huh. *Flowers."
+
+[[shot.cue]]
+at = 0.5
+do = "talk"
+actor = "nibs"
+seconds = 1.0
