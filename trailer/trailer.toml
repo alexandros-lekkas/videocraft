@@ -162,7 +162,8 @@ fade_in = 0.4
 heading = "Then it reviews itself."
 heading_v = "Then it\nreviews itself."
 heading_until = 53.8
-clip = { media = "nibs", in = 36.7, media_v = "fu_orbit_v", in_v = 0.5 }
+# s13-s15 (captions at the bottom, clear of the panel), slowed so the scene ends before s16's caption at the top.
+clip = { media = "nibs", in = 36.0, speed = 0.62, media_v = "fu_orbit_v", in_v = 0.5 }
 panel_at = 53.6
 
 [[scene]]

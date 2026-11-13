@@ -2159,7 +2159,7 @@ func cutChip(_ word: String, x: CGFloat, top: CGFloat, t: Double, at: Double) {
 /// average against the pass line it has not reached.
 func sceneMCScores(_ o: Obj, _ t: Double) {
 	let from = d(o, "from")
-	fullFrame(pick(o, "clip"), t, since: from)
+	fullFrame(pick(o, "clip"), t, since: from, speed: d(pick(o, "clip"), "speed", 1))
 	heading(o, t)
 	let at = d(o, "panel_at")
 	let pin = outCubic(prog(t, at, 0.6))
