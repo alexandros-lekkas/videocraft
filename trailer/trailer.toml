@@ -69,6 +69,11 @@ review = "review.json"
 
 # Footage, under runs/ (README.md: which runs, and how each was made). *_v: the tool's own 9:16 re-frames.
 [media]
+fu_headroom = "fu-beauty/0002/take/shots/headroom/video.mp4"
+fu_orbit = "fu-beauty/0002/take/shots/orbit/video.mp4"
+fu_pair = "fu-beauty/0002/take/shots/pair/video.mp4"
+fu_flyin = "fu-flyin/0003/take/shots/flyin/video.mp4"
+fu_take = "fu-take/0002/cut/master.mp4"
 marks = "fu-marks/0006/take/shots/wide/video.mp4"
 barn_build = "fu-build-barn-stage/0003/take/shots/build/video.mp4"
 pano = "trailer-panorama/0001/cut/master.mp4"
@@ -101,7 +106,7 @@ hall_dolly_v = "trailer-keynote/0002/clips/r3/short-1080x1920.mp4"
 type = "mcchat"
 from = 0.0
 to = 5.1
-bg = { media = "pano", in = 2.0 }
+bg = { media = "fu_headroom", in = 0.5 }
 prompt = "a one-horned goat challenges the three-time Talent Night champion, a snow fox, to a jump-off"
 type_at = 0.3
 cps = 44
@@ -121,14 +126,13 @@ type = "mcmonitor"
 from = 5.0
 to = 25.1
 clips = [
-  { at = 5.0, dur = 3.6, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]] name = "barn-stage"', 'built on camera, block by block'], toast_v = ['[[world.set]]', '"barn-stage"'] },
-  { at = 8.6, dur = 2.6, media = "marks", in = 3.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", icon = "name_tag", toast_title = "five actors, five marks", toast = ['do = "walk"', 'face = "camera"'] },
-  { at = 11.2, dur = 2.4, media = "nibs", in = 9.9, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s04-market", toast = ['rig = "lead"', 'subject = "nibs"', 'fov = 108'] },
-  { at = 13.6, dur = 2.0, media = "nibs", in = 22.65, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s08-poster", toast = ['view = "market-lane', ':poster"'] },
-  { at = 15.6, dur = 2.2, media = "nibs", in = 32.0, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s12-note", toast = ['rig = "fixed"', 'barn-stage:note-1'] },
-  { at = 17.8, dur = 2.4, media = "nibs", in = 37.1, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s14-notes", toast = ['[[edit.look]] frame = { color = "#e8a23a" }'], toast_v = ['[[edit.look]]', 'an amber frame'] },
-  { at = 20.2, dur = 2.4, media = "nibs", in = 50.4, run = "nibs-vs-duke/0012", icon = "egg", toast_title = "s17-egg", toast = ['do = "emit"', 'actor = "hen-2"'] },
-  { at = 22.6, dur = 2.5, media = "nibs", in = 55.8, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s19-jump", toast = ['rig = "lead"', 'subject = "nibs"'] },
+  { at = 5.0, dur = 3.4, media = "barn_build", in = 0.3, step = 2, shot_dir = "fu-build-barn-stage/0003/take/shots/build", icon = "oak_sign", toast_title = "barn-stage", toast = ['[[world.set]]', 'name = "barn-stage"'] },
+  { at = 8.4, dur = 2.8, media = "fu_flyin", in = 0.4, step = 2, shot_dir = "fu-flyin/0003/take/shots/flyin", icon = "compass_00", toast_title = "flyin", toast = ['rig = "dolly"', 'fov = [72, 56]'] },
+  { at = 11.2, dur = 2.6, media = "marks", in = 3.0, step = 2, shot_dir = "fu-marks/0006/take/shots/wide", icon = "name_tag", toast_title = "five actors, five marks", toast = ['do = "walk"', 'face = "camera"'] },
+  { at = 13.8, dur = 4.2, media = "fu_take", in = 0.15, run = "fu-take/0002", icon = "writable_book", toast_title = "take", toast = ['rig = "two_shot"', 'do = "say", actor = "nibs"'] },
+  { at = 18.0, dur = 2.4, media = "nibs", in = 9.9, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s04-market", toast = ['rig = "lead"', 'subject = "nibs"', 'fov = 108'] },
+  { at = 20.4, dur = 2.3, media = "nibs", in = 37.1, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s14-notes", toast = ['[[edit.look]]', 'an amber frame'] },
+  { at = 22.7, dur = 2.4, media = "nibs", in = 55.8, run = "nibs-vs-duke/0012", icon = "writable_book", toast_title = "s19-jump", toast = ['rig = "lead"', 'subject = "nibs"'] },
 ]
 
 [[scene]]
@@ -158,7 +162,7 @@ scrub_dur = 10.0
 type = "mcscores"
 from = 40.0
 to = 45.1
-clip = { media = "nibs", in = 25.2 }
+clip = { media = "fu_pair", in = 0.6 }
 toast_title = "Climb: kept the better take"
 toast = ["average 6.50 -> 6.61 (+0.11)", "best of 9 review rounds"]
 toast_v = ["6.50 -> 6.61", "(+0.11), kept"]
@@ -174,7 +178,7 @@ clip = { media = "nibs", in = 59.4, media_v = "short", in_v = 3.9 }
 type = "mcend"
 from = 55.0
 to = 60.0
-clip = { media = "pano", in = 23.5 }
+clip = { media = "fu_orbit", in = 1.0 }
 name = "videocraft"
 tagline = "Agent-directed films, shot inside Minecraft."
 tagline_v = "Agent-directed films,\nshot inside Minecraft."
@@ -197,9 +201,10 @@ style = "keynote"
 bpm = 120
 seed = 7
 film = [
+  { t = 13.8, start = 0.15, dur = 4.2, db = 0.0, game = "runs/fu-take/0002/cut/master.mp4" },
   { t = 25.0, start = 0.0, dur = 5.1, db = 0.0 },
   { t = 45.0, start = 59.4, dur = 10.0, db = 0.0 },
 ]
 film_game = "runs/nibs-vs-duke/0012/cut/x-1080p60.mp4"
 film_original = "runs/nibs-vs-duke/0012/cut/x-1080p60-original-audio.mp4"
-music = [[0.0, -60], [0.3, -7], [4.9, -7], [5.0, -1], [24.8, -1], [25.0, -16], [29.9, -16], [30.0, -3], [44.8, -3], [45.0, -60], [54.9, -60], [55.0, -4], [59.0, -4], [60.0, -60]]
+music = [[0.0, -60], [0.3, -7], [4.9, -7], [5.0, -1], [13.6, -1], [13.8, -14], [17.9, -14], [18.0, -1], [24.8, -1], [25.0, -16], [29.9, -16], [30.0, -3], [44.8, -3], [45.0, -60], [54.9, -60], [55.0, -4], [59.0, -4], [60.0, -60]]

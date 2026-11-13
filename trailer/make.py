@@ -490,8 +490,15 @@ def sound(spec, variant='game'):
         else:
             continue
         place(left, right, mono, t0, db, 0.0)
-    src = ROOT / (a['film_game'] if variant == 'game' else a['film_original'])
     for v in a['film']:
+        # Each clip's own sound: the film's game mix or its original-audio twin; a take with only a game mix
+        # (`game = …`) plays only in the game sound track.
+        if 'game' in v:
+            if variant != 'game':
+                continue
+            src = ROOT / v['game']
+        else:
+            src = ROOT / (a['film_game'] if variant == 'game' else a['film_original'])
         fl, fr = read_wav_part(src, v['start'], v['dur'])
         fade = int(0.15 * SR)
         g = 10 ** (v.get('db', 0) / 20)
